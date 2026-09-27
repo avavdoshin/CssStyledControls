@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <PathDelim Value="\"/>
+    <Name Value="CssStyledControls"/>
+    <Type Value="RunAndDesignTime"/>
+    <Author Value="(c) 2026 Alexander V Avdoshin (a.avdoshin@gmail.com)"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="..\Source"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="CSS-styled visual controls Runtime packages"/>
+    <Version Minor="1"/>
+    <Files>
+      <Item>
+        <Filename Value="CssStyledControlsReg.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="CssStyledControlsReg"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssButtonControl.pas"/>
+        <UnitName Value="CssButtonControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssCheckboxControl.pas"/>
+        <UnitName Value="CssCheckboxControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssComboControl.pas"/>
+        <UnitName Value="CssComboControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssEditControl.pas"/>
+        <UnitName Value="CssEditControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssGroupControl.pas"/>
+        <UnitName Value="CssGroupControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssLabelControl.pas"/>
+        <UnitName Value="CssLabelControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssListboxControl.pas"/>
+        <UnitName Value="CssListboxControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssMemoControl.pas"/>
+        <UnitName Value="CssMemoControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssMenuControl.pas"/>
+        <UnitName Value="CssMenuControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssPanelControl.pas"/>
+        <UnitName Value="CssPanelControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssRadioControl.pas"/>
+        <UnitName Value="CssRadioControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssScrollControl.pas"/>
+        <UnitName Value="CssScrollControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssSplitterControl.pas"/>
+        <UnitName Value="CssSplitterControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssTabbedControl.pas"/>
+        <UnitName Value="CssTabbedControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssVirtualTreeControl.pas"/>
+        <UnitName Value="CssVirtualTreeControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssUtils.pas"/>
+        <UnitName Value="CssUtils"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssGroupCaptionControl.pas"/>
+        <UnitName Value="CssGroupCaptionControl"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssStyledControl.pas"/>
+        <UnitName Value="CssStyledControl"/>
+      </Item>
+    </Files>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="LCL"/>
+      </Item>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
