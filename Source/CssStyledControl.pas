@@ -275,6 +275,7 @@ type
     function GetFocusColor: TColor; virtual;
     function GetShowPrefix: Boolean; virtual;
     procedure HtmlModeChanged; virtual;
+    function ShouldPaintCaption: Boolean; virtual;
 
     { Virtual }
     procedure SetCaption(const AValue: TCaption); virtual;
@@ -288,6 +289,7 @@ type
     { Layout helpers }
     function  GetContentRect: TRect; virtual;
     function  GetContentRectNoScroll: TRect; virtual;
+    function  GetBorderTopOffset: Integer; virtual;
 
     function  GetAlignment: TAlignment;
     procedure SetAlignment(AValue: TAlignment);
@@ -3012,9 +3014,6 @@ begin
   else
     Result := Color;
 
-  if Result = clNone then
-    Result := clWindow;
-
   if Result = clDefault then
     Result := clBtnFace;
 
@@ -3528,6 +3527,11 @@ end;
 function TCssStyledControl.GetContentRectNoScroll: TRect;
 begin
   Result := GetContentRect;
+end;
+
+function TCssStyledControl.GetBorderTopOffset: Integer;
+begin
+  Result := 0;
 end;
 
 function TCssStyledControl.GetAlignment: TAlignment;
@@ -4919,6 +4923,11 @@ begin
   // Descendants may override.
 end;
 
+function TCssStyledControl.ShouldPaintCaption: Boolean;
+begin
+  Result := True;
+end;
+
 { ============================================================ }
 { TCssStyledControl — painting                                 }
 { ============================================================ }
@@ -5791,6 +5800,8 @@ begin
 
       DrawR := R;
 
+      DrawR.Top := DrawR.Top + GetBorderTopOffset;
+
       if BorderVisible and (FBorderWidth > 1) then
         InflateRect(DrawR, -(FBorderWidth div 2), -(FBorderWidth div 2));
 
@@ -5819,6 +5830,8 @@ begin
 
       DrawR := R;
 
+      DrawR.Top := DrawR.Top + GetBorderTopOffset;
+
       if FBorderWidth > 1 then
         InflateRect(DrawR, -(FBorderWidth div 2), -(FBorderWidth div 2));
 
@@ -5836,10 +5849,13 @@ begin
   if (TextR.Right > TextR.Left) and (TextR.Bottom > TextR.Top) then
   begin
     UpdateCanvasFont;
-    if FHtmlMode then
-      DrawHtmlText(TextR, Caption)
-    else
-      DrawStyledText(TextR, Caption);
+    if ShouldPaintCaption then
+    begin
+      if FHtmlMode then
+        DrawHtmlText(TextR, Caption)
+      else
+        DrawStyledText(TextR, Caption);
+    end;
   end;
 
   inherited Paint;

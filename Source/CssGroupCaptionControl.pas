@@ -29,6 +29,8 @@ type
     function GetCaptionBackground: TColor;
     function GetTopOffset: Integer;
     procedure GetCaptionDrawRect(out ARect: TRect; out ACaptionW: Integer);
+    function GetBorderTopOffset: Integer; override;
+    procedure InitTextProps; override;
 
     // Layout
     procedure LayoutItems; virtual;
@@ -212,12 +214,7 @@ begin
   if FCaptionMode = gcmInside then
     CaptionY := B + P.Top
   else
-  begin
-    CaptionY := B - (CapH div 2);
-
-    if CaptionY < 0 then
-      CaptionY := 0;
-  end;
+    CaptionY := 0;
 
   case LAlign of
     ctaCenter:
@@ -247,6 +244,24 @@ begin
     ARect.Bottom := ClientHeight;
 
   ACaptionW := CaptionW;
+end;
+
+function TCssGroupCaptionControl.GetBorderTopOffset: Integer;
+var
+  B: Integer;
+begin
+  if FCaptionMode <> gcmOnBorder then
+    Exit(0);
+
+  B := GetCssBorderWidth;
+  Result := GetCaptionHeight(Width - B * 2) div 2;
+end;
+
+procedure TCssGroupCaptionControl.InitTextProps;
+begin
+  SetTextAlign(ctaLeft);
+  SetVAlign(cvaMiddle);
+  SetWordWrap(False);
 end;
 
 procedure TCssGroupCaptionControl.LayoutItems;

@@ -173,6 +173,7 @@ type
     procedure DrawDot(const R: TRect; AColor: TColor);
   protected
     // Initialization and style
+    function ShouldPaintCaption: Boolean; override;
     procedure Loaded; override;
     procedure InitTextProps; override;
     procedure StyleChanged; override;
@@ -226,6 +227,7 @@ type
     property ParentShowHint;
     property PopupMenu;
     property ShowHint;
+    property ShowFocusRect default False;
     property TabOrder;
     property TabStop;
     property Visible;
@@ -489,6 +491,7 @@ begin
 
   FClicked := False;
   FSpacePressed := False;
+  ShowFocusRect := False;
 
   TCssStyledControl(Self).Caption := '';
 end;
@@ -1131,6 +1134,11 @@ begin
   inherited Destroy;
 end;
 
+function TCssRadioButton.ShouldPaintCaption: Boolean;
+begin
+  Result := False;
+end;
+
 procedure TCssRadioGroup.Loaded;
 begin
   inherited Loaded;
@@ -1329,10 +1337,7 @@ begin
     if CaptionX < B + 2 then
       CaptionX := B + 2;
 
-    CaptionY := B - (CapH div 2);
-
-    if CaptionY < 0 then
-      CaptionY := 0;
+    CaptionY := 0;
 
     CaptionRect := Rect(
       CaptionX - 3,

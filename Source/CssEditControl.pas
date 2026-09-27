@@ -1115,7 +1115,18 @@ begin
   FG := GetCssTextColor;
 
   if BG = clNone then
-    BG := clWindow;
+  begin
+    if (Parent <> nil) and (Parent is TCssStyledControl) then
+      BG := TCssStyledControl(Parent).GetCssBackgroundColor;
+
+    if BG = clNone then
+    begin
+      if Parent <> nil then
+        BG := Parent.Brush.Color
+      else
+        BG := clWindow;
+    end;
+  end;
 
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := BG;

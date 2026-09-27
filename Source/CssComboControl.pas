@@ -470,7 +470,7 @@ begin
   FItemHeight := AValue;
 
   if Assigned(FListBox) then
-    FListBox.ItemHeight := AValue;
+    ApplyControlStyles;
 end;
 
 function TCssComboBox.GetButtonRect: TRect;
@@ -589,7 +589,9 @@ begin
     FListBox.StyleName := StyleName;
 
     FListBox.CssClass := FListBoxCssClass;
-    FListBox.CssStyle := FListBoxCssStyle;
+    FListBox.CssStyle :=
+      'item-height: ' + IntToStr(FItemHeight) + 'px;' +
+      FListBoxCssStyle;
 
     FListBox.HtmlMode := HtmlMode;
     FListBox.ItemHeight := FItemHeight;

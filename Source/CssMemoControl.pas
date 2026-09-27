@@ -1892,11 +1892,11 @@ var
   X1, X2, Pix1, Pix2: Integer;
   CaretPixelX, CaretPixelY: Integer;
   TS: TTextStyle;
-  // NEW: variables for placeholder
   SavedFontStyle: TFontStyles;
   TextH, TextY: Integer;
   PlaceholderAlignment: TCssTextAlign;
   PlaceholderVAlignment: TCssVAlign;
+  BG: TColor;
 begin
   inherited Paint;
 
@@ -1909,8 +1909,24 @@ begin
 
   AssignCssFontToFont(Canvas.Font);
 
+  BG := GetCssBackgroundColor;
+
+  if BG = clNone then
+  begin
+    if (Parent <> nil) and (Parent is TCssStyledControl) then
+      BG := TCssStyledControl(Parent).GetCssBackgroundColor;
+
+    if BG = clNone then
+    begin
+      if Parent <> nil then
+        BG := Parent.Brush.Color
+      else
+        BG := clWindow;
+    end;
+  end;
+
   Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := GetCssBackgroundColor;
+  Canvas.Brush.Color := BG;
   Canvas.FillRect(R);
 
   TS := Default(TTextStyle);
