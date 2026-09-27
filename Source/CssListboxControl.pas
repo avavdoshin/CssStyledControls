@@ -112,6 +112,7 @@ type
     procedure HtmlModeChanged; override;
     procedure ResetStyle; override;
     procedure ApplyDeclaration(const AName, AValue: string); override;
+    procedure EnabledChanged; override;
 
     // Painting
     procedure Paint; override;
@@ -381,6 +382,16 @@ begin
   inherited ApplyDeclaration(AName, AValue);
 end;
 
+procedure TCssListBox.EnabledChanged;
+begin
+  inherited EnabledChanged;
+
+  if Assigned(FScrollBar) then
+    FScrollBar.Enabled := Enabled;
+
+  Invalidate;
+end;
+
 procedure TCssListBox.SetScrollBarCssClass(const AValue: string);
 begin
   if FScrollBarCssClass = AValue then
@@ -429,6 +440,8 @@ begin
 
   FScrollBar.StyleProvider := StyleProvider;
   FScrollBar.StyleName := StyleName;
+
+  FScrollBar.Enabled := Enabled;
 
   FScrollBar.CssClass := FScrollBarCssClass;
   FScrollBar.CssStyle := FScrollBarCssStyle;
@@ -876,6 +889,7 @@ begin
         FTopIndex := MaxTop;
 
       FScrollBar.Position := FTopIndex;
+      FScrollBar.Enabled := True;
     end
     else
     begin
@@ -883,6 +897,7 @@ begin
 
       FScrollBar.PageSize := 0;
       FScrollBar.Position := 0;
+      FScrollBar.Enabled := False;
 
       if FTopIndex > MaxTop then
         FTopIndex := MaxTop;

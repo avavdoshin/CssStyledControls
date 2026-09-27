@@ -33,6 +33,8 @@ type
     // Scrollbars
     FVScroll: TCssScrollBar;
     FHScroll: TCssScrollBar;
+    FMemoScrollBarCssClass: string;
+    FMemoScrollBarCssStyle: string;
 
     // Caret blinking
     FCaretTimer: TTimer;
@@ -82,6 +84,8 @@ type
     procedure SetWordWrap(AValue: Boolean);
     procedure SetReadOnly(AValue: Boolean);
     procedure SetScrollBars(AValue: TScrollStyle);
+    procedure SetMemoScrollBarCssClass(const AValue: string);
+    procedure SetMemoScrollBarCssStyle(const AValue: string);
 
     procedure SetPlaceholder(const AValue: string);
     function GetPlaceholderColor: TColor;
@@ -120,6 +124,7 @@ type
     procedure UpdateScrollBars;
     procedure VScrollChanged(Sender: TObject);
     procedure HScrollChanged(Sender: TObject);
+    procedure ApplyScrollBarStyle;
 
     // Caret blinking
     procedure CaretTimerTick(Sender: TObject);
@@ -141,6 +146,7 @@ type
     procedure DoChange;
   protected
     // Initialization and style
+    procedure CreateWnd; override;
     procedure Loaded; override;
     procedure InitTextProps; override;
     procedure StyleChanged; override;
@@ -150,6 +156,9 @@ type
 
     // Painting
     procedure Paint; override;
+
+    // State
+    procedure EnabledChanged; override;
 
     // Sizing
     procedure Resize; override;
@@ -163,6 +172,7 @@ type
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     function DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean; override;
+    procedure MouseLeave; override;
 
     // Focus
     procedure DoEnter; override;
@@ -188,6 +198,8 @@ type
     property WordWrap: Boolean read FWordWrap write SetWordWrap default False;
     property ReadOnly: Boolean read FReadOnly write SetReadOnly default False;
     property ScrollBars: TScrollStyle read FScrollBars write SetScrollBars default ssNone;
+    property MemoScrollBarCssClass: string read FMemoScrollBarCssClass write SetMemoScrollBarCssClass;
+    property MemoScrollBarCssStyle: string read FMemoScrollBarCssStyle write SetMemoScrollBarCssStyle;
 
     // Standard properties
     property Align;
@@ -266,6 +278,9 @@ begin
   FPlaceholderFontStrikeOut := False;
   FPlaceholderFontStrikeOutSet := False;
 
+  FMemoScrollBarCssClass := 'memo-scrollbar';
+  FMemoScrollBarCssStyle := '';
+
   // Create scrollbars before setting sizes.
   FVScroll := TCssScrollBar.Create(Self);
   FVScroll.Parent := Self;
@@ -273,6 +288,7 @@ begin
   FVScroll.Visible := False;
   FVScroll.TabStop := False;
   FVScroll.OnChange := @VScrollChanged;
+  FVScroll.SetBounds(0, 0, 0, 0);
 
   FHScroll := TCssScrollBar.Create(Self);
   FHScroll.Parent := Self;
@@ -280,6 +296,9 @@ begin
   FHScroll.Visible := False;
   FHScroll.TabStop := False;
   FHScroll.OnChange := @HScrollChanged;
+  FHScroll.SetBounds(0, 0, 0, 0);
+
+  ApplyScrollBarStyle;
 
   // Create the caret timer.
   FCaretTimer := TTimer.Create(Self);
@@ -302,10 +321,18 @@ begin
   inherited Destroy;
 end;
 
+procedure TCssMemo.CreateWnd;
+begin
+  inherited CreateWnd;
+
+  UpdateScrollBars;
+end;
+
 procedure TCssMemo.Loaded;
 begin
   inherited Loaded;
 
+  ApplyScrollBarStyle;
   UpdateScrollBars;
   Invalidate;
 end;
@@ -321,6 +348,7 @@ procedure TCssMemo.StyleChanged;
 begin
   inherited StyleChanged;
 
+  ApplyScrollBarStyle;
   UpdateScrollBars;
   Invalidate;
 end;
@@ -556,6 +584,28 @@ begin
   FScrollBars := AValue;
 
   UpdateScrollBars;
+  Invalidate;
+end;
+
+procedure TCssMemo.SetMemoScrollBarCssClass(const AValue: string);
+begin
+  if FMemoScrollBarCssClass = AValue then
+    Exit;
+
+  FMemoScrollBarCssClass := AValue;
+
+  ApplyScrollBarStyle;
+  Invalidate;
+end;
+
+procedure TCssMemo.SetMemoScrollBarCssStyle(const AValue: string);
+begin
+  if FMemoScrollBarCssStyle = AValue then
+    Exit;
+
+  FMemoScrollBarCssStyle := AValue;
+
+  ApplyScrollBarStyle;
   Invalidate;
 end;
 
@@ -1099,6 +1149,8 @@ var
   AvailW, AvailH: Integer;
   VisLines: Integer;
   NeedV, NeedH: Boolean;
+  ForceV, ForceH: Boolean;
+  AutoV, AutoH: Boolean;
   VMax, HMax: Integer;
   HWidth: Integer;
 begin
@@ -1127,14 +1179,39 @@ begin
   if AvailH < 0 then
     AvailH := 0;
 
-  NeedV := (FScrollBars in [ssVertical, ssBoth, ssAutoVertical]) and
-           (AvailH > 0) and
-           (LineCount > 0) and
-           (LineCount > (AvailH div LineHeight));
+  ForceV := FScrollBars in [ssVertical, ssBoth];
+  ForceH := (not FWordWrap) and (FScrollBars in [ssHorizontal, ssBoth]);
 
-  NeedH := (not FWordWrap) and
-           (FScrollBars in [ssHorizontal, ssBoth, ssAutoHorizontal]) and
-           (MaxLineWidth > AvailW);
+  AutoV := FScrollBars in [ssAutoVertical, ssAutoBoth];
+  AutoH := (not FWordWrap) and (FScrollBars in [ssAutoHorizontal, ssAutoBoth]);
+
+  if ForceV then
+    NeedV := True
+  else if AutoV then
+    NeedV := (AvailH > 0) and (LineCount > 0) and
+             (LineCount > (AvailH div LineHeight))
+  else
+    NeedV := False;
+
+  if ForceH then
+    NeedH := True
+  else if AutoH then
+    NeedH := (MaxLineWidth > AvailW)
+  else
+    NeedH := False;
+
+  if AutoH and (not NeedH) and NeedV then
+  begin
+    if MaxLineWidth > (AvailW - SBSize) then
+      NeedH := True;
+  end;
+
+  if AutoV and (not NeedV) and NeedH then
+  begin
+    if (LineCount > 0) and
+       (LineCount > ((AvailH - SBSize) div LineHeight)) then
+      NeedV := True;
+  end;
 
   if NeedV then
     AvailW := AvailW - SBSize;
@@ -1185,6 +1262,7 @@ begin
   else
   begin
     FVScroll.Visible := False;
+    FVScroll.SetBounds(0, 0, 0, 0);
     FTopLine := 0;
   end;
 
@@ -1225,6 +1303,7 @@ begin
   else
   begin
     FHScroll.Visible := False;
+    FHScroll.SetBounds(0, 0, 0, 0);
     FLeftPixel := 0;
   end;
 
@@ -1251,6 +1330,29 @@ begin
     FLeftPixel := 0;
 
   Invalidate;
+end;
+
+procedure TCssMemo.ApplyScrollBarStyle;
+begin
+  if not Assigned(FVScroll) then
+    Exit;
+
+  FVScroll.CssTag        := 'scrollbar';
+  FVScroll.CssClass      := FMemoScrollBarCssClass;
+  FVScroll.CssStyle      := FMemoScrollBarCssStyle;
+  FVScroll.StyleProvider := StyleProvider;
+  FVScroll.StyleName     := StyleName;
+  FVScroll.Enabled       := Enabled;
+
+  if not Assigned(FHScroll) then
+    Exit;
+
+  FHScroll.CssTag        := 'scrollbar';
+  FHScroll.CssClass      := FMemoScrollBarCssClass;
+  FHScroll.CssStyle      := FMemoScrollBarCssStyle;
+  FHScroll.StyleProvider := StyleProvider;
+  FHScroll.StyleName     := StyleName;
+  FHScroll.Enabled       := Enabled;
 end;
 
 procedure TCssMemo.CaretTimerTick(Sender: TObject);
@@ -1849,6 +1951,17 @@ begin
   Result := True;
 end;
 
+procedure TCssMemo.MouseLeave;
+begin
+  if Assigned(FVScroll) then
+    FVScroll.ExternalMouseLeave;
+
+  if Assigned(FHScroll) then
+    FHScroll.ExternalMouseLeave;
+
+  inherited MouseLeave;
+end;
+
 procedure TCssMemo.DoEnter;
 begin
   inherited DoEnter;
@@ -2118,6 +2231,16 @@ begin
       Canvas.LineTo(CaretPixelX, CaretPixelY + LH - 1);
     end;
   end;
+end;
+
+procedure TCssMemo.EnabledChanged;
+begin
+  inherited EnabledChanged;
+
+  if Assigned(FVScroll) then FVScroll.Enabled := Enabled;
+  if Assigned(FHScroll) then FHScroll.Enabled := Enabled;
+
+  Invalidate;
 end;
 
 end.

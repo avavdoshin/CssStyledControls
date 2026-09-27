@@ -168,6 +168,7 @@ TCssComboBox:disabled {
 }
 .combobox-scrollbar,
 .listbox-scrollbar,
+.memo-scrollbar,
 .css-tree-scrollbar {
   background-color: #F8FAFC;
   scrolltrack-background: #F8FAFC;
@@ -177,6 +178,21 @@ TCssComboBox:disabled {
   thumb-border-color: #F8FAFC;
   thumb-radius: 4px;
   arrow-color: #64748B;
+}
+.listbox-scrollbar:hover,
+.combobox-scrollbar:hover,
+.memo-scrollbar:hover,
+.css-tree-scrollbar:hover {
+  thumb-background: #94A3B8;
+  arrow-color: #64748B;
+}
+
+.listbox-scrollbar:disabled,
+.combobox-scrollbar:disabled,
+.memo-scrollbar:disabled,
+.css-tree-scrollbar:disabled {
+  thumb-background: #E2E8F0;
+  arrow-color: #CBD5E1;
 }
 
 TCssEdit {
@@ -244,8 +260,8 @@ TCssMemo {
   selection-color: #FFFFFF;
   caret-color: #1E293B;
   placeholder-color: #94A3B8;
-  placeholder-align: left;
-  placeholder-vertical-align: top;
+  placeholder-align: center;
+  placeholder-vertical-align: middle;
   placeholder-font-style: italic;
 }
 TCssMemo:hover { border-color: #94A3B8; }
@@ -572,6 +588,7 @@ TCssComboBox:disabled {
 }
 .combobox-scrollbar,
 .listbox-scrollbar,
+.memo-scrollbar,
 .css-tree-scrollbar {
   background-color: #0F172A;
   scrolltrack-background: #0F172A;
@@ -581,6 +598,21 @@ TCssComboBox:disabled {
   thumb-border-color: #0F172A;
   thumb-radius: 4px;
   arrow-color: #94A3B8;
+}
+.listbox-scrollbar:hover,
+.combobox-scrollbar:hover,
+.memo-scrollbar:hover,
+.css-tree-scrollbar:hover {
+  thumb-background: #64748B;
+  arrow-color: #94A3B8;
+}
+
+.listbox-scrollbar:disabled,
+.combobox-scrollbar:disabled,
+.memo-scrollbar:disabled,
+.css-tree-scrollbar:disabled {
+  thumb-background: #334155;
+  arrow-color: #475569;
 }
 
 TCssEdit {
@@ -648,8 +680,8 @@ TCssMemo {
   selection-color: #FFFFFF;
   caret-color: #E2E8F0;
   placeholder-color: #64748B;
-  placeholder-align: left;
-  placeholder-vertical-align: top;
+  placeholder-align: center;
+  placeholder-vertical-align: middle;
   placeholder-font-style: italic;
 }
 TCssMemo:hover { border-color: #64748B; }
