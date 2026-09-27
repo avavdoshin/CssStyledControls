@@ -50,12 +50,14 @@ type
     FScrollBarCssClass: string;
     FScrollBarCssStyle: string;
     FScrollBarWidth: Integer;
+    FAlwaysReserveScrollBar: Boolean;
 
     // Scrollbar property setters
     procedure SetScrollBarCssClass(const AValue: string);
     procedure SetScrollBarCssStyle(const AValue: string);
     procedure SetScrollBarWidth(AValue: Integer);
     procedure ApplyScrollBarStyle;
+    procedure SetAlwaysReserveScrollBar(AValue: Boolean);
 
     // Items
     function GetItems: TStrings;
@@ -103,6 +105,7 @@ type
     function GetSelectedItemColor: TColor;
   protected
     // Initialization and style
+    procedure CreateWnd; override;
     procedure Loaded; override;
     procedure InitTextProps; override;
     procedure StyleChanged; override;
@@ -159,6 +162,7 @@ type
     property ScrollBarCssStyle: string read FScrollBarCssStyle write SetScrollBarCssStyle;
     property ScrollBarWidth: Integer read FScrollBarWidth write SetScrollBarWidth default 16;
     property MouseWheelLines: Integer read FMouseWheelLines write FMouseWheelLines default 3;
+    property AlwaysReserveScrollBar: Boolean read FAlwaysReserveScrollBar write SetAlwaysReserveScrollBar default True;
 
     // Standard properties
     property Align;
@@ -223,12 +227,16 @@ begin
 
   FScrollBar.Kind := sbVertical;
   FScrollBar.TabStop := False;
+  FScrollBar.Enabled := False;
   FScrollBar.Visible := False;
   FScrollBar.Width := FScrollBarWidth;
+  FScrollBar.Height := 0;
+  FScrollBar.SetBounds(0, 0, 0, 0);
 
   FScrollBar.CssTag := 'scrollbar';
   FScrollBar.CssClass := FScrollBarCssClass;
   FScrollBar.OnChange := @ScrollBarChanged;
+  FAlwaysReserveScrollBar := True;
 
   TCssStyledControl(Self).Caption := '';
 end;
@@ -240,6 +248,13 @@ begin
   FreeAndNil(FItems);
 
   inherited Destroy;
+end;
+
+procedure TCssListBox.CreateWnd;
+begin
+  inherited CreateWnd;
+
+  UpdateScrollBars;
 end;
 
 procedure TCssListBox.Loaded;
@@ -419,6 +434,17 @@ begin
   FScrollBar.CssStyle := FScrollBarCssStyle;
 
   FScrollBar.Width := FScrollBarWidth;
+end;
+
+procedure TCssListBox.SetAlwaysReserveScrollBar(AValue: Boolean);
+begin
+  if FAlwaysReserveScrollBar = AValue then
+    Exit;
+
+  FAlwaysReserveScrollBar := AValue;
+
+  UpdateScrollBars;
+  Invalidate;
 end;
 
 function TCssListBox.GetItems: TStrings;
@@ -769,7 +795,9 @@ function TCssListBox.GetListRect: TRect;
 begin
   Result := GetContentRect;
 
-  if Assigned(FScrollBar) and FScrollBar.Visible then
+  if (FScrollBarWidth > 0) and
+     (FAlwaysReserveScrollBar or
+      (Assigned(FScrollBar) and FScrollBar.Visible)) then
     Result.Right := Result.Right - FScrollBarWidth;
 
   if Result.Right < Result.Left then
@@ -851,6 +879,8 @@ begin
     end
     else
     begin
+      FScrollBar.SetBounds(0, 0, 0, 0);
+
       FScrollBar.PageSize := 0;
       FScrollBar.Position := 0;
 

@@ -262,6 +262,7 @@ type
     FVScrollRect: TRect;
     FHScrollRect: TRect;
     FScrollCapture: TCssScrollBar;
+    FAlwaysReserveScrollBar: Boolean;
 
     // Internal update flags
     FUpdatingScroll: Boolean;
@@ -446,6 +447,8 @@ type
     procedure SetTopNode(AValue: Integer);
     procedure SetHorzOffset(AValue: Integer);
     procedure SetSelectedNode(AValue: TCssVirtualNode);
+
+    procedure SetAlwaysReserveScrollBar(AValue: Boolean);
 
     // --- Scroll handling ---
     procedure DoVScroll(Sender: TObject);
@@ -716,6 +719,7 @@ type
     property ItemHeight: Integer read FItemHeight write SetItemHeight default 22;
     property NodeDataSize: Integer read FNodeDataSize write SetNodeDataSize default 0;
     property ScrollBarSize: Integer read FScrollBarSize write SetScrollBarSize default 16;
+    property AlwaysReserveScrollBar: Boolean read FAlwaysReserveScrollBar write SetAlwaysReserveScrollBar default True;
 
     property MultiSelect: Boolean read FMultiSelect write FMultiSelect default False;
     property ShowCheckboxes: Boolean read FShowCheckboxes write FShowCheckboxes default False;
@@ -1145,6 +1149,7 @@ begin
   FVScroll.Visible := False;
   FVScroll.CssClass := 'css-tree-scrollbar vscroll';
   FVScroll.OnChange := @DoVScroll;
+  FVScroll.SetBounds(0, 0, 0, 0);
 
   FHScroll := TCssScrollBar.Create(Self);
   FHScroll.Kind := sbHorizontal;
@@ -1152,6 +1157,7 @@ begin
   FHScroll.Visible := False;
   FHScroll.CssClass := 'css-tree-scrollbar hscroll';
   FHScroll.OnChange := @DoHScroll;
+  FHScroll.SetBounds(0, 0, 0, 0);
 
   DragMode := dmManual;
   DragKind := dkDrag;
@@ -1167,6 +1173,8 @@ begin
   FResizingColumn := -1;
   FResizeStartX := 0;
   FResizeStartWidth := 0;
+
+  FAlwaysReserveScrollBar := True;
 end;
 
 destructor TCssVirtualStringTree.Destroy;
@@ -1256,11 +1264,15 @@ begin
   Result := GetContentRect;
   Result.Top := Result.Top + GetHeaderHeight;
 
-  if Assigned(FVScroll) and FVScroll.Visible then
-    Result.Right := Result.Right - FVScroll.Width;
+  if (FScrollBarSize > 0) and
+     (FAlwaysReserveScrollBar or
+      (Assigned(FVScroll) and FVScroll.Visible)) then
+    Result.Right := Result.Right - FScrollBarSize;
 
-  if Assigned(FHScroll) and FHScroll.Visible then
-    Result.Bottom := Result.Bottom - FHScroll.Height;
+  if (FScrollBarSize > 0) and
+     (FAlwaysReserveScrollBar or
+      (Assigned(FHScroll) and FHScroll.Visible)) then
+    Result.Bottom := Result.Bottom - FScrollBarSize;
 
   if Result.Right < Result.Left then
     Result.Right := Result.Left;
@@ -1641,6 +1653,17 @@ begin
   Invalidate;
 end;
 
+procedure TCssVirtualStringTree.SetAlwaysReserveScrollBar(AValue: Boolean);
+begin
+  if FAlwaysReserveScrollBar = AValue then
+    Exit;
+
+  FAlwaysReserveScrollBar := AValue;
+
+  UpdateScrollBars;
+  Invalidate;
+end;
+
 // --- Scrollbar notifications ---
 
 procedure TCssVirtualStringTree.DoVScroll(Sender: TObject);
@@ -1796,6 +1819,7 @@ begin
   else
   begin
     FVScrollRect := Rect(0, 0, 0, 0);
+    FVScroll.SetBounds(0, 0, 0, 0);
   end;
 
   FVScroll.Visible := VVis;
@@ -1820,6 +1844,7 @@ begin
   else
   begin
     FHScrollRect := Rect(0, 0, 0, 0);
+    FHScroll.SetBounds(0, 0, 0, 0);
   end;
 
   FHScroll.Visible := HVis;
