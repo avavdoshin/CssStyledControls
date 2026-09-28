@@ -9,51 +9,101 @@ uses
   Forms, CssStyledControl;
 
 type
-  TCssMenuItem = class
+  TCssMenuBase = class;
+
+  { Single menu item. It is a TComponent, so it participates
+    in the standard LCL streaming and appears in the IDE
+    Structure panel as a child of the owning menu or of the
+    parent item. Owner follows the logical parent:
+      - top-level item  -> Owner = TCssMenuBase
+      - sub-item        -> Owner = parent TCssMenuItem
+    This mirrors how TMenuItem / TMainMenu work. }
+
+  TCssMenuItem = class(TComponent)
   private
-    // Fields
+    FItems: TList;            // child items, mirrors Owner chain
+    FParent: TCssMenuItem;    // logical parent, nil for top-level items
+    FMenu: TCssMenuBase;
+
     FCaption: string;
-    FItems: TList;
-    FParent: TCssMenuItem;
-    FOnClick: TNotifyEvent;
+    FShortcut: string;
     FChecked: Boolean;
     FEnabled: Boolean;
     FVisible: Boolean;
     FSeparator: Boolean;
-    FShortcut: string;
-    FTag: NativeInt;
 
-    // Property getters
+    FOnClick: TNotifyEvent;
+    FOnChanged: TNotifyEvent;
+    FDesignerData: Pointer;   // IDE-only: back-reference to TTreeNode
+
     function GetCount: Integer;
     function GetItem(Index: Integer): TCssMenuItem;
-  public
-    constructor Create;
-    destructor Destroy; override;
+    function GetMenu: TCssMenuBase;
 
-    // Child items
+    procedure DetachLogical;
+    function GetCreationOwner: TComponent;
+
+    procedure SetCaption(const AValue: string);
+    procedure SetShortcut(const AValue: string);
+    procedure SetChecked(AValue: Boolean);
+    procedure SetEnabled(AValue: Boolean);
+    procedure SetVisible(AValue: Boolean);
+    procedure SetSeparator(AValue: Boolean);
+
+    procedure DoChanged;
+  protected
+    { Standard LCL streaming hook: returns child items in order. }
+    procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    function GetParentComponent: TComponent; override;
+
+    // Structure
     function Add: TCssMenuItem;
+    function Insert(Index: Integer): TCssMenuItem;
+    function IndexOf(AItem: TCssMenuItem): Integer;
     procedure Delete(Index: Integer);
     procedure Clear;
     function HasChildren: Boolean;
+    function IsAncestorOf(AItem: TCssMenuItem): Boolean;
+    function HasParent: Boolean; override;
+    procedure SetParentComponent(Value: TComponent); override;
 
-    // Properties
-    property Caption: string read FCaption write FCaption;
+    // Reparenting (used by the designer and by MoveNode)
+    procedure Detach;                                 // detach from current parent
+    procedure AttachTo(ANewParent: TCssMenuItem;      // attach as sub-item
+      AIndex: Integer);
+
+    // Non-published accessors
     property Count: Integer read GetCount;
     property Items[Index: Integer]: TCssMenuItem read GetItem; default;
     property Parent: TCssMenuItem read FParent;
+    property Menu: TCssMenuBase read GetMenu;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+    property DesignerData: Pointer read FDesignerData write FDesignerData;
+  published
+    property Caption: string read FCaption write SetCaption;
+    property Shortcut: string read FShortcut write SetShortcut;
+    property Checked: Boolean read FChecked write SetChecked default False;
+    property Enabled: Boolean read FEnabled write SetEnabled default True;
+    property Visible: Boolean read FVisible write SetVisible default True;
+    property Separator: Boolean read FSeparator write SetSeparator default False;
     property OnClick: TNotifyEvent read FOnClick write FOnClick;
-    property Checked: Boolean read FChecked write FChecked;
-    property Enabled: Boolean read FEnabled write FEnabled;
-    property Visible: Boolean read FVisible write FVisible;
-    property Separator: Boolean read FSeparator write FSeparator;
-    property Shortcut: string read FShortcut write FShortcut;
-    property Tag: NativeInt read FTag write FTag;
+    // Tag, Name, Owner are inherited from TComponent
+  end;
+
+  { Friend class that exposes protected TComponent methods
+    for ownership changes during reparenting. }
+  TMenuComponentFriend = class(TComponent)
+  public
+    procedure AddOwnedComponent(AComponent: TComponent);
+    procedure RemoveOwnedComponent(AComponent: TComponent);
   end;
 
   TCssMenuBase = class(TCssStyledControl)
   private
-    // Items
-    FItems: TList;
+    FItems: TList;            // top-level items only
 
     // Menu appearance
     FMenuBackground: TColor;      FMenuBackgroundSet: Boolean;
@@ -86,13 +136,22 @@ type
     procedure ApplyDeclaration(const AName, AValue: string); override;
     procedure ResetStyle; override;
 
+    { Standard LCL streaming hook: returns top-level items. }
+    procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
+
     property ItemsList: TList read FItems;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function GetParentComponent: TComponent; override;
+    function DesignOwner: TComponent;
 
     // Item management
     function AddItem: TCssMenuItem;
+    function InsertItem(Index: Integer): TCssMenuItem;
+    function IndexOfItem(AItem: TCssMenuItem): Integer;
+    procedure DetachItem(AItem: TCssMenuItem);
+    procedure AttachItem(AItem: TCssMenuItem; AIndex: Integer);
     procedure ClearItems;
 
     // HTML drawing helpers
@@ -265,23 +324,80 @@ type
 
 implementation
 
+{ TMenuComponentFriend }
+
+procedure TMenuComponentFriend.AddOwnedComponent(AComponent: TComponent);
+begin
+  InsertComponent(AComponent);
+end;
+
+procedure TMenuComponentFriend.RemoveOwnedComponent(AComponent: TComponent);
+begin
+  RemoveComponent(AComponent);
+end;
+
 { TCssMenuItem }
 
-constructor TCssMenuItem.Create;
+constructor TCssMenuItem.Create(AOwner: TComponent);
 begin
-  inherited Create;
+  inherited Create(AOwner);
+
+  Include(FComponentStyle, csSubComponent);
 
   FItems := TList.Create;
   FEnabled := True;
   FVisible := True;
+
+  // Auto-register with the logical parent. This is what makes items
+  // loaded from the .lfm end up in the parent's item list without any
+  // explicit call from the reader.
+  if AOwner is TCssMenuItem then
+  begin
+    FParent := TCssMenuItem(AOwner);
+    FParent.FItems.Add(Self);
+  end
+  else if AOwner is TCssMenuBase then
+  begin
+    FMenu := TCssMenuBase(AOwner);
+    TCssMenuBase(AOwner).FItems.Add(Self);
+  end;
 end;
 
 destructor TCssMenuItem.Destroy;
+var
+  Item: TCssMenuItem;
 begin
-  Clear;
-  FItems.Free;
+  DetachLogical;
+
+  while FItems.Count > 0 do
+  begin
+    Item := TCssMenuItem(FItems[FItems.Count - 1]);
+    FItems.Remove(Item);
+    Item.FParent := nil;
+    Item.Free;
+  end;
+
+  FreeAndNil(FItems);
 
   inherited Destroy;
+end;
+
+procedure TCssMenuItem.GetChildren(Proc: TGetChildProc; Root: TComponent);
+var
+  I: Integer;
+begin
+  for I := 0 to FItems.Count - 1 do
+    Proc(TCssMenuItem(FItems[I]));
+end;
+
+function TCssMenuItem.GetParentComponent: TComponent;
+begin
+  if FParent <> nil then
+    Result := FParent
+  else if FMenu <> nil then
+    Result := FMenu
+  else
+    Result := Owner;
 end;
 
 function TCssMenuItem.GetCount: Integer;
@@ -294,30 +410,84 @@ begin
   Result := TCssMenuItem(FItems[Index]);
 end;
 
-function TCssMenuItem.Add: TCssMenuItem;
+function TCssMenuItem.GetMenu: TCssMenuBase;
+var
+  P: TCssMenuItem;
 begin
-  Result := TCssMenuItem.Create;
-  Result.FParent := Self;
-  FItems.Add(Result);
+  P := Self;
+
+  while P.FParent <> nil do
+    P := P.FParent;
+
+  Result := P.FMenu;
+
+  if (Result = nil) and (P.Owner is TCssMenuBase) then
+    Result := TCssMenuBase(P.Owner);
 end;
 
-procedure TCssMenuItem.Delete(Index: Integer);
+procedure TCssMenuItem.DetachLogical;
 begin
-  if (Index >= 0) and (Index < FItems.Count) then
+  if FParent <> nil then
   begin
-    TCssMenuItem(FItems[Index]).Free;
-    FItems.Delete(Index);
+    FParent.FItems.Remove(Self);
+    FParent := nil;
+  end
+  else if FMenu <> nil then
+  begin
+    FMenu.FItems.Remove(Self);
+    FMenu := nil;
   end;
 end;
 
-procedure TCssMenuItem.Clear;
+function TCssMenuItem.GetCreationOwner: TComponent;
 var
-  I: Integer;
+  M: TCssMenuBase;
 begin
-  for I := 0 to FItems.Count - 1 do
-    TCssMenuItem(FItems[I]).Free;
+  M := Menu;
 
-  FItems.Clear;
+  if M <> nil then
+    Result := M.DesignOwner
+  else
+  begin
+    Result := Owner;
+    if Result = nil then
+      Result := Self;
+  end;
+end;
+
+function TCssMenuItem.Add: TCssMenuItem;
+begin
+  Result := Insert(Count);
+end;
+
+function TCssMenuItem.Insert(Index: Integer): TCssMenuItem;
+begin
+  Result := TCssMenuItem.Create(GetCreationOwner);
+  Result.AttachTo(Self, Index);
+end;
+
+function TCssMenuItem.IndexOf(AItem: TCssMenuItem): Integer;
+begin
+  Result := FItems.IndexOf(AItem);
+end;
+
+procedure TCssMenuItem.Delete(Index: Integer);
+var
+  Item: TCssMenuItem;
+begin
+  if (Index < 0) or (Index >= FItems.Count) then
+    Exit;
+
+  Item := TCssMenuItem(FItems[Index]);
+  FItems.Delete(Index);
+  Item.FParent := nil;
+  Item.Free;
+end;
+
+procedure TCssMenuItem.Clear;
+begin
+  while FItems.Count > 0 do
+    Delete(0);
 end;
 
 function TCssMenuItem.HasChildren: Boolean;
@@ -325,15 +495,136 @@ var
   I: Integer;
 begin
   Result := False;
-
   for I := 0 to FItems.Count - 1 do
-  begin
     if TCssMenuItem(FItems[I]).Visible then
-    begin
-      Result := True;
-      Exit;
-    end;
+      Exit(True);
+end;
+
+function TCssMenuItem.IsAncestorOf(AItem: TCssMenuItem): Boolean;
+var
+  P: TCssMenuItem;
+begin
+  Result := False;
+  if AItem = nil then
+    Exit;
+
+  P := AItem.FParent;
+  while P <> nil do
+  begin
+    if P = Self then
+      Exit(True);
+    P := P.FParent;
   end;
+end;
+
+function TCssMenuItem.HasParent: Boolean;
+begin
+  Result :=
+    (FParent <> nil) or
+    (FMenu <> nil) or
+    (Owner is TCssMenuBase) or
+    (Owner is TCssMenuItem);
+end;
+
+procedure TCssMenuItem.SetParentComponent(Value: TComponent);
+begin
+  if Value = nil then
+    Exit;
+
+  if Value is TCssMenuItem then
+  begin
+    if (Value <> Self) and not IsAncestorOf(TCssMenuItem(Value)) then
+      AttachTo(TCssMenuItem(Value), MaxInt);
+  end
+  else if Value is TCssMenuBase then
+  begin
+    TCssMenuBase(Value).AttachItem(Self, MaxInt);
+  end;
+end;
+
+procedure TCssMenuItem.Detach;
+begin
+  DetachLogical;
+end;
+
+procedure TCssMenuItem.AttachTo(ANewParent: TCssMenuItem; AIndex: Integer);
+begin
+  if ANewParent = nil then
+    Exit;
+
+  if ANewParent = Self then
+    Exit;
+
+  if IsAncestorOf(ANewParent) then
+    Exit;
+
+  DetachLogical;
+
+  FParent := ANewParent;
+  FMenu := nil;
+
+  if AIndex < 0 then
+    AIndex := 0;
+
+  if AIndex > ANewParent.FItems.Count then
+    AIndex := ANewParent.FItems.Count;
+
+  if ANewParent.FItems.IndexOf(Self) < 0 then
+    ANewParent.FItems.Insert(AIndex, Self);
+end;
+
+procedure TCssMenuItem.SetCaption(const AValue: string);
+begin
+  if FCaption = AValue then Exit;
+  FCaption := AValue;
+  DoChanged;
+end;
+
+procedure TCssMenuItem.SetShortcut(const AValue: string);
+begin
+  if FShortcut = AValue then Exit;
+  FShortcut := AValue;
+  DoChanged;
+end;
+
+procedure TCssMenuItem.SetChecked(AValue: Boolean);
+begin
+  if FChecked = AValue then Exit;
+  FChecked := AValue;
+  DoChanged;
+end;
+
+procedure TCssMenuItem.SetEnabled(AValue: Boolean);
+begin
+  if FEnabled = AValue then Exit;
+  FEnabled := AValue;
+  DoChanged;
+end;
+
+procedure TCssMenuItem.SetVisible(AValue: Boolean);
+begin
+  if FVisible = AValue then Exit;
+  FVisible := AValue;
+  DoChanged;
+end;
+
+procedure TCssMenuItem.SetSeparator(AValue: Boolean);
+begin
+  if FSeparator = AValue then Exit;
+  FSeparator := AValue;
+  DoChanged;
+end;
+
+procedure TCssMenuItem.DoChanged;
+var
+  M: TCssMenuBase;
+begin
+  if Assigned(FOnChanged) then
+    FOnChanged(Self);
+
+  M := Menu;
+  if M <> nil then
+    M.Invalidate;
 end;
 
 { TCssMenuBase }
@@ -346,8 +637,17 @@ begin
 end;
 
 destructor TCssMenuBase.Destroy;
+var
+  Item: TCssMenuItem;
 begin
-  ClearItems;
+  while FItems.Count > 0 do
+  begin
+    Item := TCssMenuItem(FItems[FItems.Count - 1]);
+    FItems.Remove(Item);
+    Item.FMenu := nil;
+    Item.Free;
+  end;
+
   FItems.Free;
 
   inherited Destroy;
@@ -365,18 +665,62 @@ end;
 
 function TCssMenuBase.AddItem: TCssMenuItem;
 begin
-  Result := TCssMenuItem.Create;
-  FItems.Add(Result);
+  Result := InsertItem(Count);
 end;
 
 procedure TCssMenuBase.ClearItems;
 var
   I: Integer;
+  Item: TCssMenuItem;
 begin
-  for I := 0 to FItems.Count - 1 do
-    TCssMenuItem(FItems[I]).Free;
+  for I := FItems.Count - 1 downto 0 do
+  begin
+    Item := TCssMenuItem(FItems[I]);
+    DetachItem(Item);
+    Item.Free;
+  end;
+end;
 
-  FItems.Clear;
+function TCssMenuBase.InsertItem(Index: Integer): TCssMenuItem;
+begin
+  Result := TCssMenuItem.Create(DesignOwner);
+  AttachItem(Result, Index);
+end;
+
+function TCssMenuBase.IndexOfItem(AItem: TCssMenuItem): Integer;
+begin
+  Result := FItems.IndexOf(AItem);
+end;
+
+procedure TCssMenuBase.DetachItem(AItem: TCssMenuItem);
+begin
+  if AItem = nil then
+    Exit;
+
+  FItems.Remove(AItem);
+
+  AItem.FParent := nil;
+  AItem.FMenu := nil;
+end;
+
+procedure TCssMenuBase.AttachItem(AItem: TCssMenuItem; AIndex: Integer);
+begin
+  if AItem = nil then
+    Exit;
+
+  AItem.DetachLogical;
+
+  AItem.FParent := nil;
+  AItem.FMenu := Self;
+
+  if AIndex < 0 then
+    AIndex := 0;
+
+  if AIndex > FItems.Count then
+    AIndex := FItems.Count;
+
+  if FItems.IndexOf(AItem) < 0 then
+    FItems.Insert(AIndex, AItem);
 end;
 
 procedure TCssMenuBase.BeginMenuHtmlDraw;
@@ -479,6 +823,29 @@ begin
   FMenuShortcutColorSet := False;
 
   inherited ResetStyle;
+end;
+
+procedure TCssMenuBase.GetChildren(Proc: TGetChildProc; Root: TComponent);
+var
+  I: Integer;
+begin
+  for I := 0 to FItems.Count - 1 do
+    Proc(TCssMenuItem(FItems[I]));
+end;
+
+function TCssMenuBase.GetParentComponent: TComponent;
+begin
+  if Parent <> nil then
+    Result := Parent
+  else
+    Result := Owner;
+end;
+
+function TCssMenuBase.DesignOwner : TComponent;
+begin
+  Result := Owner;
+  if Result = nil then
+    Result := Self;
 end;
 
 procedure TCssMenuBase.ApplyDeclaration(const AName, AValue: string);
@@ -1914,5 +2281,25 @@ function TCssPopupMenu.IsMenuOpen: Boolean;
 begin
   Result := Assigned(FPopupForm) and FPopupForm.Visible;
 end;
+
+procedure RegisterCssMenuRuntimeClasses;
+begin
+  if GetClass('TCssMenuItem') = nil then
+    RegisterClass(TCssMenuItem);
+
+  if GetClass('TCssMainMenu') = nil then
+    RegisterClass(TCssMainMenu);
+
+  if GetClass('TCssPopupMenu') = nil then
+    RegisterClass(TCssPopupMenu);
+end;
+
+initialization
+  RegisterCssMenuRuntimeClasses;
+
+finalization
+  UnregisterClass(TCssMenuItem);
+  UnregisterClass(TCssMainMenu);
+  UnregisterClass(TCssPopupMenu);
 
 end.

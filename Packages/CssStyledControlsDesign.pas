@@ -8,13 +8,14 @@ unit CssStyledControlsDesign;
 interface
 
 uses
-  CssStyledControlDesign, LazarusPackageIntf;
+  CssStyledControlDesign, CssMenuReg, CssMenuDesigner, LazarusPackageIntf;
 
 implementation
 
 procedure Register;
 begin
   RegisterUnit('CssStyledControlDesign', @CssStyledControlDesign.Register);
+  RegisterUnit('CssMenuReg', @CssMenuReg.Register);
 end;
 
 initialization

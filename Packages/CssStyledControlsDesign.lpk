@@ -21,6 +21,15 @@
         <HasRegisterProc Value="True"/>
         <UnitName Value="CssStyledControlDesign"/>
       </Item>
+      <Item>
+        <Filename Value="CssMenuReg.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="CssMenuReg"/>
+      </Item>
+      <Item>
+        <Filename Value="..\Source\CssMenuDesigner.pas"/>
+        <UnitName Value="CssMenuDesigner"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>
