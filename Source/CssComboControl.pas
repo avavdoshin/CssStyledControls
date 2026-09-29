@@ -95,6 +95,8 @@ type
     procedure PopupDeactivate(Sender: TObject);
     procedure EditChange(Sender: TObject);
     procedure EditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure EditMouseEnter(Sender: TObject);
+    procedure EditMouseLeave(Sender: TObject);
 
     // Style application
     procedure ApplyControlStyles;
@@ -521,6 +523,9 @@ begin
       FEdit.OnChange := @EditChange;
       FEdit.OnKeyDown := @EditKeyDown;
 
+      FEdit.OnMouseEnter := @EditMouseEnter;
+      FEdit.OnMouseLeave := @EditMouseLeave;
+
       FEdit.CssTag := 'edit';
     end;
 
@@ -804,6 +809,21 @@ begin
     InternalClosePopup(True);
     Key := 0;
   end;
+end;
+
+procedure TCssComboBox.EditMouseEnter(Sender : TObject);
+begin
+  SetMouseInControlState(True);
+end;
+
+procedure TCssComboBox.EditMouseLeave(Sender: TObject);
+var
+  P: TPoint;
+begin
+  P := ScreenToClient(Mouse.CursorPos);
+
+  if not PtInRect(ClientRect, P) then
+    SetMouseInControlState(False);
 end;
 
 procedure TCssComboBox.KeyDown(var Key: Word; Shift: TShiftState);

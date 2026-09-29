@@ -308,6 +308,8 @@ type
     procedure DoEnter; override;
     procedure DoExit; override;
     procedure EnabledChanged; override;
+    procedure ChildFocusChanged(AChildFocused: Boolean); virtual;
+    procedure NotifyParentsFocusChanged(AFocused: Boolean);
 
     procedure UpdateCursor; virtual;
 
@@ -6666,6 +6668,7 @@ begin
 
   FFocused := True;
   RefreshStylesByState;
+  NotifyParentsFocusChanged(True);
 end;
 
 procedure TCssStyledControl.DoExit;
@@ -6674,6 +6677,7 @@ begin
 
   FFocused := False;
   RefreshStylesByState;
+  NotifyParentsFocusChanged(False);
 end;
 
 procedure TCssStyledControl.EnabledChanged;
@@ -6690,6 +6694,24 @@ begin
 
   RefreshStylesByState;
   NotifyUpperSiblingsRepaint;
+end;
+
+procedure TCssStyledControl.NotifyParentsFocusChanged(AFocused: Boolean);
+var
+  C: TControl;
+begin
+  C := Parent;
+  while C <> nil do
+  begin
+    if C is TCssStyledControl then
+      TCssStyledControl(C).ChildFocusChanged(AFocused);
+    C := C.Parent;
+  end;
+end;
+
+procedure TCssStyledControl.ChildFocusChanged(AChildFocused: Boolean);
+begin
+  // Do nothing
 end;
 
 procedure TCssStyledControl.Click;

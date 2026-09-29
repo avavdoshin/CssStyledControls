@@ -5,20 +5,29 @@ unit CssPanelControl;
 interface
 
 uses
-  Classes, SysUtils, Controls, Graphics, GraphType, Types, CssStyledControl;
+  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf, CssStyledControl;
 
 type
   TCssPanel = class(TCssStyledControl)
   private
     FPropagatingEnabled: Boolean;
+    FShowFocusWhenChildFocused: Boolean;
+    FShowFocusWhenChildFocusedSet: Boolean;
+    FHasFocusedChild: Boolean;
     procedure PropagateEnabledToChildren;
     procedure ForceDesignTimeRepaint;
+    function HasFocusedChild: Boolean;
+    procedure UpdateFocusedChildState;
   protected
     // Initialization and style
     procedure Loaded; override;
     procedure InitTextProps; override;
     procedure StyleChanged; override;
     procedure HtmlModeChanged; override;
+    procedure ResetStyle; override;
+    procedure ApplyDeclaration(const AName, AValue: string); override;
+    procedure Paint; override;
+    procedure ChildFocusChanged(AChildFocused: Boolean); override;
 
     // State changes
     procedure EnabledChanged; override;
@@ -28,6 +37,7 @@ type
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
   public
     constructor Create(AOwner: TComponent); override;
+    function IsFocusWithin: Boolean;
   published
     // Standard properties
     property Align;
@@ -82,6 +92,13 @@ begin
   Height := 41;
 
   FPropagatingEnabled := False;
+  FShowFocusWhenChildFocused := False;
+  FHasFocusedChild := False;
+end;
+
+function TCssPanel.IsFocusWithin : Boolean;
+begin
+  Result := FHasFocusedChild;
 end;
 
 procedure TCssPanel.PropagateEnabledToChildren;
@@ -128,12 +145,54 @@ begin
   end;
 end;
 
+function TCssPanel.HasFocusedChild: Boolean;
+var
+  H: HWND;
+  aFocused: TWinControl;
+  C: TControl;
+begin
+  Result := False;
+
+  H := GetFocus;
+  if H = 0 then
+    Exit;
+
+  aFocused := FindControl(H);
+  if aFocused = nil then
+    Exit;
+
+  C := aFocused;
+  while C <> nil do
+  begin
+    if C = Self then
+      Exit(True);
+    C := C.Parent;
+  end;
+end;
+
+procedure TCssPanel.UpdateFocusedChildState;
+var
+  NewState: Boolean;
+begin
+  NewState := HasFocusedChild;
+
+  if NewState <> FHasFocusedChild then
+  begin
+    FHasFocusedChild := NewState;
+
+    if FShowFocusWhenChildFocused then
+      Invalidate;
+  end;
+end;
+
 procedure TCssPanel.Loaded;
 begin
   inherited Loaded;
 
   if not Enabled then
     PropagateEnabledToChildren;
+
+  UpdateFocusedChildState;
 end;
 
 procedure TCssPanel.InitTextProps;
@@ -160,6 +219,50 @@ begin
     AdjustSize;
 
   Invalidate;
+end;
+
+procedure TCssPanel.ResetStyle;
+begin
+  FShowFocusWhenChildFocused := False;
+  FShowFocusWhenChildFocusedSet := False;
+
+  inherited ResetStyle;
+end;
+
+procedure TCssPanel.ApplyDeclaration(const AName, AValue: string);
+var
+  S: string;
+begin
+  if AName = 'focus-within' then
+  begin
+    S := LowerCase(Trim(AValue));
+
+    FShowFocusWhenChildFocused := (S = 'true') or (S = '1') or (S = 'yes');
+    FShowFocusWhenChildFocusedSet := True;
+
+    Invalidate;
+    Exit;
+  end;
+
+  inherited ApplyDeclaration(AName, AValue);
+end;
+
+procedure TCssPanel.Paint;
+begin
+  inherited Paint;
+
+  if FShowFocusWhenChildFocused and
+     ShowFocusRect and
+     FHasFocusedChild and
+     Enabled then
+  begin
+    DrawFocusRect(Canvas, ClientRect);
+  end;
+end;
+
+procedure TCssPanel.ChildFocusChanged(AChildFocused : Boolean);
+begin
+  UpdateFocusedChildState;
 end;
 
 procedure TCssPanel.EnabledChanged;

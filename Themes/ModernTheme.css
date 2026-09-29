@@ -113,6 +113,7 @@ TCssRadioGroup {
   text-align: left;
   vertical-align: top;
 }
+TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #94A3B8; }
 TCssCheckGroup:disabled,
 TCssRadioGroup:disabled {
   background-color: #F8FAFC;
@@ -241,6 +242,7 @@ TCssListBox {
   item-selected-color: #FFFFFF;
   item-height: 22px;
 }
+TCssListBox:hover { border-color: #94A3B8; }
 TCssListBox:focus { border-color: #2563EB; }
 TCssListBox:disabled {
   background-color: #F8FAFC;
@@ -283,6 +285,7 @@ TCssGroupBox {
   text-align: left;
   vertical-align: top;
 }
+TCssGroupBox:hover { border-color: #94A3B8; }
 TCssPanel {
   background-color: #FFFFFF;
   color: #1E293B;
@@ -291,10 +294,12 @@ TCssPanel {
   padding: 12px;
   text-align: left;
   vertical-align: top;
+  focus-within: true;
 }
-TCssPanel.panel-container        { padding: 4px; }
-TCssPanel.panel-container.tight  { padding: 0px; }
-TCssPanel.panel-container.spaced { padding: 20px; }
+TCssPanel:hover { border-color: #94A3B8; }
+TCssPanel.panel-container        { padding: 4px; focus-within: false;}
+TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}
+TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}
 
 TCssMainMenu {
   background-color: #F8FAFC;
@@ -540,6 +545,7 @@ TCssRadioGroup {
   text-align: left;
   vertical-align: top;
 }
+TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #64748B; }
 TCssCheckGroup:disabled,
 TCssRadioGroup:disabled {
   background-color: #0F172A;
@@ -668,6 +674,7 @@ TCssListBox {
   item-selected-color: #FFFFFF;
   item-height: 22px;
 }
+TCssListBox:hover { border-color: #64748B; }
 TCssListBox:focus { border-color: #60A5FA; }
 TCssListBox:disabled {
   background-color: #0F172A;
@@ -710,6 +717,7 @@ TCssGroupBox {
   text-align: left;
   vertical-align: top;
 }
+TCssGroupBox:hover { border-color: #64748B; }
 TCssPanel {
   background-color: #1E293B;
   color: #E2E8F0;
@@ -718,10 +726,12 @@ TCssPanel {
   padding: 12px;
   text-align: left;
   vertical-align: top;
+  focus-within: true;
 }
-TCssPanel.panel-container        { padding: 4px; }
-TCssPanel.panel-container.tight  { padding: 0px; }
-TCssPanel.panel-container.spaced { padding: 20px; }
+TCssPanel:hover { border-color: #64748B; }
+TCssPanel.panel-container        { padding: 4px; focus-within: false;}
+TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}
+TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}
 
 TCssMainMenu {
   background-color: #0F172A;
