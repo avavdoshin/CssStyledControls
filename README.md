@@ -4,6 +4,11 @@ A set of visual controls for **Lazarus / Free Pascal (LCL)** that are fully styl
 
 The library brings a modern, web-like approach to desktop GUI development: instead of tweaking dozens of properties by hand, you describe the look of every control in a single CSS file — complete with selectors, pseudo-classes, cascading, specificity, CSS variants (themes), and inline styles.
 
+> [!WARNING]
+> **Work in progress.** The library is under active development.
+> Some controls may not yet be fully functional, and parts of this documentation
+> may be incomplete or out of date. APIs and behavior can change without notice.
+
 ---
 
 ## Table of Contents
