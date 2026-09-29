@@ -296,6 +296,10 @@ type
     procedure CloseDropdown;
     procedure OpenDropdown(Index: Integer);
 
+    // Keyboard selection
+    procedure SelectTopItem(AIndex: Integer);
+    procedure ExecuteTopItem(AItem: TCssMenuItem);
+
     // Appearance getter
     function GetMenuBarBackground: TColor;
 
@@ -1793,17 +1797,7 @@ begin
   NewIndex := FindPrevTopItem(FOpenIndex);
 
   if NewIndex >= 0 then
-  begin
-    OpenDropdown(NewIndex);
-
-    if Assigned(FDropdown) then
-    begin
-      FDropdown.SetFocus;
-      FDropdown.SelectFirstItem;
-    end;
-
-    Invalidate; // additional repaint of the menu bar
-  end;
+    SelectTopItem(NewIndex);
 end;
 
 procedure TCssMainMenu.DropdownNavigateRight(Sender: TObject);
@@ -1813,22 +1807,13 @@ begin
   NewIndex := FindNextTopItem(FOpenIndex);
 
   if NewIndex >= 0 then
-  begin
-    OpenDropdown(NewIndex);
-
-    if Assigned(FDropdown) then
-    begin
-      FDropdown.SetFocus;
-      FDropdown.SelectFirstItem;
-    end;
-
-    Invalidate; // additional repaint of the menu bar
-  end;
+    SelectTopItem(NewIndex);
 end;
 
 procedure TCssMainMenu.KeyDown(var Key: Word; Shift: TShiftState);
 var
   NewIndex: Integer;
+  Item: TCssMenuItem;
 begin
   inherited KeyDown(Key, Shift);
 
@@ -1843,7 +1828,9 @@ begin
       if NewIndex >= 0 then
       begin
         if FOpenIndex >= 0 then
-          OpenDropdown(NewIndex)
+        begin
+          SelectTopItem(NewIndex);
+        end
         else
         begin
           FHoverIndex := NewIndex;
@@ -1864,7 +1851,9 @@ begin
       if NewIndex >= 0 then
       begin
         if FOpenIndex >= 0 then
-          OpenDropdown(NewIndex)
+        begin
+          SelectTopItem(NewIndex);
+        end
         else
         begin
           FHoverIndex := NewIndex;
@@ -1878,7 +1867,12 @@ begin
     VK_DOWN:
     begin
       if FOpenIndex < 0 then
-        Activate
+      begin
+        if FHoverIndex >= 0 then
+          SelectTopItem(FHoverIndex)
+        else
+          Activate;
+      end
       else if Assigned(FDropdown) then
       begin
         FDropdown.SetFocus;
@@ -1893,7 +1887,10 @@ begin
       if Assigned(FDropdown) then
       begin
         FDropdown.SetFocus;
-        FDropdown.FHoverIndex := FDropdown.FindPrevSelectable(0);
+
+        FDropdown.FHoverIndex :=
+          FDropdown.FindPrevSelectable(FDropdown.FVisibleItems.Count);
+
         FDropdown.Invalidate;
       end;
 
@@ -1903,14 +1900,31 @@ begin
     VK_ESCAPE:
     begin
       CloseDropdown;
-      Invalidate;
       Key := 0;
     end;
 
     VK_RETURN:
     begin
       if FOpenIndex < 0 then
-        Activate
+      begin
+        if FHoverIndex >= 0 then
+        begin
+          Item := TCssMenuItem(FItems[FHoverIndex]);
+
+          if Item.HasChildren then
+          begin
+            SelectTopItem(FHoverIndex);
+          end
+          else
+          begin
+            ExecuteTopItem(Item);
+          end;
+        end
+        else
+        begin
+          Activate;
+        end;
+      end
       else if Assigned(FDropdown) then
       begin
         FDropdown.SetFocus;
@@ -1929,16 +1943,7 @@ begin
   FirstIndex := FindNextTopItem(-1);
 
   if FirstIndex >= 0 then
-  begin
-    SetFocus;
-    OpenDropdown(FirstIndex);
-
-    if Assigned(FDropdown) then
-    begin
-      FDropdown.SetFocus;
-      FDropdown.SelectFirstItem;
-    end;
-  end;
+    SelectTopItem(FirstIndex);
 end;
 
 function TCssMainMenu.HandleKeyDown(var Key: Word; Shift: TShiftState): Boolean;
@@ -2056,18 +2061,32 @@ begin
 end;
 
 procedure TCssMainMenu.CloseDropdown;
+var
+  Popup: TCssMenuPopupForm;
 begin
   if Assigned(FDropdown) then
   begin
-    FDropdown.Hide;
-    FDropdown.Free;
+    Popup := FDropdown;
     FDropdown := nil;
+
+    Popup.FOnClosed := nil;
+    Popup.FOnNavigateLeft := nil;
+    Popup.FOnNavigateRight := nil;
+    Popup.OnDeactivate := nil;
+
+    Popup.CloseSubPopup;
+
+    Popup.Hide;
+
+    if (csDestroying in ComponentState) or (csDestroying in Popup.ComponentState) then
+      Popup.Free
+    else
+      Popup.Release;
   end;
 
   FOpenIndex := -1;
-  FHoverIndex := -1; // reset the highlight
-
-  Invalidate; // repaint the menu bar
+  FHoverIndex := -1;
+  Invalidate;
 end;
 
 procedure TCssMainMenu.OpenDropdown(Index: Integer);
@@ -2098,6 +2117,71 @@ begin
   FDropdown.ShowPopup(P.X, P.Y);
 
   Invalidate; // repaint the menu bar
+end;
+
+procedure TCssMainMenu.ExecuteTopItem(AItem: TCssMenuItem);
+begin
+  if AItem = nil then
+    Exit;
+
+  if AItem.Separator then
+    Exit;
+
+  if not AItem.Enabled then
+    Exit;
+
+  if Assigned(AItem.FOnClick) then
+    AItem.FOnClick(AItem);
+end;
+
+procedure TCssMainMenu.SelectTopItem(AIndex: Integer);
+var
+  Item: TCssMenuItem;
+  R: TRect;
+  P: TPoint;
+begin
+  if (AIndex < 0) or (AIndex >= FItems.Count) then
+    Exit;
+
+  Item := TCssMenuItem(FItems[AIndex]);
+
+  if not Item.Visible then
+    Exit;
+
+  if not Item.Enabled then
+    Exit;
+
+  if Item.Separator then
+    Exit;
+
+  CloseDropdown;
+
+  FHoverIndex := AIndex;
+  Invalidate;
+
+  if not Item.HasChildren then
+  begin
+    SetFocus;
+    Exit;
+  end;
+
+  FOpenIndex := AIndex;
+
+  FDropdown := TCssMenuPopupForm.CreateMenu(Self, Self, Item.FItems);
+  FDropdown.FParentMenuItem := Item;
+  FDropdown.FOnNavigateLeft := @DropdownNavigateLeft;
+  FDropdown.FOnNavigateRight := @DropdownNavigateRight;
+
+  R := GetTopItemRect(AIndex);
+  P := ClientToScreen(Point(R.Left, R.Bottom));
+
+  FDropdown.ShowPopup(P.X, P.Y);
+
+  if Assigned(FDropdown) then
+  begin
+    FDropdown.SetFocus;
+    FDropdown.SelectFirstItem;
+  end;
 end;
 
 procedure TCssMainMenu.Paint;
