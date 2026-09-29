@@ -273,7 +273,6 @@ type
     procedure AddLinkArea(ALinkId: Integer; const AHref: string; const ARect: TRect);
     procedure SetHoverLinkId(ALinkId: Integer);
     function GetLinkCursor: TCursor;
-    procedure UpdateCursor;
     function GetEffectiveLinkColor(AHover: Boolean): TColor;
     function GetEffectiveLinkUnderline(AHover: Boolean): Boolean;
 
@@ -307,6 +306,8 @@ type
     procedure DoEnter; override;
     procedure DoExit; override;
     procedure EnabledChanged; override;
+
+    procedure UpdateCursor; virtual;
 
     { State (setters) }
     procedure SetMouseInControlState(AValue: Boolean);

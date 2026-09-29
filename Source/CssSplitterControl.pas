@@ -60,9 +60,6 @@ type
     function FindResizeControl: TControl;
     procedure EnsureZOrderForResize;
 
-    // Cursor
-    procedure UpdateCursor;
-
     // Drag line
     procedure DrawDragLine(const R: TRect);
     procedure HideDragLine;
@@ -91,6 +88,9 @@ type
 
     // Component notification
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+
+    // Cursor
+    procedure UpdateCursor; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -164,10 +164,9 @@ begin
   DoubleBuffered := True;
   TabStop := False;
 
+  inherited SetAlign(alLeft);
   inherited Width := 5;
   inherited Height := 150;
-
-  Align := alLeft;
 
   FMinSize := 25;
   FResizeStyle := crsUpdate;
@@ -202,14 +201,16 @@ end;
 
 procedure TCssSplitter.UpdateCursor;
 begin
+  inherited UpdateCursor;
+
   // Apply the standard splitter cursor only if it has not been
   // overridden (e.g. via a CSS `cursor` property or manually at runtime).
-  if inherited Cursor = crDefault then
+  if Cursor = crDefault then
   begin
     if IsVertical then
-      inherited Cursor := crHSplit
+      Cursor := crHSplit
     else
-      inherited Cursor := crVSplit;
+      Cursor := crVSplit;
   end;
 end;
 
@@ -258,7 +259,7 @@ begin
     Exit;
 
   OldVertical := IsVertical;
-  inherited Align := AValue;
+  inherited SetAlign(AValue);
   NewVertical := IsVertical;
 
   // If orientation changed, transfer thickness between Width and Height.
@@ -269,7 +270,8 @@ begin
     inherited Height := Tmp;
   end;
 
-  UpdateCursor;
+  if not (csLoading in ComponentState) then
+    UpdateCursor;
 end;
 
 procedure TCssSplitter.SetMinSize(AValue: Integer);
