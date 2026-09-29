@@ -169,6 +169,9 @@ type
     property LargeChange: Integer read FLargeChange write SetLargeChange default 10;
     property Kind: TScrollBarKind read FKind write SetKind default sbHorizontal;
 
+    // Focus
+    property ShowFocusRect default False;
+
     // Standard properties
     property Align;
     property Anchors;
@@ -209,6 +212,8 @@ begin
 
   Width := 200;
   Height := 16;
+
+  ShowFocusRect := False;
 
   FMin := 0;
   FMax := 100;
