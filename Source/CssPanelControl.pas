@@ -12,6 +12,7 @@ type
   private
     FPropagatingEnabled: Boolean;
     procedure PropagateEnabledToChildren;
+    procedure ForceDesignTimeRepaint;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -21,6 +22,7 @@ type
 
     // State changes
     procedure EnabledChanged; override;
+    procedure SetEnabled(AValue: Boolean); override;
 
     // Layout
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
@@ -101,6 +103,31 @@ begin
   end;
 end;
 
+procedure TCssPanel.ForceDesignTimeRepaint;
+var
+  I: Integer;
+begin
+  if FPropagatingEnabled then
+    Exit;
+
+  FPropagatingEnabled := True;
+  try
+    for I := 0 to ControlCount - 1 do
+      Controls[I].Enabled := Enabled;
+
+    UpdateEnabledVisualState;
+
+    for I := 0 to ControlCount - 1 do
+      if Controls[I] is TCssStyledControl then
+        TCssStyledControl(Controls[I]).UpdateEnabledVisualState;
+
+    if Parent <> nil then
+      Parent.Invalidate;
+  finally
+    FPropagatingEnabled := False;
+  end;
+end;
+
 procedure TCssPanel.Loaded;
 begin
   inherited Loaded;
@@ -138,6 +165,14 @@ end;
 procedure TCssPanel.EnabledChanged;
 begin
   inherited EnabledChanged;
+end;
+
+procedure TCssPanel.SetEnabled(AValue : Boolean);
+begin
+  inherited SetEnabled(AValue);
+
+  if csDesigning in ComponentState then
+    ForceDesignTimeRepaint;
 end;
 
 procedure TCssPanel.AlignControls(AControl: TControl; var Rect: TRect);

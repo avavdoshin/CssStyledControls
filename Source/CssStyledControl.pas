@@ -486,6 +486,8 @@ type
 
     function TryGetLinkAt(const P: TPoint; out AHref, AText: string): Boolean;
     procedure ClickLinkAtPoint(const P: TPoint);
+
+    procedure UpdateEnabledVisualState;
   published
     property Align;
     property Anchors;
@@ -8211,6 +8213,12 @@ var
 begin
   if TryGetLinkAt(P, Href, LText) then
     DoLinkClick(Href, LText);
+end;
+
+procedure TCssStyledControl.UpdateEnabledVisualState;
+begin
+  RefreshStylesByState;
+  Invalidate;
 end;
 
 { ============================================================ }
