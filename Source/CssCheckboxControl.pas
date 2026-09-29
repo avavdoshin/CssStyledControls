@@ -165,10 +165,14 @@ type
 
     // Focus tracking
     FFocusIndex: Integer;
+    FGroupFocusRect: Boolean;
+    FChildFocused: Boolean;
 
     // Private helpers
     procedure ApplyChildShowFocusRect;
     procedure ItemEnter(Sender: TObject);
+    procedure ItemExit(Sender: TObject);
+    procedure SetGroupFocusRect(AValue: Boolean);
     procedure NavigateFromIndex(AIndex: Integer; AKey: Word);
 
     procedure SetItems(AValue: TStrings);
@@ -248,6 +252,7 @@ type
     property ItemHeight: Integer read FItemHeight write SetItemHeight;
     property CheckBoxCssClass: string read FCheckBoxCssClass write SetCheckBoxCssClass;
     property CheckBoxCssStyle: string read FCheckBoxCssStyle write SetCheckBoxCssStyle;
+    property GroupFocusRect: Boolean read FGroupFocusRect write SetGroupFocusRect default True;
 
     // Standard properties
     property AutoSize;
@@ -1404,6 +1409,8 @@ begin
   TCssStyledControl(Self).Caption := '';
 
   FFocusIndex := -1;
+  FGroupFocusRect := True;
+  FChildFocused := False;
   ShowFocusRect := False;
 end;
 
@@ -1513,6 +1520,30 @@ procedure TCssCheckGroup.ItemEnter(Sender: TObject);
 begin
   if Sender is TCssCheckBox then
     FFocusIndex := TCssCheckBox(Sender).Tag;
+
+  if not FChildFocused then
+  begin
+    FChildFocused := True;
+    Invalidate;
+  end;
+end;
+
+procedure TCssCheckGroup.ItemExit(Sender : TObject);
+begin
+  if FChildFocused then
+  begin
+    FChildFocused := False;
+    Invalidate;
+  end;
+end;
+
+procedure TCssCheckGroup.SetGroupFocusRect(AValue : Boolean);
+begin
+  if FGroupFocusRect = AValue then
+    Exit;
+
+  FGroupFocusRect := AValue;
+  Invalidate;
 end;
 
 procedure TCssCheckGroup.NavigateFromIndex(AIndex: Integer; AKey: Word);
@@ -1634,6 +1665,7 @@ begin
     SyncStateArrays;
 
     FFocusIndex := -1;
+    FChildFocused := False;
 
     for I := 0 to FItems.Count - 1 do
     begin
@@ -1669,6 +1701,7 @@ begin
 
       Cb.OnClick := @ItemCheckBoxClick;
       Cb.OnEnter := @ItemEnter;
+      Cb.OnExit  := @ItemExit;
 
       FCheckBoxes.Add(Cb);
     end;
@@ -2099,6 +2132,9 @@ var
   S: TSize;
 begin
   inherited Paint;
+
+  if FGroupFocusRect and FChildFocused and Enabled then
+    DrawFocusRect(Canvas, ClientRect);
 
   if Caption = '' then
     Exit;

@@ -39,6 +39,10 @@ type
     FOnItemClickNotify: TNotifyEvent;
     FOnItemClick: TRadioGroupItemClickEvent;
 
+    // Focus tracking
+    FGroupFocusRect: Boolean;
+    FChildFocused: Boolean;
+
     // Items
     function GetItems: TStrings;
     procedure SetItems(AValue: TStrings);
@@ -69,6 +73,9 @@ type
 
     // Child events
     procedure ItemRadioClick(Sender: TObject);
+    procedure ItemEnter(Sender: TObject);
+    procedure ItemExit(Sender: TObject);
+    procedure SetGroupFocusRect(AValue: Boolean);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -131,6 +138,7 @@ type
     // Events
     property OnItemClickNotify: TNotifyEvent read FOnItemClickNotify write FOnItemClickNotify;
     property OnItemClick: TRadioGroupItemClickEvent read FOnItemClick write FOnItemClick;
+    property GroupFocusRect: Boolean read FGroupFocusRect write SetGroupFocusRect default True;
   end;
 
   TCssRadioButton = class(TCssStyledControl)
@@ -1111,6 +1119,8 @@ begin
   FRadioButtons := TList.Create;
 
   FItemIndex := -1;
+  FGroupFocusRect := True;
+  FChildFocused := False;
   FColumns := 1;
   FItemHeight := 0;
 
@@ -1279,6 +1289,9 @@ var
   S: TSize;
 begin
   inherited Paint;
+
+  if FGroupFocusRect and FChildFocused and Enabled then
+    DrawFocusRect(Canvas, ClientRect);
 
   if Caption = '' then
     Exit;
@@ -1561,6 +1574,8 @@ begin
       Rb.Enabled := Enabled and FItemEnabled[I];
 
       Rb.OnClick := @ItemRadioClick;
+      Rb.OnEnter := @ItemEnter;
+      Rb.OnExit  := @ItemExit;
 
       Rb.SetCheckedSilent(I = FItemIndex);
 
@@ -1570,6 +1585,7 @@ begin
     FUpdating := False;
   end;
 
+  FChildFocused := False;
   LayoutItems;
 end;
 
@@ -1823,6 +1839,33 @@ begin
 
   if Assigned(FOnItemClick) then
     FOnItemClick(Self, Idx);
+end;
+
+procedure TCssRadioGroup.ItemEnter(Sender: TObject);
+begin
+  if not FChildFocused then
+  begin
+    FChildFocused := True;
+    Invalidate;
+  end;
+end;
+
+procedure TCssRadioGroup.ItemExit(Sender: TObject);
+begin
+  if FChildFocused then
+  begin
+    FChildFocused := False;
+    Invalidate;
+  end;
+end;
+
+procedure TCssRadioGroup.SetGroupFocusRect(AValue: Boolean);
+begin
+  if FGroupFocusRect = AValue then
+    Exit;
+
+  FGroupFocusRect := AValue;
+  Invalidate;
 end;
 
 function TCssRadioGroup.FindEnabledItem(AStart, ADelta: Integer;

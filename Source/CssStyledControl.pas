@@ -2895,7 +2895,8 @@ begin
       .Append(Ord(AParams.BorderStyle)).Append('|');
 
     SB.Append(IntToStr(AParams.FillColor)).Append(',')
-      .Append(IntToStr(AParams.BorderColor)).Append('|');
+      .Append(IntToStr(AParams.BorderColor)).Append(',')
+      .Append(IntToStr(AParams.BackColor)).Append('|');
 
     SB.Append(Ord(AParams.Shadow.Used)).Append(';');
     if AParams.Shadow.Used then
@@ -4266,6 +4267,16 @@ procedure TCssStyledControl.DrawFocusRect(ACanvas: TCanvas; const ARect: TRect);
 var
   R: TRect;
   Radius: Integer;
+  HW, HH, RR: Double;
+  CX, CY: Double;
+  SDOuter, SDInner, OuterCov, InnerCov, RingCov: Double;
+  FocusRGB: TColor;
+  FocusR, FocusG, FocusB: Byte;
+  X, Y: Integer;
+  CurPix: TColor;
+  CurRGB: LongInt;
+  CurR, CurG, CurB: Byte;
+  BlendR, BlendG, BlendB: Integer;
 begin
   if ACanvas = nil then Exit;
 
@@ -4273,19 +4284,74 @@ begin
   InflateRect(R, -1, -1);
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then Exit;
 
-  ACanvas.Brush.Style := bsClear;
-  ACanvas.Pen.Style := psSolid;
-  ACanvas.Pen.Width := 1;
-  ACanvas.Pen.Color := GetFocusColor;
-
   Radius := GetCssBorderRadius;
   if Radius > (R.Bottom - R.Top) div 2 then
     Radius := (R.Bottom - R.Top) div 2;
+  if Radius > (R.Right - R.Left) div 2 then
+    Radius := (R.Right - R.Left) div 2;
 
-  if Radius > 0 then
-    ACanvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, Radius, Radius)
-  else
+  if Radius <= 0 then
+  begin
+    ACanvas.Brush.Style := bsClear;
+    ACanvas.Pen.Style := psSolid;
+    ACanvas.Pen.Width := 1;
+    ACanvas.Pen.Color := GetFocusColor;
     ACanvas.Rectangle(R.Left, R.Top, R.Right, R.Bottom);
+    Exit;
+  end;
+
+  FocusRGB := ColorToRGB(GetFocusColor);
+  FocusR := Byte(FocusRGB and $FF);
+  FocusG := Byte((FocusRGB shr 8) and $FF);
+  FocusB := Byte((FocusRGB shr 16) and $FF);
+
+  HW := (R.Right - R.Left) / 2.0;
+  HH := (R.Bottom - R.Top) / 2.0;
+  CX := R.Left + HW;
+  CY := R.Top + HH;
+  RR := Radius;
+
+  for Y := R.Top to R.Bottom - 1 do
+  begin
+    for X := R.Left to R.Right - 1 do
+    begin
+      SDOuter := SdRoundBox(X + 0.5 - CX, Y + 0.5 - CY, HW, HH, RR);
+
+      if SDOuter > 1.0 then
+        Continue;
+
+      SDInner := SdRoundBox(
+        X + 0.5 - CX, Y + 0.5 - CY,
+        HW - 1, HH - 1, RR - 1
+      );
+
+      OuterCov := ClampD(0.5 - SDOuter, 0, 1);
+      InnerCov := ClampD(0.5 - SDInner, 0, 1);
+      RingCov  := OuterCov - InnerCov;
+
+      if RingCov <= 0 then
+        Continue;
+
+      if RingCov > 1 then
+        RingCov := 1;
+
+      CurPix := ACanvas.Pixels[X, Y];
+      CurRGB := ColorToRGB(CurPix);
+      CurR := Byte(CurRGB and $FF);
+      CurG := Byte((CurRGB shr 8) and $FF);
+      CurB := Byte((CurRGB shr 16) and $FF);
+
+      BlendR := Round(FocusR * RingCov + CurR * (1 - RingCov));
+      BlendG := Round(FocusG * RingCov + CurG * (1 - RingCov));
+      BlendB := Round(FocusB * RingCov + CurB * (1 - RingCov));
+
+      if BlendR < 0 then BlendR := 0 else if BlendR > 255 then BlendR := 255;
+      if BlendG < 0 then BlendG := 0 else if BlendG > 255 then BlendG := 255;
+      if BlendB < 0 then BlendB := 0 else if BlendB > 255 then BlendB := 255;
+
+      ACanvas.Pixels[X, Y] := RGBToColor(BlendR, BlendG, BlendB);
+    end;
+  end;
 end;
 
 function TCssStyledControl.GetContentRect: TRect;
