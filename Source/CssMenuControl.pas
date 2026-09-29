@@ -115,6 +115,8 @@ type
     FMenuDisabledText: TColor;    FMenuDisabledTextSet: Boolean;
     FMenuSeparatorColor: TColor;  FMenuSeparatorColorSet: Boolean;
     FMenuShortcutColor: TColor;   FMenuShortcutColorSet: Boolean;
+    FMenuSeparatorHeight: Integer;FMenuSeparatorHeightSet: Boolean;
+    FMenuSeparatorWidth: Integer; FMenuSeparatorWidthSet: Boolean;
 
     // Saved text alignment for HTML drawing
     FSavedVAlign: TCssVAlign;
@@ -132,6 +134,8 @@ type
     function GetMenuDisabledText: TColor;
     function GetMenuSeparatorColor: TColor;
     function GetMenuShortcutColor: TColor;
+    function GetMenuSeparatorHeight: Integer;
+    function GetMenuSeparatorWidth: Integer;
   protected
     procedure ApplyDeclaration(const AName, AValue: string); override;
     procedure ResetStyle; override;
@@ -286,6 +290,7 @@ type
     // Geometry
     function GetTopItemRect(Index: Integer): TRect;
     function TopItemAtPos(X, Y: Integer): Integer;
+    function GetTopItemWidth(AItem: TCssMenuItem): Integer;
 
     // Dropdown management
     procedure CloseDropdown;
@@ -810,6 +815,36 @@ begin
     Result := RGBToColor(130, 130, 130);
 end;
 
+function TCssMenuBase.GetMenuSeparatorHeight: Integer;
+begin
+  if FMenuSeparatorHeightSet then
+    Result := FMenuSeparatorHeight
+  else
+  begin
+    Result := GetMenuItemHeight div 4;
+
+    if Result < 4 then
+      Result := 4;
+
+    if Result > 9 then
+      Result := 9;
+  end;
+
+  if Result < 1 then
+    Result := 1;
+end;
+
+function TCssMenuBase.GetMenuSeparatorWidth: Integer;
+begin
+  if FMenuSeparatorWidthSet then
+    Result := FMenuSeparatorWidth
+  else
+    Result := 8;
+
+  if Result < 1 then
+    Result := 1;
+end;
+
 procedure TCssMenuBase.ResetStyle;
 begin
   FMenuBackgroundSet := False;
@@ -821,6 +856,8 @@ begin
   FMenuDisabledTextSet := False;
   FMenuSeparatorColorSet := False;
   FMenuShortcutColorSet := False;
+  FMenuSeparatorHeightSet := False;
+  FMenuSeparatorWidthSet := False;
 
   inherited ResetStyle;
 end;
@@ -943,6 +980,26 @@ begin
     Exit;
   end;
 
+  if AName = 'menu-separator-height' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      FMenuSeparatorHeight := Px;
+      FMenuSeparatorHeightSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'menu-separator-width' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      FMenuSeparatorWidth := Px;
+      FMenuSeparatorWidthSet := True;
+    end;
+    Exit;
+  end;
+
   inherited ApplyDeclaration(AName, AValue);
 end;
 
@@ -1015,19 +1072,29 @@ end;
 
 procedure TCssMenuPopupForm.CalcSize;
 var
-  I, W, CapW, TotalH, IH: Integer;
+  I, W, CapW, TotalH, IH, SepH: Integer;
   Item: TCssMenuItem;
   S: TSize;
 begin
   IH := FMenu.GetMenuItemHeight;
+  SepH := FMenu.GetMenuSeparatorHeight;
 
   Canvas.Font := Font;
 
   W := 0;
+  TotalH := 4;
 
   for I := 0 to FVisibleItems.Count - 1 do
   begin
     Item := TCssMenuItem(FVisibleItems[I]);
+
+    if Item.Separator then
+    begin
+      Inc(TotalH, SepH);
+      Continue;
+    end;
+
+    Inc(TotalH, IH);
 
     if FMenu.HtmlMode then
     begin
@@ -1046,8 +1113,6 @@ begin
 
   if W < 120 then
     W := 120;
-
-  TotalH := FVisibleItems.Count * IH + 4;
 
   ClientWidth := W;
   ClientHeight := TotalH;
@@ -1093,10 +1158,37 @@ end;
 
 function TCssMenuPopupForm.ItemRect(Index: Integer): TRect;
 var
-  IH: Integer;
+  I, aTop, H: Integer;
+  Item: TCssMenuItem;
 begin
-  IH := FMenu.GetMenuItemHeight;
-  Result := Rect(2, 2 + Index * IH, ClientWidth - 2, 2 + (Index + 1) * IH);
+  if (Index < 0) or (Index >= FVisibleItems.Count) then
+  begin
+    Result := Rect(0, 0, 0, 0);
+    Exit;
+  end;
+
+  aTop := 2;
+
+  for I := 0 to Index - 1 do
+  begin
+    Item := TCssMenuItem(FVisibleItems[I]);
+
+    if Item.Separator then
+      H := FMenu.GetMenuSeparatorHeight
+    else
+      H := FMenu.GetMenuItemHeight;
+
+    Inc(aTop, H);
+  end;
+
+  Item := TCssMenuItem(FVisibleItems[Index]);
+
+  if Item.Separator then
+    H := FMenu.GetMenuSeparatorHeight
+  else
+    H := FMenu.GetMenuItemHeight;
+
+  Result := Rect(2, aTop, ClientWidth - 2, aTop + H);
 end;
 
 function TCssMenuPopupForm.ItemAtPos(X, Y: Integer): Integer;
@@ -1303,13 +1395,11 @@ end;
 
 procedure TCssMenuPopupForm.Paint;
 var
-  I, Y, IH: Integer;
+  I: Integer;
   Item: TCssMenuItem;
   R: TRect;
   FG: TColor;
 begin
-  IH := FMenu.GetMenuItemHeight;
-
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := FMenu.GetMenuBackground;
   Canvas.FillRect(ClientRect);
@@ -1324,13 +1414,13 @@ begin
   begin
     Item := TCssMenuItem(FVisibleItems[I]);
     R := ItemRect(I);
-    Y := R.Top;
 
     if Item.Separator then
     begin
+      Canvas.Pen.Width := 1;
       Canvas.Pen.Color := FMenu.GetMenuSeparatorColor;
-      Canvas.MoveTo(R.Left + 4, Y + IH div 2);
-      Canvas.LineTo(R.Right - 4, Y + IH div 2);
+      Canvas.MoveTo(R.Left + 4, R.Top + ((R.Bottom - R.Top) div 2));
+      Canvas.LineTo(R.Right - 4, R.Top + ((R.Bottom - R.Top) div 2));
       Continue;
     end;
 
@@ -1347,10 +1437,7 @@ begin
         FG := FMenu.GetMenuTextColor;
     end
     else
-    begin
-      // Disabled item: no hover background, gray text.
       FG := FMenu.GetMenuDisabledText;
-    end;
 
     if Item.Checked then
       DrawCheckMark(R, FG);
@@ -1362,8 +1449,9 @@ begin
     begin
       FMenu.BeginMenuHtmlDraw;
       try
-        FMenu.DrawHtmlText(Canvas,
-          Rect(R.Left + 26, Y, R.Right - 24, Y + IH),
+        FMenu.DrawHtmlText(
+          Canvas,
+          Rect(R.Left + 26, R.Top, R.Right - 24, R.Bottom),
           Item.Caption,
           FG
         );
@@ -1373,10 +1461,9 @@ begin
     end
     else
     begin
-      Canvas.Font.Color := FG;
       Canvas.TextOut(
         R.Left + 26,
-        Y + ((IH - Canvas.TextHeight(Item.Caption)) div 2),
+        R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Caption)) div 2),
         Item.Caption
       );
     end;
@@ -1384,8 +1471,11 @@ begin
     if Item.Shortcut <> '' then
     begin
       Canvas.Font.Color := FMenu.GetMenuShortcutColor;
-      Canvas.TextOut(R.Right - Canvas.TextWidth(Item.Shortcut) - 24,
-        Y + ((IH - Canvas.TextHeight(Item.Shortcut)) div 2), Item.Shortcut);
+      Canvas.TextOut(
+        R.Right - Canvas.TextWidth(Item.Shortcut) - 24,
+        R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Shortcut)) div 2),
+        Item.Shortcut
+      );
     end;
 
     if Item.HasChildren then
@@ -1876,32 +1966,29 @@ end;
 
 function TCssMainMenu.GetTopItemRect(Index: Integer): TRect;
 var
-  X, I, W: Integer;
-  S: TSize;
+  I, X, W: Integer;
+  Item: TCssMenuItem;
 begin
+  if (Index < 0) or (Index >= FItems.Count) then
+  begin
+    Result := Rect(0, 0, 0, 0);
+    Exit;
+  end;
+
   Canvas.Font := Font;
+
   X := 4;
 
   for I := 0 to Index - 1 do
   begin
-    if HtmlMode then
-    begin
-      S := MeasureHtmlTextSize(TCssMenuItem(FItems[I]).Caption, 0);
-      W := S.cx + 20;
-    end
-    else
-      W := Canvas.TextWidth(TCssMenuItem(FItems[I]).Caption) + 20;
+    Item := TCssMenuItem(FItems[I]);
 
-    X := X + W;
+    if Item.Visible then
+      X := X + GetTopItemWidth(Item);
   end;
 
-  if HtmlMode then
-  begin
-    S := MeasureHtmlTextSize(TCssMenuItem(FItems[Index]).Caption, 0);
-    W := S.cx + 20;
-  end
-  else
-    W := Canvas.TextWidth(TCssMenuItem(FItems[Index]).Caption) + 20;
+  Item := TCssMenuItem(FItems[Index]);
+  W := GetTopItemWidth(Item);
 
   Result := Rect(X, 2, X + W, ClientHeight - 2);
 end;
@@ -1909,12 +1996,15 @@ end;
 function TCssMainMenu.TopItemAtPos(X, Y: Integer): Integer;
 var
   I: Integer;
+  Item: TCssMenuItem;
 begin
   Result := -1;
 
   for I := 0 to FItems.Count - 1 do
   begin
-    if not TCssMenuItem(FItems[I]).Visible then
+    Item := TCssMenuItem(FItems[I]);
+
+    if not Item.Visible or Item.Separator then
       Continue;
 
     if PtInRect(GetTopItemRect(I), Point(X, Y)) then
@@ -1923,6 +2013,35 @@ begin
       Exit;
     end;
   end;
+end;
+
+function TCssMainMenu.GetTopItemWidth(AItem: TCssMenuItem): Integer;
+var
+  S: TSize;
+begin
+  Result := 0;
+
+  if (AItem = nil) or not AItem.Visible then
+    Exit;
+
+  if AItem.Separator then
+  begin
+    Result := GetMenuSeparatorWidth;
+    Exit;
+  end;
+
+  Canvas.Font := Font;
+
+  if HtmlMode then
+  begin
+    S := MeasureHtmlTextSize(AItem.Caption, 0);
+    Result := S.cx + 20;
+  end
+  else
+    Result := Canvas.TextWidth(AItem.Caption) + 20;
+
+  if Result < 20 then
+    Result := 20;
 end;
 
 procedure TCssMainMenu.CloseDropdown;
@@ -1972,7 +2091,7 @@ end;
 
 procedure TCssMainMenu.Paint;
 var
-  I, TextTop: Integer;
+  I, TextTop, SepX: Integer;
   Item: TCssMenuItem;
   R: TRect;
   S: TSize;
@@ -1993,10 +2112,25 @@ begin
 
     R := GetTopItemRect(I);
 
+    if Item.Separator then
+    begin
+      if (R.Bottom - R.Top) > 8 then
+      begin
+        SepX := R.Left + ((R.Right - R.Left) div 2);
+
+        Canvas.Pen.Width := 1;
+        Canvas.Pen.Color := GetMenuSeparatorColor;
+        Canvas.MoveTo(SepX, R.Top + 4);
+        Canvas.LineTo(SepX, R.Bottom - 4);
+      end;
+
+      Continue;
+    end;
+
     if (I = FHoverIndex) or (I = FOpenIndex) then
     begin
-      Canvas.Brush.Color := GetMenuHoverBackground;
       Canvas.Brush.Style := bsSolid;
+      Canvas.Brush.Color := GetMenuHoverBackground;
       Canvas.FillRect(R);
       FG := GetMenuHoverTextColor;
     end
@@ -2011,14 +2145,15 @@ begin
 
     if HtmlMode then
     begin
-      S := MeasureHtmlTextSize(Item.Caption, R.Right - R.Left - 20);
+      S := MeasureHtmlTextSize(Item.Caption, (R.Right - R.Left) - 20);
 
-      TextTop := R.Top + ((R.Bottom - R.Top - S.cy) div 2);
+      TextTop := R.Top + (((R.Bottom - R.Top) - S.cy) div 2);
 
       if TextTop < R.Top then
         TextTop := R.Top;
 
-      DrawHtmlText(Canvas,
+      DrawHtmlText(
+        Canvas,
         Rect(R.Left + 10, TextTop, R.Right - 10, TextTop + S.cy),
         Item.Caption,
         FG
@@ -2026,10 +2161,9 @@ begin
     end
     else
     begin
-      Canvas.Font.Color := FG;
       Canvas.TextOut(
         R.Left + 10,
-        R.Top + ((R.Bottom - R.Top - Canvas.TextHeight(Item.Caption)) div 2),
+        R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Caption)) div 2),
         Item.Caption
       );
     end;

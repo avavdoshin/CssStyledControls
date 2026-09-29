@@ -300,6 +300,8 @@ TCssMainMenu {
   padding: 2px 4px;
   menubar-background: #F8FAFC;
   menu-item-height: 26px;
+  menu-separator-height: 5px;
+  menu-separator-width: 8px;
   menu-text-color: #1E293B;
   menu-hover-background: #2563EB;
   menu-hover-text-color: #FFFFFF;
@@ -315,6 +317,8 @@ TCssPopupMenu {
   menu-background: #FFFFFF;
   menu-border-color: #E2E8F0;
   menu-item-height: 26px;
+  menu-separator-height: 5px;
+  menu-separator-width: 8px;
   menu-text-color: #1E293B;
   menu-hover-background: #2563EB;
   menu-hover-text-color: #FFFFFF;
@@ -720,6 +724,8 @@ TCssMainMenu {
   padding: 2px 4px;
   menubar-background: #0F172A;
   menu-item-height: 26px;
+  menu-separator-height: 5px;
+  menu-separator-width: 8px;
   menu-text-color: #E2E8F0;
   menu-hover-background: #3B82F6;
   menu-hover-text-color: #FFFFFF;
@@ -735,6 +741,8 @@ TCssPopupMenu {
   menu-background: #1E293B;
   menu-border-color: #334155;
   menu-item-height: 26px;
+  menu-separator-height: 5px;
+  menu-separator-width: 8px;
   menu-text-color: #E2E8F0;
   menu-hover-background: #3B82F6;
   menu-hover-text-color: #FFFFFF;
