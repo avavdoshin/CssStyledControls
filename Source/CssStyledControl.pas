@@ -109,6 +109,38 @@ type
     TL, TR, BR, BL: Integer;
   end;
 
+  TCssGradientStop = record
+    Position: Double;   // 0..1
+    Color: TColor;
+  end;
+
+  TCssGradientKind = (cgkNone, cgkLinear, cgkRadial);
+
+  TCssGradient = record
+    Kind: TCssGradientKind;
+    Angle: Double;
+    Stops: array of TCssGradientStop;
+  end;
+
+  TCssBoxShadow = record
+    OffsetX, OffsetY, Blur, Spread: Integer;
+    Color: TColor;
+    HasColor: Boolean;
+    Used: Boolean;
+  end;
+
+  TCssRoundedBoxParams = record
+    Radii: TCssCornerRadii;
+    FillColor: TColor;
+    BorderColor: TColor;
+    BorderWidth: Integer;
+    BorderStyle: TCssBorderStyle;
+    BackColor: TColor;
+    Shadow: TCssBoxShadow;
+    Gradient: TCssGradient;
+    HasGradient: Boolean;
+  end;
+
   TCssStyledControl = class(TCustomControl)
   private
     FCaption: TCaption;
@@ -189,18 +221,15 @@ type
     FFocusColorSet: Boolean;
 
     FBorderRadiusTL, FBorderRadiusTR, FBorderRadiusBR, FBorderRadiusBL: Integer;
+    FBackgroundGradient: TCssGradient;
+    FBoxShadow: TCssBoxShadow;
 
     { AA rounded rect }
     procedure DrawRoundedRectAA(
       ACanvas: TCanvas;
       const ARect: TRect;
-      const ARadii: TCssCornerRadii;
-      AFillColor: TColor;
-      ABorderColor: TColor;
-      ABorderWidth: Integer;
-      ABorderStyle: TCssBorderStyle);
+      const AParams: TCssRoundedBoxParams);
     function GetParentBackgroundColor: TColor;
-    function GetCssBorderRadii: TCssCornerRadii;
 
     { CSS parsing helpers }
     procedure ParseTextShadow(const AValue: string);
@@ -211,6 +240,8 @@ type
     procedure ParseFontFamily(const AValue: string);
     procedure ParseBackground(const AValue: string);
     procedure ParseBorderRadius(const AValue: string);
+    procedure ParseBoxShadow(const AValue: string);
+    procedure ParseBackgroundGradient(const AValue: string);
 
     function TryNamedColor(const AName: string; out AColor: TColor): Boolean;
     function CssClassContains(const AClass: string): Boolean;
@@ -398,6 +429,9 @@ type
     function GetStyledPadding: TRect;
     function GetStyledBorderRadius: Integer;
     function GetStyledTextColor: TColor;
+    function GetCssBorderRadii: TCssCornerRadii;
+    function GetCssGradient: TCssGradient;
+    function GetCssBoxShadow: TCssBoxShadow;
 
     function TryGetLinkAt(const P: TPoint; out AHref, AText: string): Boolean;
     procedure ClickLinkAtPoint(const P: TPoint);
@@ -846,6 +880,156 @@ begin
   S := StringReplace(S, ',', '.', [rfReplaceAll]);
   Val(S, AFloat, Code);
   Result := Code = 0;
+end;
+
+function TryParseGradientAngle(const S: string; out ADeg: Double): Boolean;
+var
+  T: string;
+  N: Double;
+  Code: Integer;
+begin
+  T := LowerCase(Trim(S));
+
+  if EndsText('deg', T) then
+  begin
+    T := Copy(T, 1, Length(T) - 3);
+    Val(T, N, Code);
+    if Code = 0 then begin ADeg := N; Exit(True); end;
+  end
+  else if EndsText('grad', T) then
+  begin
+    T := Copy(T, 1, Length(T) - 4);
+    Val(T, N, Code);
+    if Code = 0 then begin ADeg := N * 0.9; Exit(True); end;
+  end
+  else if EndsText('rad', T) then
+  begin
+    T := Copy(T, 1, Length(T) - 3);
+    Val(T, N, Code);
+    if Code = 0 then begin ADeg := N * 180 / Pi; Exit(True); end;
+  end
+  else if EndsText('turn', T) then
+  begin
+    T := Copy(T, 1, Length(T) - 4);
+    Val(T, N, Code);
+    if Code = 0 then begin ADeg := N * 360; Exit(True); end;
+  end;
+
+  Result := False;
+end;
+
+function TryParseGradientPosition(const S: string; out APos: Double): Boolean;
+var
+  T: string;
+  N: Double;
+  Code: Integer;
+begin
+  Result := False;
+  T := Trim(S);
+
+  if EndsText('%', T) then
+  begin
+    T := Copy(T, 1, Length(T) - 1);
+    Val(T, N, Code);
+    if Code = 0 then
+    begin
+      APos := N / 100;
+      Result := True;
+    end;
+  end;
+end;
+
+procedure SplitByTopCommas(const S: string; AList: TStrings);
+var
+  I, Start, Depth: Integer;
+  InQuote: Boolean;
+  Quote: Char;
+begin
+  Start := 1;
+  Depth := 0;
+  InQuote := False;
+  Quote := #0;
+
+  for I := 1 to Length(S) do
+  begin
+    if InQuote then
+    begin
+      if S[I] = Quote then InQuote := False;
+    end
+    else if (S[I] = '''') or (S[I] = '"') then
+    begin
+      InQuote := True;
+      Quote := S[I];
+    end
+    else if S[I] = '(' then Inc(Depth)
+    else if S[I] = ')' then Dec(Depth)
+    else if (S[I] = ',') and (Depth = 0) then
+    begin
+      AList.Add(Trim(Copy(S, Start, I - Start)));
+      Start := I + 1;
+    end;
+  end;
+
+  if Start <= Length(S) then
+    AList.Add(Trim(Copy(S, Start, Length(S) - Start + 1)));
+end;
+
+procedure EnsureStopPositions(var Stops: array of TCssGradientStop);
+var
+  I, J, Count, First, Last: Integer;
+  AllSet, AnySet: Boolean;
+begin
+  Count := Length(Stops);
+  if Count = 0 then Exit;
+
+  AllSet := True;
+  AnySet := False;
+
+  for I := 0 to Count - 1 do
+  begin
+    if Stops[I].Position < 0 then AllSet := False
+    else AnySet := True;
+  end;
+
+  if not AnySet then
+  begin
+    if Count = 1 then
+      Stops[0].Position := 0
+    else
+      for I := 0 to Count - 1 do
+        Stops[I].Position := I / (Count - 1);
+    Exit;
+  end;
+
+  if Stops[0].Position < 0 then Stops[0].Position := 0;
+  if Stops[Count - 1].Position < 0 then Stops[Count - 1].Position := 1;
+
+  I := 1;
+  while I < Count do
+  begin
+    if Stops[I].Position < 0 then
+    begin
+      First := I - 1;
+      Last := I + 1;
+      while (Last < Count) and (Stops[Last].Position < 0) do
+        Inc(Last);
+      if Last >= Count then Last := Count - 1;
+
+      for J := First + 1 to Last - 1 do
+        Stops[J].Position :=
+          Stops[First].Position +
+          (Stops[Last].Position - Stops[First].Position) *
+          (J - First) / (Last - First);
+
+      I := Last;
+    end
+    else
+      Inc(I);
+  end;
+
+  for I := 1 to Count - 1 do
+    if Stops[I].Position < Stops[I - 1].Position then
+      Stops[I].Position := Stops[I - 1].Position;
 end;
 
 type
@@ -2313,6 +2497,112 @@ begin
     Sqrt(Sqr(Max(QX, 0.0)) + Sqr(Max(QY, 0.0))) - R;
 end;
 
+function SdPerimeterAngle(
+  PX, PY, HW, HH, RTL, RTR, RBR, RBL: Double): Double;
+const
+  EPS = 0.5;
+var
+  GX, GY: Double;
+begin
+  GX := SdRoundBoxPC(PX + EPS, PY, HW, HH, RTL, RTR, RBR, RBL) -
+        SdRoundBoxPC(PX - EPS, PY, HW, HH, RTL, RTR, RBR, RBL);
+  GY := SdRoundBoxPC(PX, PY + EPS, HW, HH, RTL, RTR, RBR, RBL) -
+        SdRoundBoxPC(PX, PY - EPS, HW, HH, RTL, RTR, RBR, RBL);
+
+  Result := ArcTan2(GY, GX);
+end;
+
+function LerpColor(C1, C2: TColor; T: Double): TColor;
+var
+  RGB1, RGB2: LongInt;
+  R1, G1, B1, R2, G2, B2: Integer;
+begin
+  if T <= 0 then Exit(C1);
+  if T >= 1 then Exit(C2);
+
+  RGB1 := ColorToRGB(C1);
+  RGB2 := ColorToRGB(C2);
+
+  R1 := RGB1 and $FF; G1 := (RGB1 shr 8) and $FF; B1 := (RGB1 shr 16) and $FF;
+  R2 := RGB2 and $FF; G2 := (RGB2 shr 8) and $FF; B2 := (RGB2 shr 16) and $FF;
+
+  Result := RGBToColor(
+    Round(R1 + (R2 - R1) * T),
+    Round(G1 + (G2 - G1) * T),
+    Round(B1 + (B2 - B1) * T)
+  );
+end;
+
+procedure EvalGradientColor(
+  const G: TCssGradient;
+  PX, PY, HW, HH: Double;
+  out R, GG, B: Byte);
+var
+  T, LocalT, DirX, DirY, Proj, L, MaxR: Double;
+  I: Integer;
+  Col: TColor;
+  RGB: LongInt;
+begin
+  R := 0; GG := 0; B := 0;
+
+  if Length(G.Stops) = 0 then
+    Exit;
+
+  if G.Kind = cgkLinear then
+  begin
+    DirX := Sin(G.Angle);
+    DirY := -Cos(G.Angle);
+
+    Proj := PX * DirX + PY * DirY;
+    L := Abs(DirX) * (2 * HW) + Abs(DirY) * (2 * HH);
+
+    if L > 1E-6 then
+      T := Proj / L + 0.5
+    else
+      T := 0.5;
+  end
+  else
+  begin
+    MaxR := Sqrt(HW * HW + HH * HH);
+
+    if MaxR > 1E-6 then
+      T := Sqrt(PX * PX + PY * PY) / MaxR
+    else
+      T := 0;
+  end;
+
+  T := ClampD(T, 0, 1);
+
+  if T <= G.Stops[0].Position then
+    Col := G.Stops[0].Color
+  else if T >= G.Stops[High(G.Stops)].Position then
+    Col := G.Stops[High(G.Stops)].Color
+  else
+  begin
+    Col := G.Stops[0].Color;
+
+    for I := 0 to High(G.Stops) - 1 do
+    begin
+      if (T >= G.Stops[I].Position) and (T <= G.Stops[I + 1].Position) then
+      begin
+        if G.Stops[I + 1].Position - G.Stops[I].Position > 1E-6 then
+          LocalT := (T - G.Stops[I].Position) /
+                    (G.Stops[I + 1].Position - G.Stops[I].Position)
+        else
+          LocalT := 0;
+
+        Col := LerpColor(G.Stops[I].Color, G.Stops[I + 1].Color, LocalT);
+        Break;
+      end;
+    end;
+  end;
+
+  RGB := ColorToRGB(Col);
+  R  := Byte(RGB and $FF);
+  GG := Byte((RGB shr 8) and $FF);
+  B  := Byte((RGB shr 16) and $FF);
+end;
+
 function PerimeterParam(PX, PY, HW, HH: Double): Double;
 var
   Angle: Double;
@@ -2325,47 +2615,60 @@ end;
 
 procedure RenderRoundedRectToBitmap(
   ABitmap: TBitmap;
-  AW, AH, ARTL, ARTR, ARBR, ARBL, ABorderWidth: Integer;
-  AFillColor, ABorderColor, ABackColor: TColor;
-  ABorderStyle: TCssBorderStyle);
+  AW, AH: Integer;
+  const AParams: TCssRoundedBoxParams;
+  APadX, APadY: Integer);
 var
   Img: TLazIntfImage;
-  X, Y: Integer;
+  PW, PH, X, Y: Integer;
   BgR, BgG, BgB: Byte;
   FillR, FillG, FillB: Byte;
   BorderR, BorderG, BorderB: Byte;
-  HasFill, HasBorder, IsDashed, IsDotted: Boolean;
+  ShadowR, ShadowG, ShadowB: Byte;
+  HasFill, HasBorder, HasShadow: Boolean;
   Pixel: TFPColor;
   HW, HH, RTL, RTR, RBR, RBL, BW: Double;
-  PX, PY, SDF: Double;
-  OuterCov, InnerCov, BorderCov: Double;
-  BgRGB, FillRGB, BorderRGB: TColor;
+  Blur, Spread, ShadowOffX, ShadowOffY: Double;
+  PX, PY, SDF, SDF_Shadow: Double;
+  OuterCov, InnerCov, BorderCov, ShadowCov: Double;
+  BgRGB, FillRGB, BorderRGB, ShadowRGB: TColor;
   CompR, CompG, CompB: Double;
-  Param, DashPhase: Double;
-  DashMask: Double;
-  Perim, DashLen: Double;
+  DashMask, Param: Double;
+  IsDash, IsDot: Boolean;
+  FFR, FFG, FFB: Byte;
+  UseGrad: Boolean;
 begin
   if (AW <= 0) or (AH <= 0) or (ABitmap = nil) then
     Exit;
 
+  PW := AW + APadX * 2;
+  PH := AH + APadY * 2;
+
   ABitmap.PixelFormat := pf32bit;
-  ABitmap.SetSize(AW, AH);
+  ABitmap.SetSize(PW, PH);
 
-  HasFill   := (AFillColor <> clNone) and (AFillColor <> clDefault);
-  HasBorder := (ABorderWidth > 0) and
-               (ABorderColor <> clNone) and (ABorderColor <> clDefault);
+  HasFill   := (AParams.FillColor <> clNone) and
+               (AParams.FillColor <> clDefault);
+  HasBorder := (AParams.BorderWidth > 0) and
+               (AParams.BorderColor <> clNone) and
+               (AParams.BorderColor <> clDefault);
+  HasShadow := AParams.Shadow.Used and AParams.Shadow.HasColor;
 
-  IsDashed := ABorderStyle = cbsDashed;
-  IsDotted := ABorderStyle = cbsDotted;
+  UseGrad := AParams.HasGradient and
+             (AParams.Gradient.Kind <> cgkNone) and
+             (Length(AParams.Gradient.Stops) > 0);
 
-  BgRGB := ColorToRGB(ABackColor);
+  IsDash := AParams.BorderStyle = cbsDashed;
+  IsDot  := AParams.BorderStyle = cbsDotted;
+
+  BgRGB := ColorToRGB(AParams.BackColor);
   BgR := Byte(BgRGB and $FF);
   BgG := Byte((BgRGB shr 8) and $FF);
   BgB := Byte((BgRGB shr 16) and $FF);
 
   if HasFill then
   begin
-    FillRGB := ColorToRGB(AFillColor);
+    FillRGB := ColorToRGB(AParams.FillColor);
     FillR := Byte(FillRGB and $FF);
     FillG := Byte((FillRGB shr 8) and $FF);
     FillB := Byte((FillRGB shr 16) and $FF);
@@ -2377,7 +2680,7 @@ begin
 
   if HasBorder then
   begin
-    BorderRGB := ColorToRGB(ABorderColor);
+    BorderRGB := ColorToRGB(AParams.BorderColor);
     BorderR := Byte(BorderRGB and $FF);
     BorderG := Byte((BorderRGB shr 8) and $FF);
     BorderB := Byte((BorderRGB shr 16) and $FF);
@@ -2387,79 +2690,115 @@ begin
     BorderR := 0; BorderG := 0; BorderB := 0;
   end;
 
+  if HasShadow then
+  begin
+    ShadowRGB := ColorToRGB(AParams.Shadow.Color);
+    ShadowR := Byte(ShadowRGB and $FF);
+    ShadowG := Byte((ShadowRGB shr 8) and $FF);
+    ShadowB := Byte((ShadowRGB shr 16) and $FF);
+  end
+  else
+  begin
+    ShadowR := 0; ShadowG := 0; ShadowB := 0;
+  end;
+
   Img := ABitmap.CreateIntfImage;
   try
     HW := AW / 2.0;
     HH := AH / 2.0;
 
-    RTL := ARTL; RTR := ARTR; RBR := ARBR; RBL := ARBL;
+    RTL := AParams.Radii.TL;
+    RTR := AParams.Radii.TR;
+    RBR := AParams.Radii.BR;
+    RBL := AParams.Radii.BL;
     ClampCornerRadii(RTL, RTR, RBR, RBL, AW, AH);
 
-    BW := ABorderWidth;
+    BW := AParams.BorderWidth;
     if BW < 0 then BW := 0;
 
-    Perim := 2 * (AW + AH);
-    if IsDashed then
-      DashLen := 8.0
-    else
-      DashLen := 4.0;
+    ShadowOffX := AParams.Shadow.OffsetX;
+    ShadowOffY := AParams.Shadow.OffsetY;
+    Blur       := AParams.Shadow.Blur;
+    Spread     := AParams.Shadow.Spread;
 
-    for Y := 0 to AH - 1 do
+    for Y := 0 to PH - 1 do
     begin
-      for X := 0 to AW - 1 do
+      for X := 0 to PW - 1 do
       begin
-        PX := X + 0.5 - HW;
-        PY := Y + 0.5 - HH;
+        PX := X + 0.5 - APadX - HW;
+        PY := Y + 0.5 - APadY - HH;
+
+        ShadowCov := 0;
+        if HasShadow then
+        begin
+          SDF_Shadow := SdRoundBoxPC(
+            PX - ShadowOffX, PY - ShadowOffY,
+            HW + Spread, HH + Spread,
+            RTL + Spread, RTR + Spread,
+            RBR + Spread, RBL + Spread
+          );
+
+          if Blur > 0.5 then
+            ShadowCov := ClampD(0.5 - SDF_Shadow / Blur, 0, 1)
+          else
+            ShadowCov := ClampD(0.5 - SDF_Shadow, 0, 1);
+        end;
 
         SDF := SdRoundBoxPC(PX, PY, HW, HH, RTL, RTR, RBR, RBL);
-
-        OuterCov := ClampD(0.5 - SDF, 0.0, 1.0);
+        OuterCov := ClampD(0.5 - SDF, 0, 1);
 
         if HasBorder then
-          InnerCov := ClampD(0.5 - (SDF + BW), 0.0, 1.0)
+          InnerCov := ClampD(0.5 - (SDF + BW), 0, 1)
         else
           InnerCov := OuterCov;
 
         BorderCov := OuterCov - InnerCov;
-        if BorderCov < 0 then BorderCov := 0;
-        if BorderCov > 1 then BorderCov := 1;
 
-        if HasBorder and (IsDashed or IsDotted) and (BorderCov > 0) then
+        // dash / dot
+        if HasBorder and (IsDash or IsDot) and (BorderCov > 0.001) then
         begin
-          Param := PerimeterParam(PX, PY, HW, HH);
+          Param := SdPerimeterAngle(PX, PY, HW, HH, RTL, RTR, RBR, RBL);
+          Param := (Param + Pi) / (2 * Pi);
 
-          DashPhase := Param * (Perim / DashLen);
-
-          if IsDashed then
-          begin
-            DashMask := Frac(DashPhase);
-            if DashMask < 0.6 then DashMask := 1.0 else DashMask := 0.0;
-          end
+          if IsDash then
+            DashMask := Frac(Param * 24)
           else
-          begin
-            DashMask := Frac(DashPhase);
-            if DashMask < 0.3 then DashMask := 1.0 else DashMask := 0.0;
-          end;
+            DashMask := Frac(Param * 48);
+
+          if IsDash then
+            if DashMask < 0.6 then DashMask := 1 else DashMask := 0
+          else
+            if DashMask < 0.35 then DashMask := 1 else DashMask := 0;
 
           BorderCov := BorderCov * DashMask;
         end;
 
-        CompR := BgR * (1.0 - OuterCov);
-        CompG := BgG * (1.0 - OuterCov);
-        CompB := BgB * (1.0 - OuterCov);
+        if ShadowCov > 0 then
+          ShadowCov := ShadowCov * (1 - OuterCov);
 
-        if HasFill then
+        CompR := BgR * (1 - ShadowCov) + ShadowR * ShadowCov;
+        CompG := BgG * (1 - ShadowCov) + ShadowG * ShadowCov;
+        CompB := BgB * (1 - ShadowCov) + ShadowB * ShadowCov;
+
+        if UseGrad then
         begin
-          CompR := CompR + FillR * InnerCov;
-          CompG := CompG + FillG * InnerCov;
-          CompB := CompB + FillB * InnerCov;
+          EvalGradientColor(AParams.Gradient, PX, PY, HW, HH, FFR, FFG, FFB);
+          CompR := CompR * (1 - InnerCov) + FFR * InnerCov;
+          CompG := CompG * (1 - InnerCov) + FFG * InnerCov;
+          CompB := CompB * (1 - InnerCov) + FFB * InnerCov;
+        end
+        else if HasFill then
+        begin
+          CompR := CompR * (1 - InnerCov) + FillR * InnerCov;
+          CompG := CompG * (1 - InnerCov) + FillG * InnerCov;
+          CompB := CompB * (1 - InnerCov) + FillB * InnerCov;
         end;
 
         if HasBorder then
         begin
-          CompR := CompR + BorderR * BorderCov;
-          CompG := CompG + BorderG * BorderCov;
-          CompB := CompB + BorderB * BorderCov;
+          CompR := CompR * (1 - BorderCov) + BorderR * BorderCov;
+          CompG := CompG * (1 - BorderCov) + BorderG * BorderCov;
+          CompB := CompB * (1 - BorderCov) + BorderB * BorderCov;
         end;
 
         Pixel.Red   := Round(ClampD(CompR, 0, 255)) * 257;
@@ -2478,32 +2817,22 @@ end;
 
 type
   TCssRoundedRectCacheEntry = class
-    Width, Height: Integer;
-    RTL, RTR, RBR, RBL: Integer;
-    BorderWidth: Integer;
-    FillColor, BorderColor, BackColor: TColor;
-    BorderStyle: TCssBorderStyle;
+    Signature: string;
     Bitmap: TBitmap;
     constructor Create;
     destructor Destroy; override;
-    function Matches(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW: Integer;
-      AFill, ABorder, ABack: TColor;
-      AStyle: TCssBorderStyle): Boolean;
   end;
 
   TCssRoundedRectCache = class
   private
-    FEntries: TList;
-    function IndexOfEntry(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW: Integer;
-      AFill, ABorder, ABack: TColor;
-      AStyle: TCssBorderStyle): Integer;
+    FEntries: TStringList;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
-    function GetBitmap(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW: Integer;
-      AFill, ABorder, ABack: TColor;
-      AStyle: TCssBorderStyle): TBitmap;
+    function GetBitmap(
+      AW, AH: Integer;
+      const AParams: TCssRoundedBoxParams): TBitmap;
   end;
 
 const
@@ -2522,22 +2851,12 @@ begin
   inherited;
 end;
 
-function TCssRoundedRectCacheEntry.Matches(AW, AH, ARTL, ARTR, ARBR, ARBL,
-  ABW: Integer; AFill, ABorder, ABack: TColor;
-  AStyle: TCssBorderStyle): Boolean;
-begin
-  Result :=
-    (Width = AW) and (Height = AH) and
-    (RTL = ARTL) and (RTR = ARTR) and (RBR = ARBR) and (RBL = ARBL) and
-    (BorderWidth = ABW) and
-    (FillColor = AFill) and (BorderColor = ABorder) and
-    (BackColor = ABack) and (BorderStyle = AStyle);
-end;
-
 constructor TCssRoundedRectCache.Create;
 begin
   inherited;
-  FEntries := TList.Create;
+  FEntries := TStringList.Create;
+  FEntries.CaseSensitive := True;
+  FEntries.Sorted := False;
 end;
 
 destructor TCssRoundedRectCache.Destroy;
@@ -2552,65 +2871,111 @@ var
   I: Integer;
 begin
   for I := 0 to FEntries.Count - 1 do
-    TCssRoundedRectCacheEntry(FEntries[I]).Free;
+    TCssRoundedRectCacheEntry(FEntries.Objects[I]).Free;
+
   FEntries.Clear;
 end;
 
-function TCssRoundedRectCache.IndexOfEntry(AW, AH, ARTL, ARTR, ARBR, ARBL,
-  ABW: Integer; AFill, ABorder, ABack: TColor;
-  AStyle: TCssBorderStyle): Integer;
+function BuildRoundedRectSignature(
+  AW, AH: Integer;
+  const AParams: TCssRoundedBoxParams): string;
 var
+  SB: TStringBuilder;
   I: Integer;
 begin
-  for I := 0 to FEntries.Count - 1 do
-    if TCssRoundedRectCacheEntry(FEntries[I]).Matches(
-         AW, AH, ARTL, ARTR, ARBR, ARBL, ABW, AFill, ABorder, ABack, AStyle) then
-      Exit(I);
-  Result := -1;
+  SB := TStringBuilder.Create;
+  try
+    SB.Append(AW).Append(',').Append(AH).Append('|');
+    SB.Append(AParams.Radii.TL).Append(',')
+      .Append(AParams.Radii.TR).Append(',')
+      .Append(AParams.Radii.BR).Append(',')
+      .Append(AParams.Radii.BL).Append('|');
+
+    SB.Append(AParams.BorderWidth).Append(',')
+      .Append(Ord(AParams.BorderStyle)).Append('|');
+
+    SB.Append(IntToStr(AParams.FillColor)).Append(',')
+      .Append(IntToStr(AParams.BorderColor)).Append('|');
+
+    SB.Append(Ord(AParams.Shadow.Used)).Append(';');
+    if AParams.Shadow.Used then
+      SB.Append(AParams.Shadow.OffsetX).Append(',')
+        .Append(AParams.Shadow.OffsetY).Append(',')
+        .Append(AParams.Shadow.Blur).Append(',')
+        .Append(AParams.Shadow.Spread).Append(',')
+        .Append(IntToStr(AParams.Shadow.Color));
+
+    SB.Append('|').Append(Ord(AParams.HasGradient)).Append(';');
+    if AParams.HasGradient and (AParams.Gradient.Kind <> cgkNone) then
+    begin
+      SB.Append(Ord(AParams.Gradient.Kind)).Append(',');
+      SB.Append(FormatFloat('0.0000', AParams.Gradient.Angle)).Append(';');
+
+      for I := 0 to High(AParams.Gradient.Stops) do
+        SB.Append(FormatFloat('0.0000', AParams.Gradient.Stops[I].Position))
+          .Append(':')
+          .Append(IntToStr(AParams.Gradient.Stops[I].Color))
+          .Append(';');
+    end;
+
+    Result := SB.ToString;
+  finally
+    SB.Free;
+  end;
 end;
 
-function TCssRoundedRectCache.GetBitmap(AW, AH, ARTL, ARTR, ARBR, ARBL,
-  ABW: Integer; AFill, ABorder, ABack: TColor;
-  AStyle: TCssBorderStyle): TBitmap;
+procedure ComputeShadowPad(
+  const AShadow: TCssBoxShadow;
+  out APadX, APadY: Integer);
+begin
+  if AShadow.Used then
+  begin
+    APadX := Abs(AShadow.OffsetX) + AShadow.Blur + AShadow.Spread + 2;
+    APadY := Abs(AShadow.OffsetY) + AShadow.Blur + AShadow.Spread + 2;
+  end
+  else
+  begin
+    APadX := 0;
+    APadY := 0;
+  end;
+end;
+
+function TCssRoundedRectCache.GetBitmap(
+  AW, AH: Integer;
+  const AParams: TCssRoundedBoxParams): TBitmap;
 var
-  Idx: Integer;
+  Sig: string;
+  Idx, PadX, PadY: Integer;
   Entry: TCssRoundedRectCacheEntry;
 begin
-  Idx := IndexOfEntry(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW,
-    AFill, ABorder, ABack, AStyle);
+  Sig := BuildRoundedRectSignature(AW, AH, AParams);
+
+  Idx := FEntries.IndexOf(Sig);
 
   if Idx >= 0 then
   begin
-    Entry := TCssRoundedRectCacheEntry(FEntries[Idx]);
-    // Move to most-recently-used
+    Entry := TCssRoundedRectCacheEntry(FEntries.Objects[Idx]);
+
     FEntries.Delete(Idx);
-    FEntries.Add(Entry);
+    FEntries.AddObject(Sig, Entry);
+
     Exit(Entry.Bitmap);
   end;
 
   while FEntries.Count >= CSS_ROUNDED_RECT_CACHE_LIMIT do
   begin
-    TCssRoundedRectCacheEntry(FEntries[0]).Free;
+    TCssRoundedRectCacheEntry(FEntries.Objects[0]).Free;
     FEntries.Delete(0);
   end;
 
+  ComputeShadowPad(AParams.Shadow, PadX, PadY);
+
   Entry := TCssRoundedRectCacheEntry.Create;
-  Entry.Width := AW;
-  Entry.Height := AH;
-  Entry.RTL := ARTL;
-  Entry.RTR := ARTR;
-  Entry.RBR := ARBR;
-  Entry.RBL := ARBL;
-  Entry.BorderWidth := ABW;
-  Entry.FillColor := AFill;
-  Entry.BorderColor := ABorder;
-  Entry.BackColor := ABack;
-  Entry.BorderStyle := AStyle;
+  Entry.Signature := Sig;
 
-  RenderRoundedRectToBitmap(Entry.Bitmap, AW, AH,
-    ARTL, ARTR, ARBR, ARBL, ABW, AFill, ABorder, ABack, AStyle);
+  RenderRoundedRectToBitmap(Entry.Bitmap, AW, AH, AParams, PadX, PadY);
 
-  FEntries.Add(Entry);
+  FEntries.AddObject(Sig, Entry);
   Result := Entry.Bitmap;
 end;
 
@@ -3076,6 +3441,17 @@ begin
 
   FFocusColor := clDefault;
   FFocusColorSet := False;
+
+  FBackgroundGradient.Kind := cgkNone;
+  SetLength(FBackgroundGradient.Stops, 0);
+
+  FBoxShadow.OffsetX := 0;
+  FBoxShadow.OffsetY := 0;
+  FBoxShadow.Blur := 0;
+  FBoxShadow.Spread := 0;
+  FBoxShadow.Color := clBlack;
+  FBoxShadow.HasColor := False;
+  FBoxShadow.Used := False;
 
   FHoverLinkId := 0;
   FLinkAreas := nil;
@@ -3863,6 +4239,19 @@ begin
       FFocusColor := LColor;
       FFocusColorSet := True;
     end;
+  end
+  else if AName = 'box-shadow' then
+    ParseBoxShadow(AValue)
+  else if AName = 'background-image' then
+    ParseBackgroundGradient(AValue)
+  else if AName = 'background' then
+  begin
+    // Если задан градиент — парсим как градиент, иначе как цвет.
+    if (Pos('linear-gradient(', LowerCase(AValue)) = 1) or
+       (Pos('radial-gradient(', LowerCase(AValue)) = 1) then
+      ParseBackgroundGradient(AValue)
+    else
+      ParseBackground(AValue);
   end;
 end;
 
@@ -4328,6 +4717,245 @@ begin
   end;
 end;
 
+procedure TCssStyledControl.ParseBoxShadow(const AValue: string);
+var
+  Tokens: TStringList;
+  S: string;
+  P, I, Px: Integer;
+  C: TColor;
+  FoundX, FoundY, FoundBlur, FoundSpread: Boolean;
+  InsetSeen: Boolean;
+begin
+  FBoxShadow.OffsetX := 0;
+  FBoxShadow.OffsetY := 0;
+  FBoxShadow.Blur := 0;
+  FBoxShadow.Spread := 0;
+  FBoxShadow.Color := clBlack;
+  FBoxShadow.HasColor := False;
+  FBoxShadow.Used := False;
+
+  S := Trim(AValue);
+  if (S = '') or SameText(S, 'none') then
+    Exit;
+
+  P := 1;
+  InsetSeen := False;
+  while P <= Length(S) do
+  begin
+    if S[P] = ',' then
+    begin
+      S := Copy(S, 1, P - 1);
+      Break;
+    end;
+    Inc(P);
+  end;
+
+  Tokens := TStringList.Create;
+  try
+    SplitBySpaces(Trim(S), Tokens);
+
+    FoundX := False;
+    FoundY := False;
+    FoundBlur := False;
+    FoundSpread := False;
+
+    for I := 0 to Tokens.Count - 1 do
+    begin
+      if SameText(Tokens[I], 'inset') then
+      begin
+        InsetSeen := True;
+        Continue;
+      end;
+
+      if ParseColor(Tokens[I], C) then
+      begin
+        FBoxShadow.Color := C;
+        FBoxShadow.HasColor := True;
+        Continue;
+      end;
+
+      if ParseLengthPx(Tokens[I], Px) then
+      begin
+        if not FoundX then
+        begin
+          FBoxShadow.OffsetX := Px;
+          FoundX := True;
+        end
+        else if not FoundY then
+        begin
+          FBoxShadow.OffsetY := Px;
+          FoundY := True;
+        end
+        else if not FoundBlur then
+        begin
+          FBoxShadow.Blur := Px;
+          FoundBlur := True;
+        end
+        else if not FoundSpread then
+        begin
+          FBoxShadow.Spread := Px;
+          FoundSpread := True;
+        end;
+      end;
+    end;
+
+    if not FBoxShadow.HasColor then
+      FBoxShadow.Color := RGBToColor(0, 0, 0);
+
+    FBoxShadow.Used :=
+      (not InsetSeen) and
+      (FoundX or FoundY or FoundBlur or FoundSpread);
+  finally
+    Tokens.Free;
+  end;
+end;
+
+procedure TCssStyledControl.ParseBackgroundGradient(const AValue: string);
+var
+  S, Inner, FirstArg, Side, Arg, Token: string;
+  OpenP, CloseP, Depth, I, J: Integer;
+  Args, Tokens: TStringList;
+  Kind: TCssGradientKind;
+  Angle, AngleDeg: Double;
+  StopStart, StopCount: Integer;
+  StopList: array of TCssGradientStop;
+  Stop: TCssGradientStop;
+  Col: TColor;
+  PosPct: Double;
+  Found: Boolean;
+begin
+  FBackgroundGradient.Kind := cgkNone;
+  SetLength(FBackgroundGradient.Stops, 0);
+
+  S := Trim(AValue);
+  if S = '' then Exit;
+
+  if Pos('linear-gradient(', LowerCase(S)) = 1 then
+    Kind := cgkLinear
+  else if Pos('radial-gradient(', LowerCase(S)) = 1 then
+    Kind := cgkRadial
+  else
+    Exit;
+
+  OpenP := Pos('(', S);
+  if OpenP = 0 then Exit;
+
+  Depth := 1;
+  I := OpenP + 1;
+  CloseP := 0;
+  while (I <= Length(S)) and (Depth > 0) do
+  begin
+    if S[I] = '(' then Inc(Depth)
+    else if S[I] = ')' then
+    begin
+      Dec(Depth);
+      if Depth = 0 then
+      begin
+        CloseP := I;
+        Break;
+      end;
+    end;
+    Inc(I);
+  end;
+
+  if CloseP = 0 then Exit;
+
+  Inner := Copy(S, OpenP + 1, CloseP - OpenP - 1);
+
+  Args := TStringList.Create;
+  Tokens := TStringList.Create;
+  try
+    SplitByTopCommas(Inner, Args);
+
+    Angle := Pi;
+    StopStart := 0;
+
+    if Args.Count > 0 then
+    begin
+      FirstArg := Trim(Args[0]);
+
+      if Kind = cgkLinear then
+      begin
+        if TryParseGradientAngle(FirstArg, AngleDeg) then
+        begin
+          Angle := AngleDeg * Pi / 180;
+          StopStart := 1;
+        end
+        else if Pos('to ', LowerCase(FirstArg)) = 1 then
+        begin
+          Side := LowerCase(Trim(Copy(FirstArg, 4, MaxInt)));
+
+          if Side = 'right' then AngleDeg := 90
+          else if Side = 'left' then AngleDeg := 270
+          else if Side = 'top' then AngleDeg := 0
+          else if Side = 'bottom' then AngleDeg := 180
+          else if Side = 'top right' then AngleDeg := 45
+          else if Side = 'top left' then AngleDeg := 315
+          else if Side = 'bottom right' then AngleDeg := 135
+          else if Side = 'bottom left' then AngleDeg := 225
+          else AngleDeg := 180;
+
+          Angle := AngleDeg * Pi / 180;
+          StopStart := 1;
+        end;
+      end
+      else
+      begin
+        if not ParseColor(FirstArg, Col) then
+          StopStart := 1;
+      end;
+    end;
+
+    StopCount := 0;
+    SetLength(StopList, Args.Count - StopStart);
+
+    for I := StopStart to Args.Count - 1 do
+    begin
+      Arg := Trim(Args[I]);
+      if Arg = '' then Continue;
+
+      Tokens.Clear;
+      SplitBySpaces(Arg, Tokens);
+
+      Stop.Position := -1;
+      Stop.Color := clBlack;
+
+      for J := 0 to Tokens.Count - 1 do
+      begin
+        Token := Tokens[J];
+
+        if ParseColor(Token, Col) then
+          Stop.Color := Col
+        else if TryParseGradientPosition(Token, PosPct) then
+          Stop.Position := PosPct;
+      end;
+
+      if StopCount >= Length(StopList) then
+        SetLength(StopList, StopCount + 1);
+
+      StopList[StopCount] := Stop;
+      Inc(StopCount);
+    end;
+
+    SetLength(StopList, StopCount);
+
+    if StopCount = 0 then
+      Exit;
+
+    EnsureStopPositions(StopList);
+
+    FBackgroundGradient.Kind := Kind;
+    FBackgroundGradient.Angle := Angle;
+    SetLength(FBackgroundGradient.Stops, StopCount);
+
+    for I := 0 to StopCount - 1 do
+      FBackgroundGradient.Stops[I] := StopList[I];
+  finally
+    Tokens.Free;
+    Args.Free;
+  end;
+end;
+
 function TCssStyledControl.GetParentBackgroundColor: TColor;
 var
   C: TControl;
@@ -4353,14 +4981,9 @@ end;
 procedure TCssStyledControl.DrawRoundedRectAA(
   ACanvas: TCanvas;
   const ARect: TRect;
-  const ARadii: TCssCornerRadii;
-  AFillColor: TColor;
-  ABorderColor: TColor;
-  ABorderWidth: Integer;
-  ABorderStyle: TCssBorderStyle);
+  const AParams: TCssRoundedBoxParams);
 var
-  W, H: Integer;
-  BackColor: TColor;
+  W, H, PadX, PadY: Integer;
   Bmp: TBitmap;
 begin
   if ACanvas = nil then Exit;
@@ -4371,21 +4994,13 @@ begin
   if (W <= 0) or (H <= 0) then
     Exit;
 
-  if (ARadii.TL <= 0) and (ARadii.TR <= 0) and
-     (ARadii.BR <= 0) and (ARadii.BL <= 0) then
-    Exit;
-
-  BackColor := GetParentBackgroundColor;
-
   EnsureRoundedRectCache;
-  Bmp := GRoundedRectCache.GetBitmap(
-    W, H,
-    ARadii.TL, ARadii.TR, ARadii.BR, ARadii.BL,
-    ABorderWidth,
-    AFillColor, ABorderColor, BackColor,
-    ABorderStyle);
 
-  ACanvas.Draw(ARect.Left, ARect.Top, Bmp);
+  Bmp := GRoundedRectCache.GetBitmap(W, H, AParams);
+
+  ComputeShadowPad(AParams.Shadow, PadX, PadY);
+
+  ACanvas.Draw(ARect.Left - PadX, ARect.Top - PadY, Bmp);
 end;
 
 function TCssStyledControl.GetCssBorderRadii: TCssCornerRadii;
@@ -4394,6 +5009,16 @@ begin
   Result.TR := FBorderRadiusTR;
   Result.BR := FBorderRadiusBR;
   Result.BL := FBorderRadiusBL;
+end;
+
+function TCssStyledControl.GetCssGradient : TCssGradient;
+begin
+  Result := FBackgroundGradient;
+end;
+
+function TCssStyledControl.GetCssBoxShadow : TCssBoxShadow;
+begin
+  Result := FBoxShadow;
 end;
 
 procedure TCssStyledControl.ParseTextShadow(const AValue: string);
@@ -5515,36 +6140,41 @@ begin
   ACanvas.TextRect(ARect, ARect.Left, ARect.Top, AText, TS);
 end;
 
-procedure TCssStyledControl.DrawStyledBackground(ACanvas: TCanvas; const ARect: TRect);
+procedure TCssStyledControl.DrawStyledBackground(
+  ACanvas: TCanvas; const ARect: TRect);
 var
   BG: TColor;
   BorderVisible: Boolean;
   DrawR: TRect;
   Radii: TCssCornerRadii;
+  Params: TCssRoundedBoxParams;
+  NeedAA: Boolean;
 begin
   if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
     Exit;
 
   BG := GetCssBackgroundColor;
   BorderVisible := (FBorderStyle <> cbsNone) and (FBorderWidth > 0);
-
   Radii := GetCssBorderRadii;
 
-  if (Radii.TL > 0) or (Radii.TR > 0) or
-     (Radii.BR > 0) or (Radii.BL > 0) then
+  NeedAA :=
+    (Radii.TL > 0) or (Radii.TR > 0) or (Radii.BR > 0) or (Radii.BL > 0) or
+    FBoxShadow.Used or
+    (FBackgroundGradient.Kind <> cgkNone);
+
+  if NeedAA then
   begin
-    if (BG <> clNone) or BorderVisible then
-    begin
-      DrawRoundedRectAA(
-        ACanvas,
-        ARect,
-        Radii,
-        BG,
-        ApplyOpacity(FBorderColor),
-        FBorderWidth,
-        FBorderStyle
-      );
-    end;
+    Params.Radii := Radii;
+    Params.FillColor := BG;
+    Params.BorderColor := ApplyOpacity(FBorderColor);
+    Params.BorderWidth := FBorderWidth;
+    Params.BorderStyle := FBorderStyle;
+    Params.Shadow := FBoxShadow;
+    Params.Gradient := FBackgroundGradient;
+    Params.HasGradient := FBackgroundGradient.Kind <> cgkNone;
+    Params.BackColor := GetParentBackgroundColor;
+
+    DrawRoundedRectAA(ACanvas, ARect, Params);
   end
   else
   begin
@@ -6262,6 +6892,8 @@ var
   BG: TColor;
   BorderVisible: Boolean;
   Radii: TCssCornerRadii;
+  Params: TCssRoundedBoxParams;
+  NeedAA: Boolean;
 begin
   R := ClientRect;
 
@@ -6282,24 +6914,27 @@ begin
   BorderVisible := (FBorderStyle <> cbsNone) and (FBorderWidth > 0);
   Radii := GetCssBorderRadii;
 
-  if (Radii.TL > 0) or (Radii.TR > 0) or
-     (Radii.BR > 0) or (Radii.BL > 0) then
-  begin
-    if (BG <> clNone) or BorderVisible then
-    begin
-      DrawR := R;
-      DrawR.Top := DrawR.Top + GetBorderTopOffset;
+  NeedAA :=
+    (Radii.TL > 0) or (Radii.TR > 0) or (Radii.BR > 0) or (Radii.BL > 0) or
+    FBoxShadow.Used or
+    (FBackgroundGradient.Kind <> cgkNone);
 
-      DrawRoundedRectAA(
-        Canvas,
-        DrawR,
-        Radii,
-        BG,
-        ApplyOpacity(FBorderColor),
-        FBorderWidth,
-        FBorderStyle
-      );
-    end;
+  if NeedAA then
+  begin
+    DrawR := R;
+    DrawR.Top := DrawR.Top + GetBorderTopOffset;
+
+    Params.Radii := Radii;
+    Params.FillColor := BG;
+    Params.BorderColor := ApplyOpacity(FBorderColor);
+    Params.BorderWidth := FBorderWidth;
+    Params.BorderStyle := FBorderStyle;
+    Params.Shadow := FBoxShadow;
+    Params.Gradient := FBackgroundGradient;
+    Params.HasGradient := FBackgroundGradient.Kind <> cgkNone;
+    Params.BackColor := GetParentBackgroundColor;
+
+    DrawRoundedRectAA(Canvas, DrawR, Params);
   end
   else
   begin
@@ -6313,7 +6948,6 @@ begin
     if BorderVisible then
     begin
       Canvas.Brush.Style := bsClear;
-
       Canvas.Pen.Width := FBorderWidth;
       Canvas.Pen.Color := ApplyOpacity(FBorderColor);
       Canvas.Pen.Style := GetBorderPenStyle;
@@ -7196,6 +7830,8 @@ var
 begin
   if FLoading or (csDestroying in ComponentState) then
     Exit;
+
+  InvalidateRoundedRectCache;
 
   for I := FControls.Count - 1 downto 0 do
     TCssStyledControl(FControls[I]).ProviderStyleChanged;
