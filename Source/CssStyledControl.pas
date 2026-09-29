@@ -105,6 +105,10 @@ type
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
   end;
 
+  TCssCornerRadii = record
+    TL, TR, BR, BL: Integer;
+  end;
+
   TCssStyledControl = class(TCustomControl)
   private
     FCaption: TCaption;
@@ -184,15 +188,19 @@ type
     FFocusColor: TColor;
     FFocusColorSet: Boolean;
 
+    FBorderRadiusTL, FBorderRadiusTR, FBorderRadiusBR, FBorderRadiusBL: Integer;
+
     { AA rounded rect }
     procedure DrawRoundedRectAA(
       ACanvas: TCanvas;
       const ARect: TRect;
-      ARadius: Integer;
+      const ARadii: TCssCornerRadii;
       AFillColor: TColor;
       ABorderColor: TColor;
-      ABorderWidth: Integer);
+      ABorderWidth: Integer;
+      ABorderStyle: TCssBorderStyle);
     function GetParentBackgroundColor: TColor;
+    function GetCssBorderRadii: TCssCornerRadii;
 
     { CSS parsing helpers }
     procedure ParseTextShadow(const AValue: string);
@@ -202,6 +210,7 @@ type
     procedure ParseFontSize(const AValue: string);
     procedure ParseFontFamily(const AValue: string);
     procedure ParseBackground(const AValue: string);
+    procedure ParseBorderRadius(const AValue: string);
 
     function TryNamedColor(const AName: string; out AColor: TColor): Boolean;
     function CssClassContains(const AClass: string): Boolean;
@@ -2262,23 +2271,79 @@ begin
   else Result := AValue;
 end;
 
+procedure ClampCornerRadii(
+  var RTL, RTR, RBR, RBL: Double;
+  W, H: Double);
+var
+  F, F1, F2, F3, F4: Double;
+begin
+  F1 := 1.0; F2 := 1.0; F3 := 1.0; F4 := 1.0;
+
+  if (RTL + RTR) > 0 then F1 := W / (RTL + RTR);
+  if (RBR + RBL) > 0 then F2 := W / (RBR + RBL);
+  if (RTL + RBL) > 0 then F3 := H / (RTL + RBL);
+  if (RTR + RBR) > 0 then F4 := H / (RTR + RBR);
+
+  F := F1;
+  if F2 < F then F := F2;
+  if F3 < F then F := F3;
+  if F4 < F then F := F4;
+  if F > 1.0 then F := 1.0;
+  if F < 0.0 then F := 0.0;
+
+  RTL := RTL * F; RTR := RTR * F;
+  RBR := RBR * F; RBL := RBL * F;
+end;
+
+function SdRoundBoxPC(
+  PX, PY, HW, HH, RTL, RTR, RBR, RBL: Double): Double;
+var
+  R, QX, QY: Double;
+begin
+  if (PX >= 0) and (PY < 0) then R := RTR
+  else if (PX < 0) and (PY < 0) then R := RTL
+  else if (PX < 0) and (PY >= 0) then R := RBL
+  else R := RBR;
+
+  QX := Abs(PX) - HW + R;
+  QY := Abs(PY) - HH + R;
+
+  Result :=
+    Min(Max(QX, QY), 0.0) +
+    Sqrt(Sqr(Max(QX, 0.0)) + Sqr(Max(QY, 0.0))) - R;
+end;
+
+function PerimeterParam(PX, PY, HW, HH: Double): Double;
+var
+  Angle: Double;
+begin
+  if (HW <= 0) or (HH <= 0) then
+    Exit(0);
+  Angle := ArcTan2(PY / HH, PX / HW);  // -Pi..Pi
+  Result := (Angle + Pi) / (2 * Pi);   // 0..1
+end;
+
 procedure RenderRoundedRectToBitmap(
   ABitmap: TBitmap;
-  AW, AH, ARadius, ABorderWidth: Integer;
-  AFillColor, ABorderColor, ABackColor: TColor);
+  AW, AH, ARTL, ARTR, ARBR, ARBL, ABorderWidth: Integer;
+  AFillColor, ABorderColor, ABackColor: TColor;
+  ABorderStyle: TCssBorderStyle);
 var
   Img: TLazIntfImage;
   X, Y: Integer;
   BgR, BgG, BgB: Byte;
   FillR, FillG, FillB: Byte;
   BorderR, BorderG, BorderB: Byte;
-  HasFill, HasBorder: Boolean;
+  HasFill, HasBorder, IsDashed, IsDotted: Boolean;
   Pixel: TFPColor;
-  HW, HH, R, BW: Double;
+  HW, HH, RTL, RTR, RBR, RBL, BW: Double;
   PX, PY, SDF: Double;
   OuterCov, InnerCov, BorderCov: Double;
   BgRGB, FillRGB, BorderRGB: TColor;
   CompR, CompG, CompB: Double;
+  Param, DashPhase: Double;
+  DashMask: Double;
+  Perim, DashLen: Double;
 begin
   if (AW <= 0) or (AH <= 0) or (ABitmap = nil) then
     Exit;
@@ -2289,6 +2354,9 @@ begin
   HasFill   := (AFillColor <> clNone) and (AFillColor <> clDefault);
   HasBorder := (ABorderWidth > 0) and
                (ABorderColor <> clNone) and (ABorderColor <> clDefault);
+
+  IsDashed := ABorderStyle = cbsDashed;
+  IsDotted := ABorderStyle = cbsDotted;
 
   BgRGB := ColorToRGB(ABackColor);
   BgR := Byte(BgRGB and $FF);
@@ -2323,13 +2391,18 @@ begin
   try
     HW := AW / 2.0;
     HH := AH / 2.0;
-    R  := ARadius;
-    if R > HW then R := HW;
-    if R > HH then R := HH;
-    if R < 0  then R := 0;
+
+    RTL := ARTL; RTR := ARTR; RBR := ARBR; RBL := ARBL;
+    ClampCornerRadii(RTL, RTR, RBR, RBL, AW, AH);
 
     BW := ABorderWidth;
     if BW < 0 then BW := 0;
+
+    Perim := 2 * (AW + AH);
+    if IsDashed then
+      DashLen := 8.0
+    else
+      DashLen := 4.0;
 
     for Y := 0 to AH - 1 do
     begin
@@ -2338,7 +2411,7 @@ begin
         PX := X + 0.5 - HW;
         PY := Y + 0.5 - HH;
 
-        SDF := SdRoundBox(PX, PY, HW, HH, R);
+        SDF := SdRoundBoxPC(PX, PY, HW, HH, RTL, RTR, RBR, RBL);
 
         OuterCov := ClampD(0.5 - SDF, 0.0, 1.0);
 
@@ -2351,23 +2424,42 @@ begin
         if BorderCov < 0 then BorderCov := 0;
         if BorderCov > 1 then BorderCov := 1;
 
-        // Композиция: фон → заливка → граница
-        CompR := BgR;
-        CompG := BgG;
-        CompB := BgB;
+        if HasBorder and (IsDashed or IsDotted) and (BorderCov > 0) then
+        begin
+          Param := PerimeterParam(PX, PY, HW, HH);
+
+          DashPhase := Param * (Perim / DashLen);
+
+          if IsDashed then
+          begin
+            DashMask := Frac(DashPhase);
+            if DashMask < 0.6 then DashMask := 1.0 else DashMask := 0.0;
+          end
+          else
+          begin
+            DashMask := Frac(DashPhase);
+            if DashMask < 0.3 then DashMask := 1.0 else DashMask := 0.0;
+          end;
+
+          BorderCov := BorderCov * DashMask;
+        end;
+
+        CompR := BgR * (1.0 - OuterCov);
+        CompG := BgG * (1.0 - OuterCov);
+        CompB := BgB * (1.0 - OuterCov);
 
         if HasFill then
         begin
-          CompR := CompR * (1 - InnerCov) + FillR * InnerCov;
-          CompG := CompG * (1 - InnerCov) + FillG * InnerCov;
-          CompB := CompB * (1 - InnerCov) + FillB * InnerCov;
+          CompR := CompR + FillR * InnerCov;
+          CompG := CompG + FillG * InnerCov;
+          CompB := CompB + FillB * InnerCov;
         end;
 
         if HasBorder then
         begin
-          CompR := CompR * (1 - BorderCov) + BorderR * BorderCov;
-          CompG := CompG * (1 - BorderCov) + BorderG * BorderCov;
-          CompB := CompB * (1 - BorderCov) + BorderB * BorderCov;
+          CompR := CompR + BorderR * BorderCov;
+          CompG := CompG + BorderG * BorderCov;
+          CompB := CompB + BorderB * BorderCov;
         end;
 
         Pixel.Red   := Round(ClampD(CompR, 0, 255)) * 257;
@@ -2386,34 +2478,40 @@ end;
 
 type
   TCssRoundedRectCacheEntry = class
-    Width, Height, Radius, BorderWidth: Integer;
+    Width, Height: Integer;
+    RTL, RTR, RBR, RBL: Integer;
+    BorderWidth: Integer;
     FillColor, BorderColor, BackColor: TColor;
+    BorderStyle: TCssBorderStyle;
     Bitmap: TBitmap;
     constructor Create;
     destructor Destroy; override;
-    function Matches(AW, AH, ARadius, ABW: Integer;
-      AFill, ABorder, ABack: TColor): Boolean;
+    function Matches(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW: Integer;
+      AFill, ABorder, ABack: TColor;
+      AStyle: TCssBorderStyle): Boolean;
   end;
 
   TCssRoundedRectCache = class
   private
     FEntries: TList;
-    function IndexOfEntry(AW, AH, ARadius, ABW: Integer;
-      AFill, ABorder, ABack: TColor): Integer;
+    function IndexOfEntry(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW: Integer;
+      AFill, ABorder, ABack: TColor;
+      AStyle: TCssBorderStyle): Integer;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
-    function GetBitmap(AW, AH, ARadius, ABW: Integer;
-      AFill, ABorder, ABack: TColor): TBitmap;
+    function GetBitmap(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW: Integer;
+      AFill, ABorder, ABack: TColor;
+      AStyle: TCssBorderStyle): TBitmap;
   end;
 
 const
-  CSS_ROUNDED_RECT_CACHE_LIMIT = 64;
+  CSS_ROUNDED_RECT_CACHE_LIMIT = 96;
 
 constructor TCssRoundedRectCacheEntry.Create;
 begin
-  inherited Create;
+  inherited;
   Bitmap := TBitmap.Create;
   Bitmap.PixelFormat := pf32bit;
 end;
@@ -2421,22 +2519,24 @@ end;
 destructor TCssRoundedRectCacheEntry.Destroy;
 begin
   Bitmap.Free;
-  inherited Destroy;
+  inherited;
 end;
 
-function TCssRoundedRectCacheEntry.Matches(AW, AH, ARadius, ABW: Integer;
-  AFill, ABorder, ABack: TColor): Boolean;
+function TCssRoundedRectCacheEntry.Matches(AW, AH, ARTL, ARTR, ARBR, ARBL,
+  ABW: Integer; AFill, ABorder, ABack: TColor;
+  AStyle: TCssBorderStyle): Boolean;
 begin
   Result :=
     (Width = AW) and (Height = AH) and
-    (Radius = ARadius) and (BorderWidth = ABW) and
+    (RTL = ARTL) and (RTR = ARTR) and (RBR = ARBR) and (RBL = ARBL) and
+    (BorderWidth = ABW) and
     (FillColor = AFill) and (BorderColor = ABorder) and
-    (BackColor = ABack);
+    (BackColor = ABack) and (BorderStyle = AStyle);
 end;
 
 constructor TCssRoundedRectCache.Create;
 begin
-  inherited Create;
+  inherited;
   FEntries := TList.Create;
 end;
 
@@ -2444,7 +2544,7 @@ destructor TCssRoundedRectCache.Destroy;
 begin
   Clear;
   FEntries.Free;
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TCssRoundedRectCache.Clear;
@@ -2456,48 +2556,59 @@ begin
   FEntries.Clear;
 end;
 
-function TCssRoundedRectCache.IndexOfEntry(AW, AH, ARadius, ABW: Integer;
-  AFill, ABorder, ABack: TColor): Integer;
+function TCssRoundedRectCache.IndexOfEntry(AW, AH, ARTL, ARTR, ARBR, ARBL,
+  ABW: Integer; AFill, ABorder, ABack: TColor;
+  AStyle: TCssBorderStyle): Integer;
 var
   I: Integer;
 begin
   for I := 0 to FEntries.Count - 1 do
     if TCssRoundedRectCacheEntry(FEntries[I]).Matches(
-         AW, AH, ARadius, ABW, AFill, ABorder, ABack) then
+         AW, AH, ARTL, ARTR, ARBR, ARBL, ABW, AFill, ABorder, ABack, AStyle) then
       Exit(I);
   Result := -1;
 end;
 
-function TCssRoundedRectCache.GetBitmap(AW, AH, ARadius, ABW: Integer;
-  AFill, ABorder, ABack: TColor): TBitmap;
+function TCssRoundedRectCache.GetBitmap(AW, AH, ARTL, ARTR, ARBR, ARBL,
+  ABW: Integer; AFill, ABorder, ABack: TColor;
+  AStyle: TCssBorderStyle): TBitmap;
 var
   Idx: Integer;
   Entry: TCssRoundedRectCacheEntry;
 begin
-  Idx := IndexOfEntry(AW, AH, ARadius, ABW, AFill, ABorder, ABack);
+  Idx := IndexOfEntry(AW, AH, ARTL, ARTR, ARBR, ARBL, ABW,
+    AFill, ABorder, ABack, AStyle);
 
   if Idx >= 0 then
   begin
     Entry := TCssRoundedRectCacheEntry(FEntries[Idx]);
+    // Move to most-recently-used
     FEntries.Delete(Idx);
     FEntries.Add(Entry);
     Exit(Entry.Bitmap);
   end;
 
-  if FEntries.Count >= CSS_ROUNDED_RECT_CACHE_LIMIT then
-    Clear;
+  while FEntries.Count >= CSS_ROUNDED_RECT_CACHE_LIMIT do
+  begin
+    TCssRoundedRectCacheEntry(FEntries[0]).Free;
+    FEntries.Delete(0);
+  end;
 
   Entry := TCssRoundedRectCacheEntry.Create;
   Entry.Width := AW;
   Entry.Height := AH;
-  Entry.Radius := ARadius;
+  Entry.RTL := ARTL;
+  Entry.RTR := ARTR;
+  Entry.RBR := ARBR;
+  Entry.RBL := ARBL;
   Entry.BorderWidth := ABW;
   Entry.FillColor := AFill;
   Entry.BorderColor := ABorder;
   Entry.BackColor := ABack;
+  Entry.BorderStyle := AStyle;
 
-  RenderRoundedRectToBitmap(Entry.Bitmap, AW, AH, ARadius, ABW,
-    AFill, ABorder, ABack);
+  RenderRoundedRectToBitmap(Entry.Bitmap, AW, AH,
+    ARTL, ARTR, ARBR, ARBL, ABW, AFill, ABorder, ABack, AStyle);
 
   FEntries.Add(Entry);
   Result := Entry.Bitmap;
@@ -2510,6 +2621,12 @@ procedure EnsureRoundedRectCache;
 begin
   if GRoundedRectCache = nil then
     GRoundedRectCache := TCssRoundedRectCache.Create;
+end;
+
+procedure InvalidateRoundedRectCache;
+begin
+  if Assigned(GRoundedRectCache) then
+    GRoundedRectCache.Clear;
 end;
 
 { ============================================================ }
@@ -2915,7 +3032,10 @@ begin
   FBorderWidth := 0;
   FBorderColor := clBlack;
   FBorderStyle := cbsNone;
-  FBorderRadius := 0;
+  FBorderRadiusTL := 0;
+  FBorderRadiusTR := 0;
+  FBorderRadiusBR := 0;
+  FBorderRadiusBL := 0;
 
   FPadding := Rect(0, 0, 0, 0);
 
@@ -3350,7 +3470,7 @@ end;
 
 function TCssStyledControl.GetCssBorderRadius: Integer;
 begin
-  Result := FBorderRadius;
+  Result := FBorderRadiusTL;
 end;
 
 function TCssStyledControl.GetEffectiveTextColor: TColor;
@@ -3629,18 +3749,7 @@ begin
   end
   else if AName = 'border-radius' then
   begin
-    S := AValue;
-
-    P := Pos(' ', S);
-    if P > 0 then
-      S := Copy(S, 1, P - 1);
-
-    P := Pos('/', S);
-    if P > 0 then
-      S := Copy(S, 1, P - 1);
-
-    if ParseLengthPx(Trim(S), Px) then
-      FBorderRadius := Px;
+    ParseBorderRadius(AValue);
   end
   else if AName = 'padding' then
   begin
@@ -4158,6 +4267,67 @@ begin
   end;
 end;
 
+procedure TCssStyledControl.ParseBorderRadius(const AValue: string);
+var
+  Tokens: TStringList;
+  Parts: array[0..3] of Integer;
+  N, I, Px, P: Integer;
+  S: string;
+begin
+  S := AValue;
+  P := Pos('/', S);
+  if P > 0 then
+    S := Copy(S, 1, P - 1);
+
+  Tokens := TStringList.Create;
+  try
+    SplitBySpaces(S, Tokens);
+
+    N := 0;
+    for I := 0 to Tokens.Count - 1 do
+    begin
+      if ParseLengthPx(Tokens[I], Px) and (N < 4) then
+      begin
+        Parts[N] := Px;
+        Inc(N);
+      end;
+    end;
+
+    case N of
+      1:
+        begin
+          FBorderRadiusTL := Parts[0];
+          FBorderRadiusTR := Parts[0];
+          FBorderRadiusBR := Parts[0];
+          FBorderRadiusBL := Parts[0];
+        end;
+      2:
+        begin
+          FBorderRadiusTL := Parts[0];
+          FBorderRadiusTR := Parts[1];
+          FBorderRadiusBR := Parts[0];
+          FBorderRadiusBL := Parts[1];
+        end;
+      3:
+        begin
+          FBorderRadiusTL := Parts[0];
+          FBorderRadiusTR := Parts[1];
+          FBorderRadiusBR := Parts[2];
+          FBorderRadiusBL := Parts[1];
+        end;
+      4:
+        begin
+          FBorderRadiusTL := Parts[0];
+          FBorderRadiusTR := Parts[1];
+          FBorderRadiusBR := Parts[2];
+          FBorderRadiusBL := Parts[3];
+        end;
+    end;
+  finally
+    Tokens.Free;
+  end;
+end;
+
 function TCssStyledControl.GetParentBackgroundColor: TColor;
 var
   C: TControl;
@@ -4183,10 +4353,11 @@ end;
 procedure TCssStyledControl.DrawRoundedRectAA(
   ACanvas: TCanvas;
   const ARect: TRect;
-  ARadius: Integer;
+  const ARadii: TCssCornerRadii;
   AFillColor: TColor;
   ABorderColor: TColor;
-  ABorderWidth: Integer);
+  ABorderWidth: Integer;
+  ABorderStyle: TCssBorderStyle);
 var
   W, H: Integer;
   BackColor: TColor;
@@ -4197,17 +4368,32 @@ begin
   W := ARect.Right - ARect.Left;
   H := ARect.Bottom - ARect.Top;
 
-  if (W <= 0) or (H <= 0) or (ARadius <= 0) then
+  if (W <= 0) or (H <= 0) then
+    Exit;
+
+  if (ARadii.TL <= 0) and (ARadii.TR <= 0) and
+     (ARadii.BR <= 0) and (ARadii.BL <= 0) then
     Exit;
 
   BackColor := GetParentBackgroundColor;
 
   EnsureRoundedRectCache;
   Bmp := GRoundedRectCache.GetBitmap(
-    W, H, ARadius, ABorderWidth,
-    AFillColor, ABorderColor, BackColor);
+    W, H,
+    ARadii.TL, ARadii.TR, ARadii.BR, ARadii.BL,
+    ABorderWidth,
+    AFillColor, ABorderColor, BackColor,
+    ABorderStyle);
 
   ACanvas.Draw(ARect.Left, ARect.Top, Bmp);
+end;
+
+function TCssStyledControl.GetCssBorderRadii: TCssCornerRadii;
+begin
+  Result.TL := FBorderRadiusTL;
+  Result.TR := FBorderRadiusTR;
+  Result.BR := FBorderRadiusBR;
+  Result.BL := FBorderRadiusBL;
 end;
 
 procedure TCssStyledControl.ParseTextShadow(const AValue: string);
@@ -5334,6 +5520,7 @@ var
   BG: TColor;
   BorderVisible: Boolean;
   DrawR: TRect;
+  Radii: TCssCornerRadii;
 begin
   if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
     Exit;
@@ -5341,54 +5528,22 @@ begin
   BG := GetCssBackgroundColor;
   BorderVisible := (FBorderStyle <> cbsNone) and (FBorderWidth > 0);
 
-  if FBorderRadius > 0 then
+  Radii := GetCssBorderRadii;
+
+  if (Radii.TL > 0) or (Radii.TR > 0) or
+     (Radii.BR > 0) or (Radii.BL > 0) then
   begin
     if (BG <> clNone) or BorderVisible then
     begin
-      if (FBorderStyle = cbsSolid) or (FBorderStyle = cbsNone) then
-      begin
-        DrawRoundedRectAA(
-          ACanvas,
-          ARect,
-          FBorderRadius,
-          BG,
-          ApplyOpacity(FBorderColor),
-          FBorderWidth
-        );
-      end
-      else
-      begin
-        if BorderVisible then
-        begin
-          ACanvas.Pen.Width := FBorderWidth;
-          ACanvas.Pen.Color := ApplyOpacity(FBorderColor);
-          ACanvas.Pen.Style := GetBorderPenStyle;
-        end
-        else
-        begin
-          ACanvas.Pen.Width := 1;
-          ACanvas.Pen.Style := psSolid;
-          ACanvas.Pen.Color := BG;
-        end;
-
-        if BG = clNone then
-          ACanvas.Brush.Style := bsClear
-        else
-        begin
-          ACanvas.Brush.Style := bsSolid;
-          ACanvas.Brush.Color := BG;
-        end;
-
-        DrawR := ARect;
-
-        if BorderVisible and (FBorderWidth > 1) then
-          InflateRect(DrawR, -(FBorderWidth div 2), -(FBorderWidth div 2));
-
-        ACanvas.RoundRect(
-          DrawR.Left, DrawR.Top, DrawR.Right, DrawR.Bottom,
-          FBorderRadius, FBorderRadius
-        );
-      end;
+      DrawRoundedRectAA(
+        ACanvas,
+        ARect,
+        Radii,
+        BG,
+        ApplyOpacity(FBorderColor),
+        FBorderWidth,
+        FBorderStyle
+      );
     end;
   end
   else
@@ -6106,6 +6261,7 @@ var
   R, DrawR, TextR: TRect;
   BG: TColor;
   BorderVisible: Boolean;
+  Radii: TCssCornerRadii;
 begin
   R := ClientRect;
 
@@ -6124,56 +6280,25 @@ begin
     BG := clBtnFace;
 
   BorderVisible := (FBorderStyle <> cbsNone) and (FBorderWidth > 0);
+  Radii := GetCssBorderRadii;
 
-  if FBorderRadius > 0 then
+  if (Radii.TL > 0) or (Radii.TR > 0) or
+     (Radii.BR > 0) or (Radii.BL > 0) then
   begin
     if (BG <> clNone) or BorderVisible then
     begin
       DrawR := R;
       DrawR.Top := DrawR.Top + GetBorderTopOffset;
 
-      if (FBorderStyle = cbsSolid) or (FBorderStyle = cbsNone) then
-      begin
-        DrawRoundedRectAA(
-          Canvas,
-          DrawR,
-          FBorderRadius,
-          BG,
-          ApplyOpacity(FBorderColor),
-          FBorderWidth
-        );
-      end
-      else
-      begin
-        if BorderVisible then
-        begin
-          Canvas.Pen.Width := FBorderWidth;
-          Canvas.Pen.Color := ApplyOpacity(FBorderColor);
-          Canvas.Pen.Style := GetBorderPenStyle;
-        end
-        else
-        begin
-          Canvas.Pen.Width := 1;
-          Canvas.Pen.Style := psSolid;
-          Canvas.Pen.Color := BG;
-        end;
-
-        if BG = clNone then
-          Canvas.Brush.Style := bsClear
-        else
-        begin
-          Canvas.Brush.Style := bsSolid;
-          Canvas.Brush.Color := BG;
-        end;
-
-        if BorderVisible and (FBorderWidth > 1) then
-          InflateRect(DrawR, -(FBorderWidth div 2), -(FBorderWidth div 2));
-
-        Canvas.RoundRect(
-          DrawR.Left, DrawR.Top, DrawR.Right, DrawR.Bottom,
-          FBorderRadius, FBorderRadius
-        );
-      end;
+      DrawRoundedRectAA(
+        Canvas,
+        DrawR,
+        Radii,
+        BG,
+        ApplyOpacity(FBorderColor),
+        FBorderWidth,
+        FBorderStyle
+      );
     end;
   end
   else
