@@ -797,20 +797,20 @@ begin
   Result := GetCssTextColor;
 end;
 
-procedure TCssScrollBar.DrawArrowGlyph(const R: TRect; APart: TCssScrollPart;
-  AColor: TColor);
+procedure TCssScrollBar.DrawArrowGlyph(
+  const R: TRect; APart: TCssScrollPart; AColor: TColor);
 var
   CX, CY: Integer;
+  BG: TColor;
 begin
-  if (R.Right - R.Left < 5) or (R.Bottom - R.Top < 5) then
-    Exit;
+  if (R.Right - R.Left < 5) or (R.Bottom - R.Top < 5) then Exit;
 
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := AColor;
-
-  Canvas.Pen.Style := psSolid;
-  Canvas.Pen.Color := AColor;
-  Canvas.Pen.Width := 1;
+  if FActivePart = APart then
+    BG := GetThumbActiveBackground
+  else if FHoverPart = APart then
+    BG := GetThumbHoverBackground
+  else
+    BG := GetTrackBackground;
 
   CX := (R.Left + R.Right) div 2;
   CY := (R.Top + R.Bottom) div 2;
@@ -818,40 +818,32 @@ begin
   if FKind = sbVertical then
   begin
     if APart = cspArrowMinus then
-    begin
-      Canvas.Polygon([
+      DrawAntiAliasedTriangle(Canvas,
         Point(CX, R.Top + 3),
         Point(R.Left + 3, R.Bottom - 3),
-        Point(R.Right - 3, R.Bottom - 3)
-      ]);
-    end
+        Point(R.Right - 3, R.Bottom - 3),
+        AColor, BG)
     else if APart = cspArrowPlus then
-    begin
-      Canvas.Polygon([
+      DrawAntiAliasedTriangle(Canvas,
         Point(CX, R.Bottom - 3),
         Point(R.Left + 3, R.Top + 3),
-        Point(R.Right - 3, R.Top + 3)
-      ]);
-    end;
+        Point(R.Right - 3, R.Top + 3),
+        AColor, BG);
   end
   else
   begin
     if APart = cspArrowMinus then
-    begin
-      Canvas.Polygon([
+      DrawAntiAliasedTriangle(Canvas,
         Point(R.Left + 3, CY),
         Point(R.Right - 3, R.Top + 3),
-        Point(R.Right - 3, R.Bottom - 3)
-      ]);
-    end
+        Point(R.Right - 3, R.Bottom - 3),
+        AColor, BG)
     else if APart = cspArrowPlus then
-    begin
-      Canvas.Polygon([
+      DrawAntiAliasedTriangle(Canvas,
         Point(R.Right - 3, CY),
         Point(R.Left + 3, R.Top + 3),
-        Point(R.Left + 3, R.Bottom - 3)
-      ]);
-    end;
+        Point(R.Left + 3, R.Bottom - 3),
+        AColor, BG);
   end;
 end;
 
@@ -1303,22 +1295,20 @@ begin
 end;
 
 procedure TCssScrollBar.DrawArrowGlyphEx(
-  ACanvas: TCanvas;
-  const R: TRect;
-  APart: TCssScrollPart;
-  AColor: TColor);
+  ACanvas: TCanvas; const R: TRect;
+  APart: TCssScrollPart; AColor: TColor);
 var
   CX, CY: Integer;
+  BG: TColor;
 begin
-  if (R.Right - R.Left < 5) or (R.Bottom - R.Top < 5) then
-    Exit;
+  if (R.Right - R.Left < 5) or (R.Bottom - R.Top < 5) then Exit;
 
-  ACanvas.Brush.Style := bsSolid;
-  ACanvas.Brush.Color := AColor;
-
-  ACanvas.Pen.Style := psSolid;
-  ACanvas.Pen.Color := AColor;
-  ACanvas.Pen.Width := 1;
+  if FActivePart = APart then
+    BG := GetThumbActiveBackground
+  else if FHoverPart = APart then
+    BG := GetThumbHoverBackground
+  else
+    BG := GetTrackBackground;
 
   CX := (R.Left + R.Right) div 2;
   CY := (R.Top + R.Bottom) div 2;
@@ -1326,40 +1316,32 @@ begin
   if FKind = sbVertical then
   begin
     if APart = cspArrowMinus then
-    begin
-      ACanvas.Polygon([
+      DrawAntiAliasedTriangle(ACanvas,
         Point(CX, R.Top + 3),
         Point(R.Left + 3, R.Bottom - 3),
-        Point(R.Right - 3, R.Bottom - 3)
-      ]);
-    end
+        Point(R.Right - 3, R.Bottom - 3),
+        AColor, BG)
     else if APart = cspArrowPlus then
-    begin
-      ACanvas.Polygon([
+      DrawAntiAliasedTriangle(ACanvas,
         Point(CX, R.Bottom - 3),
         Point(R.Left + 3, R.Top + 3),
-        Point(R.Right - 3, R.Top + 3)
-      ]);
-    end;
+        Point(R.Right - 3, R.Top + 3),
+        AColor, BG);
   end
   else
   begin
     if APart = cspArrowMinus then
-    begin
-      ACanvas.Polygon([
+      DrawAntiAliasedTriangle(ACanvas,
         Point(R.Left + 3, CY),
         Point(R.Right - 3, R.Top + 3),
-        Point(R.Right - 3, R.Bottom - 3)
-      ]);
-    end
+        Point(R.Right - 3, R.Bottom - 3),
+        AColor, BG)
     else if APart = cspArrowPlus then
-    begin
-      ACanvas.Polygon([
+      DrawAntiAliasedTriangle(ACanvas,
         Point(R.Right - 3, CY),
         Point(R.Left + 3, R.Top + 3),
-        Point(R.Left + 3, R.Bottom - 3)
-      ]);
-    end;
+        Point(R.Left + 3, R.Bottom - 3),
+        AColor, BG);
   end;
 end;
 

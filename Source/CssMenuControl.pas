@@ -1274,37 +1274,48 @@ begin
 
   CloseChain;
 end;
-
 procedure TCssMenuPopupForm.DrawCheckMark(R: TRect; AColor: TColor);
 var
-  CX, CY: Integer;
+  CheckRect: TRect;
+  CheckSize: Integer;
 begin
-  CX := R.Left + 12;
-  CY := (R.Top + R.Bottom) div 2;
+  CheckSize := 16;
 
-  Canvas.Pen.Color := AColor;
-  Canvas.Pen.Width := 2;
-  Canvas.MoveTo(CX - 4, CY);
-  Canvas.LineTo(CX - 1, CY + 3);
-  Canvas.LineTo(CX + 4, CY - 4);
-  Canvas.Pen.Width := 1;
+  CheckRect := Rect(
+    R.Left + 4,
+    (R.Top + R.Bottom - CheckSize) div 2,
+    R.Left + 4 + CheckSize,
+    (R.Top + R.Bottom - CheckSize) div 2 + CheckSize
+  );
+
+  FMenu.DrawAntiAliasedCheckMark(Canvas, CheckRect, AColor);
 end;
 
 procedure TCssMenuPopupForm.DrawSubArrow(R: TRect; AColor: TColor);
 var
   CX, CY: Integer;
+  Bg: TColor;
 begin
   CX := R.Right - 10;
   CY := (R.Top + R.Bottom) div 2;
 
-  Canvas.Brush.Color := AColor;
-  Canvas.Pen.Color := AColor;
+  Bg := FMenu.GetMenuBackground;
 
-  Canvas.Polygon([
+  if (FHoverIndex >= 0) and
+     (FHoverIndex < FVisibleItems.Count) and
+     (ItemRect(FHoverIndex).Top = R.Top) then
+  begin
+    Bg := FMenu.GetMenuHoverBackground;
+  end;
+
+  FMenu.DrawAntiAliasedTriangle(
+    Canvas,
     Point(CX - 3, CY - 4),
     Point(CX - 3, CY + 4),
-    Point(CX + 3, CY)
-  ]);
+    Point(CX + 3, CY),
+    AColor,
+    Bg
+  );
 end;
 
 function TCssMenuPopupForm.FindNextSelectable(StartIndex: Integer): Integer;

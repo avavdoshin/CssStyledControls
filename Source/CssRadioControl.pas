@@ -289,47 +289,36 @@ begin
 end;
 
 type
-  TCssDotCacheEntry = class
+  TCssDotMaskEntry = class
     Size: Integer;
-    DotColor: TColor;
-    BgColor: TColor;
-    Bitmap: TBitmap;
+    Coverage: array of Byte;  // Size * Size, 0..255
     constructor Create;
-    destructor Destroy; override;
-    function Matches(ASize: Integer; ADotColor, ABgColor: TColor): Boolean;
+    function Matches(ASize: Integer): Boolean;
   end;
 
   TCssDotCache = class
   private
     FEntries: TList;
-    function IndexOfEntry(ASize: Integer; ADotColor, ABgColor: TColor): Integer;
+    function IndexOfEntry(ASize: Integer): Integer;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
-    function GetBitmap(ASize: Integer; ADotColor, ABgColor: TColor): TBitmap;
+    function GetMask(ASize: Integer): TCssDotMaskEntry;
   end;
 
 const
   CSS_DOT_CACHE_LIMIT = 48;
 
-constructor TCssDotCacheEntry.Create;
+constructor TCssDotMaskEntry.Create;
 begin
   inherited Create;
-  Bitmap := TBitmap.Create;
-  Bitmap.PixelFormat := pf32bit;
+  SetLength(Coverage, 0);
 end;
 
-destructor TCssDotCacheEntry.Destroy;
+function TCssDotMaskEntry.Matches(ASize: Integer): Boolean;
 begin
-  Bitmap.Free;
-  inherited Destroy;
-end;
-
-function TCssDotCacheEntry.Matches(ASize: Integer;
-  ADotColor, ABgColor: TColor): Boolean;
-begin
-  Result := (Size = ASize) and (DotColor = ADotColor) and (BgColor = ABgColor);
+  Result := Size = ASize;
 end;
 
 constructor TCssDotCache.Create;
@@ -350,126 +339,76 @@ var
   I: Integer;
 begin
   for I := 0 to FEntries.Count - 1 do
-    TCssDotCacheEntry(FEntries[I]).Free;
+    TCssDotMaskEntry(FEntries[I]).Free;
   FEntries.Clear;
 end;
 
-function TCssDotCache.IndexOfEntry(ASize: Integer;
-  ADotColor, ABgColor: TColor): Integer;
+procedure BuildDotCoverage(
+  var ACoverage: array of Byte;
+  ASize: Integer);
+var
+  X, Y: Integer;
+  CX, CY, R, Dist, Cov: Double;
+  Idx: Integer;
+begin
+  for Idx := 0 to ASize * ASize - 1 do
+    ACoverage[Idx] := 0;
+
+  CX := ASize / 2.0;
+  CY := ASize / 2.0;
+  R  := ASize * 0.28;
+
+  for Y := 0 to ASize - 1 do
+    for X := 0 to ASize - 1 do
+    begin
+      Dist := Sqrt(Sqr(X + 0.5 - CX) + Sqr(Y + 0.5 - CY));
+      Cov := R + 0.5 - Dist;
+
+      if Cov <= 0 then
+        Continue;
+      if Cov > 1 then
+        Cov := 1;
+
+      ACoverage[Y * ASize + X] := Round(Cov * 255);
+    end;
+end;
+
+function TCssDotCache.IndexOfEntry(ASize: Integer): Integer;
 var
   I: Integer;
 begin
   for I := 0 to FEntries.Count - 1 do
-    if TCssDotCacheEntry(FEntries[I]).Matches(ASize, ADotColor, ABgColor) then
+    if TCssDotMaskEntry(FEntries[I]).Matches(ASize) then
       Exit(I);
   Result := -1;
 end;
 
-procedure RenderDotToBitmap(
-  ABitmap: TBitmap;
-  ASize: Integer;
-  ADotColor, ABgColor: TColor);
-var
-  Img: TLazIntfImage;
-  X, Y: Integer;
-  CX, CY, R: Double;
-  Dist, Coverage: Double;
-  BgR, BgG, BgB: Byte;
-  DotR, DotG, DotB: Byte;
-  BgRGB, DotRGB: TColor;
-  BlendedR, BlendedG, BlendedB: Integer;
-  Pixel: TFPColor;
-begin
-  if (ASize <= 0) or (ABitmap = nil) then
-    Exit;
-
-  ABitmap.PixelFormat := pf32bit;
-  ABitmap.SetSize(ASize, ASize);
-
-  Img := ABitmap.CreateIntfImage;
-  try
-    BgRGB := ColorToRGB(ABgColor);
-    BgR := Byte(BgRGB and $FF);
-    BgG := Byte((BgRGB shr 8) and $FF);
-    BgB := Byte((BgRGB shr 16) and $FF);
-
-    DotRGB := ColorToRGB(ADotColor);
-    DotR := Byte(DotRGB and $FF);
-    DotG := Byte((DotRGB shr 8) and $FF);
-    DotB := Byte((DotRGB shr 16) and $FF);
-
-    for Y := 0 to ASize - 1 do
-      for X := 0 to ASize - 1 do
-      begin
-        Pixel.Red   := BgR * 256;
-        Pixel.Green := BgG * 256;
-        Pixel.Blue  := BgB * 256;
-        Pixel.Alpha := $FFFF;
-        Img.Colors[X, Y] := Pixel;
-      end;
-
-    CX := ASize / 2.0;
-    CY := ASize / 2.0;
-    R  := ASize * 0.28;
-
-    for Y := 0 to ASize - 1 do
-      for X := 0 to ASize - 1 do
-      begin
-        Dist := Sqrt(Sqr(X + 0.5 - CX) + Sqr(Y + 0.5 - CY));
-        Coverage := R + 0.5 - Dist;
-
-        if Coverage <= 0 then
-          Continue;
-        if Coverage > 1 then
-          Coverage := 1;
-
-        Pixel := Img.Colors[X, Y];
-
-        BlendedR := Round(DotR * Coverage + Pixel.Red   / 256 * (1 - Coverage));
-        BlendedG := Round(DotG * Coverage + Pixel.Green / 256 * (1 - Coverage));
-        BlendedB := Round(DotB * Coverage + Pixel.Blue  / 256 * (1 - Coverage));
-
-        Pixel.Red   := Byte(BlendedR) * 256;
-        Pixel.Green := Byte(BlendedG) * 256;
-        Pixel.Blue  := Byte(BlendedB) * 256;
-        Pixel.Alpha := $FFFF;
-        Img.Colors[X, Y] := Pixel;
-      end;
-
-    ABitmap.LoadFromIntfImage(Img);
-  finally
-    Img.Free;
-  end;
-end;
-
-function TCssDotCache.GetBitmap(ASize: Integer;
-  ADotColor, ABgColor: TColor): TBitmap;
+function TCssDotCache.GetMask(ASize: Integer): TCssDotMaskEntry;
 var
   Idx: Integer;
-  Entry: TCssDotCacheEntry;
+  E: TCssDotMaskEntry;
 begin
-  Idx := IndexOfEntry(ASize, ADotColor, ABgColor);
+  Idx := IndexOfEntry(ASize);
 
   if Idx >= 0 then
   begin
-    Entry := TCssDotCacheEntry(FEntries[Idx]);
+    E := TCssDotMaskEntry(FEntries[Idx]);
     FEntries.Delete(Idx);
-    FEntries.Add(Entry);
-    Exit(Entry.Bitmap);
+    FEntries.Add(E);
+    Exit(E);
   end;
 
   if FEntries.Count >= CSS_DOT_CACHE_LIMIT then
     Clear;
 
-  Entry := TCssDotCacheEntry.Create;
-  Entry.Size := ASize;
-  Entry.DotColor := ADotColor;
-  Entry.BgColor := ABgColor;
+  E := TCssDotMaskEntry.Create;
+  E.Size := ASize;
+  SetLength(E.Coverage, ASize * ASize);
 
-  RenderDotToBitmap(Entry.Bitmap, ASize, ADotColor, ABgColor);
+  BuildDotCoverage(E.Coverage, ASize);
 
-  FEntries.Add(Entry);
-  Result := Entry.Bitmap;
+  FEntries.Add(E);
+  Result := E;
 end;
 
 var
@@ -754,8 +693,7 @@ end;
 procedure TCssRadioButton.DrawDot(const R: TRect; AColor: TColor);
 var
   DotSize: Integer;
-  BgColor: TColor;
-  Bmp: TBitmap;
+  Mask: TCssDotMaskEntry;
 begin
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
     Exit;
@@ -767,12 +705,16 @@ begin
   if DotSize <= 0 then
     Exit;
 
-  BgColor := GetRadioBackground;
-
   EnsureDotCache;
-  Bmp := GDotCache.GetBitmap(DotSize, AColor, BgColor);
+  Mask := GDotCache.GetMask(DotSize);
 
-  Canvas.Draw(R.Left, R.Top, Bmp);
+  BlendCoverageToCanvas(
+    Canvas,
+    R.Left, R.Top,
+    DotSize, DotSize,
+    Mask.Coverage,
+    AColor
+  );
 end;
 
 procedure TCssRadioButton.Paint;
@@ -832,10 +774,31 @@ begin
 
   Canvas.Pen.Style := psSolid;
 
+  // Bordered circle / rounded box with AA.
   if FBoxRadiusSet and (Radius < (BoxSize div 2)) then
-    Canvas.RoundRect(Box.Left, Box.Top, Box.Right, Box.Bottom, Radius, Radius)
+  begin
+    DrawAntiAliasedRoundedBox(
+      Canvas,
+      Box,
+      Radius,
+      BG,
+      BorderColor,
+      LBorderWidth,
+      cbsSolid,
+      GetParentBackgroundColor
+    );
+  end
   else
-    Canvas.Ellipse(Box.Left, Box.Top, Box.Right, Box.Bottom);
+  begin
+    DrawAntiAliasedCircle(
+      Canvas,
+      Box,
+      BG,
+      BorderColor,
+      LBorderWidth,
+      GetParentBackgroundColor
+    );
+  end;
 
   if FChecked then
     DrawDot(Box, DotColor);

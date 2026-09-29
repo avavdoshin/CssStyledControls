@@ -224,13 +224,6 @@ type
     FBackgroundGradient: TCssGradient;
     FBoxShadow: TCssBoxShadow;
 
-    { AA rounded rect }
-    procedure DrawRoundedRectAA(
-      ACanvas: TCanvas;
-      const ARect: TRect;
-      const AParams: TCssRoundedBoxParams);
-    function GetParentBackgroundColor: TColor;
-
     { CSS parsing helpers }
     procedure ParseTextShadow(const AValue: string);
     procedure ParseBorder(const AValue: string);
@@ -293,6 +286,13 @@ type
     function ApplyOpacity(AColor: TColor): TColor;
 
   protected
+    { AA rounded rect }
+    procedure DrawRoundedRectAA(
+      ACanvas: TCanvas;
+      const ARect: TRect;
+      const AParams: TCssRoundedBoxParams);
+    function GetParentBackgroundColor: TColor;
+
     { Lifecycle }
     procedure Loaded; override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
@@ -397,6 +397,12 @@ type
       ADefaultTextColor: TColor
     ); overload;
 
+    procedure BlendCoverageToCanvas(
+      ACanvas: TCanvas;
+      ALeft, ATop, AWidth, AHeight: Integer;
+      const ACoverage: array of Byte;
+      AColor: TColor);
+
     function MeasureHtmlTextSize(
       ACanvas: TCanvas;
       const AText: string;
@@ -412,6 +418,51 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    // === Anti-aliased primitives (public for descendants) ===
+    // Triangle with anti-aliased edges. AP1..AP3 - polygon vertices,
+    // ABackgroundColor - color used for edge blending; if clNone is given,
+    // the parent background color is used.
+    procedure DrawAntiAliasedTriangle(
+      ACanvas: TCanvas;
+      const AP1, AP2, AP3: TPoint;
+      AColor: TColor;
+      ABackgroundColor: TColor = clNone);
+
+    // Circle with anti-aliased edges, optional fill and border.
+    // ARect defines the bounding box of the circle (use equal W/H for a round circle).
+    procedure DrawAntiAliasedCircle(
+      ACanvas: TCanvas;
+      const ARect: TRect;
+      AFillColor: TColor;
+      ABorderColor: TColor;
+      ABorderWidth: Integer = 1;
+      ABackgroundColor: TColor = clNone);
+
+    procedure DrawAntiAliasedRoundedBox(
+      ACanvas: TCanvas;
+      const ARect: TRect;
+      ARadii: TCssCornerRadii;
+      AFillColor: TColor;
+      ABorderColor: TColor;
+      ABorderWidth: Integer;
+      ABorderStyle: TCssBorderStyle = cbsSolid;
+      ABackgroundColor: TColor = clNone); overload;
+
+    procedure DrawAntiAliasedRoundedBox(
+      ACanvas: TCanvas;
+      const ARect: TRect;
+      ARadius: Integer;
+      AFillColor: TColor;
+      ABorderColor: TColor;
+      ABorderWidth: Integer;
+      ABorderStyle: TCssBorderStyle = cbsSolid;
+      ABackgroundColor: TColor = clNone); overload;
+
+    procedure DrawAntiAliasedCheckMark(
+      ACanvas: TCanvas;
+      const ARect: TRect;
+      AColor: TColor);
 
     procedure ApplyStyleSheet(const ACss: string);
     procedure ProviderStyleChanged;
@@ -485,10 +536,100 @@ type
 
   TCssGroupCaptionMode = (gcmInside, gcmOnBorder);
 
+procedure BuildCheckMarkCoverage(
+  var ACoverage: array of Byte;
+  AW, AH: Integer;
+  const AX1, AY1, AX2, AY2, AX3, AY3: Double;
+  ALineWidth: Double);
+
 implementation
 
 uses
   StrUtils, IntfGraphics, FPImage, Math;
+
+procedure BuildCheckMarkCoverage(
+  var ACoverage: array of Byte;
+  AW, AH: Integer;
+  const AX1, AY1, AX2, AY2, AX3, AY3: Double;
+  ALineWidth: Double);
+var
+  I: Integer;
+  Half: Double;
+
+  procedure FillSegment(X1, Y1, X2, Y2: Double);
+  var
+    MinX, MaxX, MinY, MaxY: Integer;
+    LX, LY: Integer;
+    DX, DY, LenSq, T, CX, CY, Dist, Cov: Double;
+    PX, PY: Double;
+    ByteCov: Byte;
+    Idx: Integer;
+  begin
+    MinX := Floor(Min(X1, X2) - Half - 1);
+    MaxX := Ceil (Max(X1, X2) + Half + 1);
+    MinY := Floor(Min(Y1, Y2) - Half - 1);
+    MaxY := Ceil (Max(Y1, Y2) + Half + 1);
+
+    if MinX < 0   then MinX := 0;
+    if MinY < 0   then MinY := 0;
+    if MaxX >= AW then MaxX := AW - 1;
+    if MaxY >= AH then MaxY := AH - 1;
+
+    if (MinX > MaxX) or (MinY > MaxY) then Exit;
+
+    DX := X2 - X1;
+    DY := Y2 - Y1;
+    LenSq := DX * DX + DY * DY;
+
+    for LY := MinY to MaxY do
+      for LX := MinX to MaxX do
+      begin
+        if LenSq > 1E-9 then
+        begin
+          T := ((LX + 0.5 - X1) * DX + (LY + 0.5 - Y1) * DY) / LenSq;
+          if T < 0 then T := 0
+          else if T > 1 then T := 1;
+
+          CX := X1 + T * DX;
+          CY := Y1 + T * DY;
+
+          PX := LX + 0.5 - CX;
+          PY := LY + 0.5 - CY;
+          Dist := Sqrt(PX * PX + PY * PY);
+        end
+        else
+        begin
+          PX := LX + 0.5 - X1;
+          PY := LY + 0.5 - Y1;
+          Dist := Sqrt(PX * PX + PY * PY);
+        end;
+
+        Cov := Half + 0.5 - Dist;
+        if Cov <= 0 then
+          Continue;
+        if Cov > 1 then
+          Cov := 1;
+
+        ByteCov := Round(Cov * 255);
+        Idx := LY * AW + LX;
+
+        if ByteCov > ACoverage[Idx] then
+          ACoverage[Idx] := ByteCov;
+      end;
+  end;
+
+begin
+  if (AW <= 0) or (AH <= 0) then Exit;
+  if Length(ACoverage) < AW * AH then Exit;
+
+  for I := 0 to AW * AH - 1 do
+    ACoverage[I] := 0;
+
+  Half := ALineWidth / 2;
+
+  FillSegment(AX1, AY1, AX2, AY2);
+  FillSegment(AX2, AY2, AX3, AY3);
+end;
 
 { ============================================================ }
 { Global helper functions                                      }
@@ -2996,6 +3137,327 @@ begin
 end;
 
 { ============================================================ }
+{ Anti-aliased triangle / circle                                }
+{ ============================================================ }
+
+type
+  TCssAACacheEntry = class
+    Signature: string;
+    Bitmap: TBitmap;
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  TCssAACache = class
+  private
+    FEntries: TStringList;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Clear;
+    function GetBitmap(const ASignature: string): TBitmap; // nil if missing
+    procedure PutBitmap(const ASignature: string; ABitmap: TBitmap);
+  end;
+
+const
+  CSS_AA_CACHE_LIMIT = 128;
+
+constructor TCssAACacheEntry.Create;
+begin
+  inherited;
+  Bitmap := TBitmap.Create;
+  Bitmap.PixelFormat := pf32bit;
+end;
+
+destructor TCssAACacheEntry.Destroy;
+begin
+  Bitmap.Free;
+  inherited;
+end;
+
+constructor TCssAACache.Create;
+begin
+  inherited;
+  FEntries := TStringList.Create;
+  FEntries.CaseSensitive := True;
+  FEntries.Sorted := False;
+end;
+
+destructor TCssAACache.Destroy;
+begin
+  Clear;
+  FEntries.Free;
+  inherited;
+end;
+
+procedure TCssAACache.Clear;
+var
+  I: Integer;
+begin
+  for I := 0 to FEntries.Count - 1 do
+    TCssAACacheEntry(FEntries.Objects[I]).Free;
+  FEntries.Clear;
+end;
+
+function TCssAACache.GetBitmap(const ASignature: string): TBitmap;
+var
+  Idx: Integer;
+  E: TCssAACacheEntry;
+begin
+  Idx := FEntries.IndexOf(ASignature);
+
+  if Idx < 0 then
+    Exit(nil);
+
+  E := TCssAACacheEntry(FEntries.Objects[Idx]);
+
+  // Move to the end (LRU).
+  FEntries.Delete(Idx);
+  FEntries.AddObject(ASignature, E);
+
+  Result := E.Bitmap;
+end;
+
+procedure TCssAACache.PutBitmap(const ASignature: string; ABitmap: TBitmap);
+var
+  E: TCssAACacheEntry;
+begin
+  while FEntries.Count >= CSS_AA_CACHE_LIMIT do
+  begin
+    TCssAACacheEntry(FEntries.Objects[0]).Free;
+    FEntries.Delete(0);
+  end;
+
+  E := TCssAACacheEntry.Create;
+  E.Signature := ASignature;
+  E.Bitmap.Assign(ABitmap);
+
+  FEntries.AddObject(ASignature, E);
+end;
+
+var
+  GAA_TriangleCache: TCssAACache = nil;
+
+function EdgeDistanceSigned(
+  const A, B: TPoint;
+  PX, PY: Double;
+  AOutSign: Double): Double; inline;
+var
+  DX, DY, L: Double;
+begin
+  DX := B.X - A.X;
+  DY := B.Y - A.Y;
+  Result := (DX * (PY - A.Y) - DY * (PX - A.X)) * AOutSign;
+  L := Sqrt(DX * DX + DY * DY);
+  if L > 1E-9 then
+    Result := Result / L
+  else
+    Result := 0;
+end;
+
+procedure RenderTriangleToBitmap(
+  ABitmap: TBitmap;
+  AW, AH: Integer;
+  const AP1, AP2, AP3: TPoint;
+  AColor, ABgColor: TColor);
+var
+  Img: TLazIntfImage;
+  X, Y: Integer;
+  BgR, BgG, BgB: Byte;
+  FR, FG, FB: Byte;
+  BgRGB, FillRGB: TColor;
+  Pixel: TFPColor;
+  PX, PY: Double;
+  Area, Sign: Double;
+  D12, D23, D31: Double;
+  MinD, Cov: Double;
+begin
+  if (AW <= 0) or (AH <= 0) or (ABitmap = nil) then
+    Exit;
+
+  ABitmap.PixelFormat := pf32bit;
+  ABitmap.SetSize(AW, AH);
+
+  BgRGB := ColorToRGB(ABgColor);
+  BgR := Byte(BgRGB and $FF);
+  BgG := Byte((BgRGB shr 8) and $FF);
+  BgB := Byte((BgRGB shr 16) and $FF);
+
+  FillRGB := ColorToRGB(AColor);
+  FR := Byte(FillRGB and $FF);
+  FG := Byte((FillRGB shr 8) and $FF);
+  FB := Byte((FillRGB shr 16) and $FF);
+
+  // Sign: inside is where all edge values are >= 0.
+  Area := (AP2.X - AP1.X) * (AP3.Y - AP1.Y) - (AP2.Y - AP1.Y) * (AP3.X - AP1.X);
+  if Area >= 0 then Sign := 1 else Sign := -1;
+
+  Img := ABitmap.CreateIntfImage;
+  try
+    for Y := 0 to AH - 1 do
+    begin
+      for X := 0 to AW - 1 do
+      begin
+        PX := X + 0.5;
+        PY := Y + 0.5;
+
+        // Signed distances to the 3 edges (positive inside).
+        D12 := EdgeDistanceSigned(AP1, AP2, PX, PY, Sign);
+        D23 := EdgeDistanceSigned(AP2, AP3, PX, PY, Sign);
+        D31 := EdgeDistanceSigned(AP3, AP1, PX, PY, Sign);
+
+        MinD := D12;
+        if D23 < MinD then MinD := D23;
+        if D31 < MinD then MinD := D31;
+
+        Cov := 0.5 + MinD;
+
+        if Cov <= 0 then
+        begin
+          Pixel.Red   := BgR * 257;
+          Pixel.Green := BgG * 257;
+          Pixel.Blue  := BgB * 257;
+        end
+        else if Cov >= 1 then
+        begin
+          Pixel.Red   := FR * 257;
+          Pixel.Green := FG * 257;
+          Pixel.Blue  := FB * 257;
+        end
+        else
+        begin
+          Pixel.Red   := Round(FR * Cov + BgR * (1 - Cov)) * 257;
+          Pixel.Green := Round(FG * Cov + BgG * (1 - Cov)) * 257;
+          Pixel.Blue  := Round(FB * Cov + BgB * (1 - Cov)) * 257;
+        end;
+
+        Pixel.Alpha := $FFFF;
+        Img.Colors[X, Y] := Pixel;
+      end;
+    end;
+
+    ABitmap.LoadFromIntfImage(Img);
+  finally
+    Img.Free;
+  end;
+end;
+
+procedure RenderCircleToBitmap(
+  ABitmap: TBitmap;
+  AW, AH: Integer;
+  AFillColor, ABorderColor: TColor;
+  ABorderWidth: Integer;
+  ABgColor: TColor);
+var
+  Img: TLazIntfImage;
+  X, Y: Integer;
+  BgR, BgG, BgB: Byte;
+  FillR, FillG, FillB: Byte;
+  BorR, BorG, BorB: Byte;
+  BgRGB, FillRGB, BorRGB: TColor;
+  Pixel: TFPColor;
+  CX, CY, R: Double;
+  Dist, OuterCov, InnerCov, BorderCov: Double;
+  HasFill, HasBorder: Boolean;
+  PX, PY, CompR, CompG, CompB: Double;
+begin
+  if (AW <= 0) or (AH <= 0) or (ABitmap = nil) then Exit;
+
+  ABitmap.PixelFormat := pf32bit;
+  ABitmap.SetSize(AW, AH);
+
+  BgRGB := ColorToRGB(ABgColor);
+  BgR := Byte(BgRGB and $FF);
+  BgG := Byte((BgRGB shr 8) and $FF);
+  BgB := Byte((BgRGB shr 16) and $FF);
+
+  HasFill := (AFillColor <> clNone) and (AFillColor <> clDefault);
+  HasBorder := (ABorderWidth > 0) and
+               (ABorderColor <> clNone) and (ABorderColor <> clDefault);
+
+  if HasFill then
+  begin
+    FillRGB := ColorToRGB(AFillColor);
+    FillR := Byte(FillRGB and $FF);
+    FillG := Byte((FillRGB shr 8) and $FF);
+    FillB := Byte((FillRGB shr 16) and $FF);
+  end
+  else
+  begin
+    FillR := 0; FillG := 0; FillB := 0;
+  end;
+
+  if HasBorder then
+  begin
+    BorRGB := ColorToRGB(ABorderColor);
+    BorR := Byte(BorRGB and $FF);
+    BorG := Byte((BorRGB shr 8) and $FF);
+    BorB := Byte((BorRGB shr 16) and $FF);
+  end
+  else
+  begin
+    BorR := 0; BorG := 0; BorB := 0;
+  end;
+
+  CX := AW / 2.0;
+  CY := AH / 2.0;
+  R := Min(AW, AH) / 2.0 - 0.5;
+  if R < 0 then R := 0;
+
+  Img := ABitmap.CreateIntfImage;
+  try
+    for Y := 0 to AH - 1 do
+    begin
+      for X := 0 to AW - 1 do
+      begin
+        PX := X + 0.5 - CX;
+        PY := Y + 0.5 - CY;
+        Dist := Sqrt(PX * PX + PY * PY);
+
+        OuterCov := 0.5 + (R - Dist);
+        if OuterCov < 0 then OuterCov := 0
+        else if OuterCov > 1 then OuterCov := 1;
+
+        InnerCov := 0.5 + (R - ABorderWidth - Dist);
+        if InnerCov < 0 then InnerCov := 0
+        else if InnerCov > 1 then InnerCov := 1;
+
+        BorderCov := OuterCov - InnerCov;
+        if BorderCov < 0 then BorderCov := 0;
+
+        CompR := BgR;
+        CompG := BgG;
+        CompB := BgB;
+
+        if HasFill and (InnerCov > 0) then
+        begin
+          CompR := CompR * (1 - InnerCov) + FillR * InnerCov;
+          CompG := CompG * (1 - InnerCov) + FillG * InnerCov;
+          CompB := CompB * (1 - InnerCov) + FillB * InnerCov;
+        end;
+
+        if HasBorder and (BorderCov > 0) then
+        begin
+          CompR := CompR * (1 - BorderCov) + BorR * BorderCov;
+          CompG := CompG * (1 - BorderCov) + BorG * BorderCov;
+          CompB := CompB * (1 - BorderCov) + BorB * BorderCov;
+        end;
+
+        Pixel.Red   := Round(CompR) * 257;
+        Pixel.Green := Round(CompG) * 257;
+        Pixel.Blue  := Round(CompB) * 257;
+        Pixel.Alpha := $FFFF;
+        Img.Colors[X, Y] := Pixel;
+      end;
+    end;
+
+    ABitmap.LoadFromIntfImage(Img);
+  finally
+    Img.Free;
+  end;
+end;
+
+{ ============================================================ }
 { TCssStyledControl — construction / destruction               }
 { ============================================================ }
 
@@ -3045,6 +3507,235 @@ begin
   FStyleProvider := nil;
 
   inherited Destroy;
+end;
+
+procedure TCssStyledControl.DrawAntiAliasedTriangle(
+  ACanvas: TCanvas;
+  const AP1, AP2, AP3: TPoint;
+  AColor: TColor;
+  ABackgroundColor: TColor);
+var
+  MinX, MinY, MaxX, MaxY, W, H: Integer;
+  Bg: TColor;
+  Sig: string;
+  Bmp: TBitmap;
+  Buf: TBitmap;
+  P1, P2, P3: TPoint;
+begin
+  if ACanvas = nil then Exit;
+  if AColor = clNone then Exit;
+
+  MinX := AP1.X; if AP2.X < MinX then MinX := AP2.X; if AP3.X < MinX then MinX := AP3.X;
+  MinY := AP1.Y; if AP2.Y < MinY then MinY := AP2.Y; if AP3.Y < MinY then MinY := AP3.Y;
+  MaxX := AP1.X; if AP2.X > MaxX then MaxX := AP2.X; if AP3.X > MaxX then MaxX := AP3.X;
+  MaxY := AP1.Y; if AP2.Y > MaxY then MaxY := AP2.Y; if AP3.Y > MaxY then MaxY := AP3.Y;
+
+  // Leave 1px margin for AA.
+  Dec(MinX); Dec(MinY);
+  Inc(MaxX); Inc(MaxY);
+
+  W := MaxX - MinX;
+  H := MaxY - MinY;
+
+  if (W <= 0) or (H <= 0) then Exit;
+
+  if ABackgroundColor = clNone then
+    Bg := GetParentBackgroundColor
+  else
+    Bg := ABackgroundColor;
+
+  P1 := Point(AP1.X - MinX, AP1.Y - MinY);
+  P2 := Point(AP2.X - MinX, AP2.Y - MinY);
+  P3 := Point(AP3.X - MinX, AP3.Y - MinY);
+
+  Sig := Format('T|%d,%d|%d,%d|%d,%d|%d,%d|%d|%d',
+    [W, H,
+     P1.X, P1.Y,
+     P2.X, P2.Y,
+     P3.X, P3.Y,
+     Integer(AColor), Integer(Bg)]);
+
+  if GAA_TriangleCache = nil then
+    GAA_TriangleCache := TCssAACache.Create;
+
+  Bmp := GAA_TriangleCache.GetBitmap(Sig);
+
+  if Bmp = nil then
+  begin
+    Buf := TBitmap.Create;
+    try
+      RenderTriangleToBitmap(Buf, W, H, P1, P2, P3, AColor, Bg);
+      GAA_TriangleCache.PutBitmap(Sig, Buf);
+      Bmp := GAA_TriangleCache.GetBitmap(Sig);
+    finally
+      Buf.Free;
+    end;
+  end;
+
+  if Bmp <> nil then
+    ACanvas.Draw(MinX, MinY, Bmp);
+end;
+
+procedure TCssStyledControl.DrawAntiAliasedCircle(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  AFillColor: TColor;
+  ABorderColor: TColor;
+  ABorderWidth: Integer;
+  ABackgroundColor: TColor);
+var
+  W, H: Integer;
+  Bg: TColor;
+  Sig: string;
+  Buf: TBitmap;
+  Bmp: TBitmap;
+begin
+  if ACanvas = nil then Exit;
+
+  W := ARect.Right - ARect.Left;
+  H := ARect.Bottom - ARect.Top;
+
+  if (W <= 0) or (H <= 0) then Exit;
+
+  if ABackgroundColor = clNone then
+    Bg := GetParentBackgroundColor
+  else
+    Bg := ABackgroundColor;
+
+  Sig := Format('C|%d,%d|%d|%d|%d|%d',
+    [W, H, Integer(AFillColor), Integer(ABorderColor),
+     ABorderWidth, Integer(Bg)]);
+
+  if GAA_TriangleCache = nil then
+    GAA_TriangleCache := TCssAACache.Create;
+
+  Bmp := GAA_TriangleCache.GetBitmap(Sig);
+
+  if Bmp = nil then
+  begin
+    Buf := TBitmap.Create;
+    try
+      RenderCircleToBitmap(Buf, W, H, AFillColor, ABorderColor,
+        ABorderWidth, Bg);
+      GAA_TriangleCache.PutBitmap(Sig, Buf);
+      Bmp := GAA_TriangleCache.GetBitmap(Sig);
+    finally
+      Buf.Free;
+    end;
+  end;
+
+  if Bmp <> nil then
+    ACanvas.Draw(ARect.Left, ARect.Top, Bmp);
+end;
+
+procedure TCssStyledControl.DrawAntiAliasedRoundedBox(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  ARadii: TCssCornerRadii;
+  AFillColor: TColor;
+  ABorderColor: TColor;
+  ABorderWidth: Integer;
+  ABorderStyle: TCssBorderStyle;
+  ABackgroundColor: TColor);
+var
+  Params: TCssRoundedBoxParams;
+begin
+  if ACanvas = nil then Exit;
+  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then Exit;
+
+  Params.Radii := ARadii;
+  Params.FillColor := AFillColor;
+  Params.BorderColor := ABorderColor;
+  Params.BorderWidth := ABorderWidth;
+  Params.BorderStyle := ABorderStyle;
+
+  if ABackgroundColor = clNone then
+    Params.BackColor := GetParentBackgroundColor
+  else
+    Params.BackColor := ABackgroundColor;
+
+  Params.Shadow.Used := False;
+  Params.Shadow.HasColor := False;
+  Params.Shadow.OffsetX := 0;
+  Params.Shadow.OffsetY := 0;
+  Params.Shadow.Blur := 0;
+  Params.Shadow.Spread := 0;
+  Params.Shadow.Color := clBlack;
+
+  Params.HasGradient := False;
+  Params.Gradient.Kind := cgkNone;
+  SetLength(Params.Gradient.Stops, 0);
+
+  DrawRoundedRectAA(ACanvas, ARect, Params);
+end;
+
+procedure TCssStyledControl.DrawAntiAliasedRoundedBox(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  ARadius: Integer;
+  AFillColor: TColor;
+  ABorderColor: TColor;
+  ABorderWidth: Integer;
+  ABorderStyle: TCssBorderStyle;
+  ABackgroundColor: TColor);
+var
+  Radii: TCssCornerRadii;
+begin
+  Radii.TL := ARadius;
+  Radii.TR := ARadius;
+  Radii.BR := ARadius;
+  Radii.BL := ARadius;
+
+  DrawAntiAliasedRoundedBox(
+    ACanvas, ARect, Radii,
+    AFillColor, ABorderColor, ABorderWidth,
+    ABorderStyle, ABackgroundColor
+  );
+end;
+
+procedure TCssStyledControl.DrawAntiAliasedCheckMark(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  AColor: TColor);
+var
+  W, H: Integer;
+  Coverage: array of Byte;
+  LineWidth: Double;
+  X1, Y1, X2, Y2, X3, Y3: Double;
+begin
+  if ACanvas = nil then Exit;
+
+  W := ARect.Right - ARect.Left;
+  H := ARect.Bottom - ARect.Top;
+
+  if (W <= 0) or (H <= 0) then Exit;
+
+  if W < 12 then
+    LineWidth := 1.5
+  else if W < 20 then
+    LineWidth := 2.0
+  else
+    LineWidth := 2.5;
+
+  SetLength(Coverage, W * H);
+
+  X1 := W * 0.20;  Y1 := H * 0.50;
+  X2 := W * 0.40;  Y2 := H * 0.75;
+  X3 := W * 0.80;  Y3 := H * 0.22;
+
+  BuildCheckMarkCoverage(
+    Coverage, W, H,
+    X1, Y1, X2, Y2, X3, Y3,
+    LineWidth
+  );
+
+  BlendCoverageToCanvas(
+    ACanvas,
+    ARect.Left, ARect.Top,
+    W, H,
+    Coverage,
+    AColor
+  );
 end;
 
 { ============================================================ }
@@ -6952,6 +7643,53 @@ begin
   end;
 end;
 
+procedure TCssStyledControl.BlendCoverageToCanvas(
+  ACanvas: TCanvas;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  AColor: TColor);
+var
+  X, Y, Idx: Integer;
+  Cov, InvCov: Double;
+  LineRGB, BgRGB: TColor;
+  LR, LG, LB: Byte;
+  BR, BG, BB: Byte;
+  R, G, B: Integer;
+  DstColor: TColor;
+begin
+  if ACanvas = nil then Exit;
+  if (AWidth <= 0) or (AHeight <= 0) then Exit;
+  if Length(ACoverage) < AWidth * AHeight then Exit;
+
+  LineRGB := ColorToRGB(AColor);
+  LR := Byte(LineRGB and $FF);
+  LG := Byte((LineRGB shr 8) and $FF);
+  LB := Byte((LineRGB shr 16) and $FF);
+
+  for Y := 0 to AHeight - 1 do
+    for X := 0 to AWidth - 1 do
+    begin
+      Idx := Y * AWidth + X;
+      if ACoverage[Idx] = 0 then
+        Continue;
+
+      Cov := ACoverage[Idx] / 255.0;
+      InvCov := 1.0 - Cov;
+
+      DstColor := ACanvas.Pixels[ALeft + X, ATop + Y];
+      BgRGB := ColorToRGB(DstColor);
+      BR := Byte(BgRGB and $FF);
+      BG := Byte((BgRGB shr 8) and $FF);
+      BB := Byte((BgRGB shr 16) and $FF);
+
+      R := Round(LR * Cov + BR * InvCov);
+      G := Round(LG * Cov + BG * InvCov);
+      B := Round(LB * Cov + BB * InvCov);
+
+      ACanvas.Pixels[ALeft + X, ATop + Y] := RGBToColor(R, G, B);
+    end;
+end;
+
 procedure TCssStyledControl.Paint;
 var
   R, DrawR, TextR: TRect;
@@ -7910,7 +8648,7 @@ initialization
 
 finalization
   FreeAndNil(GRoundedRectCache);
-
+  FreeAndNil(GAA_TriangleCache);
 end.
 
 end.

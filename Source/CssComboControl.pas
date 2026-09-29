@@ -1144,13 +1144,15 @@ begin
   CX := (ButtonR.Left + ButtonR.Right) div 2;
   CY := (ButtonR.Top + ButtonR.Bottom) div 2;
 
-  Canvas.Brush.Color := ArrowColor;
-
-  Canvas.Polygon([
+  // Anti-aliased arrow (down). Background is taken from the button.
+  DrawAntiAliasedTriangle(
+    Canvas,
     Point(CX - 4, CY - 2),
     Point(CX + 4, CY - 2),
-    Point(CX, CY + 3)
-  ]);
+    Point(CX,     CY + 3),
+    ArrowColor,
+    BG
+  );
 end;
 
 procedure TCssComboBox.SetEditCssClass(const AValue: string);

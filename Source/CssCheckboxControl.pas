@@ -308,29 +308,23 @@ begin
 end;
 
 type
-  TCssCheckMarkCacheEntry = class
+  TCssCheckMarkMaskEntry = class
     Width, Height: Integer;
-    LineColor: TColor;
-    BgColor: TColor;
     LineWidthX10: Integer;
-    Bitmap: TBitmap;
+    Coverage: array of Byte;   // W * H, 0..255
     constructor Create;
-    destructor Destroy; override;
-    function Matches(AW, AH: Integer; ALineColor, ABgColor: TColor;
-      ALineWidth: Double): Boolean;
+    function Matches(AW, AH: Integer; ALineWidth: Double): Boolean;
   end;
 
   TCssCheckMarkCache = class
   private
     FEntries: TList;
-    function IndexOfEntry(AW, AH: Integer;
-      ALineColor, ABgColor: TColor; ALineWidth: Double): Integer;
+    function IndexOfEntry(AW, AH: Integer; ALineWidth: Double): Integer;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Clear;
-    function GetBitmap(AW, AH: Integer;
-      ALineColor, ABgColor: TColor; ALineWidth: Double): TBitmap;
+    function GetMask(AW, AH: Integer; ALineWidth: Double): TCssCheckMarkMaskEntry;
   end;
 
   PRGBQuadItem = ^TRGBQuadItem;
@@ -341,26 +335,17 @@ type
 const
   CSS_CHECKMARK_CACHE_LIMIT = 48;
 
-constructor TCssCheckMarkCacheEntry.Create;
+constructor TCssCheckMarkMaskEntry.Create;
 begin
   inherited Create;
-  Bitmap := TBitmap.Create;
-  Bitmap.PixelFormat := pf32bit;
+  SetLength(Coverage, 0);
 end;
 
-destructor TCssCheckMarkCacheEntry.Destroy;
-begin
-  Bitmap.Free;
-  inherited Destroy;
-end;
-
-function TCssCheckMarkCacheEntry.Matches(AW, AH: Integer;
-  ALineColor, ABgColor: TColor; ALineWidth: Double): Boolean;
+function TCssCheckMarkMaskEntry.Matches(AW, AH: Integer;
+  ALineWidth: Double): Boolean;
 begin
   Result :=
     (Width = AW) and (Height = AH) and
-    (LineColor = ALineColor) and
-    (BgColor = ABgColor) and
     (LineWidthX10 = Round(ALineWidth * 10));
 end;
 
@@ -382,207 +367,60 @@ var
   I: Integer;
 begin
   for I := 0 to FEntries.Count - 1 do
-    TCssCheckMarkCacheEntry(FEntries[I]).Free;
+    TCssCheckMarkMaskEntry(FEntries[I]).Free;
   FEntries.Clear;
 end;
 
 function TCssCheckMarkCache.IndexOfEntry(AW, AH: Integer;
-  ALineColor, ABgColor: TColor; ALineWidth: Double): Integer;
+  ALineWidth: Double): Integer;
 var
   I: Integer;
 begin
   for I := 0 to FEntries.Count - 1 do
-    if TCssCheckMarkCacheEntry(FEntries[I]).Matches(
-         AW, AH, ALineColor, ABgColor, ALineWidth) then
+    if TCssCheckMarkMaskEntry(FEntries[I]).Matches(AW, AH, ALineWidth) then
       Exit(I);
   Result := -1;
 end;
 
-procedure RenderCheckMarkToBitmap(
-  ABitmap: TBitmap;
-  AW, AH: Integer;
-  const AX1, AY1, AX2, AY2, AX3, AY3: Double;
-  ALineWidth: Double;
-  ALineColor, ABgColor: TColor);
-var
-  Img: TLazIntfImage;
-  Pixel: TFPColor;
-  X, Y: Integer;
-  BgR, BgG, BgB: Byte;
-  LR, LG, LB: Byte;
-  BgRGB, LineRGB: TColor;
-  Half: Double;
-
-  procedure DrawSegment(X1, Y1, X2, Y2: Double);
-  var
-    MinX, MaxX, MinY, MaxY: Integer;
-    LX, LY: Integer;
-    DX, DY, LenSq, T, CX, CY, Dist, Coverage: Double;
-    PX, PY: Double;
-    BlendedR, BlendedG, BlendedB: Integer;
-    CurPixel: TFPColor;
-  begin
-    MinX := Floor(Min(X1, X2) - Half - 1);
-    MaxX := Ceil (Max(X1, X2) + Half + 1);
-    MinY := Floor(Min(Y1, Y2) - Half - 1);
-    MaxY := Ceil (Max(Y1, Y2) + Half + 1);
-
-    if MinX < 0    then MinX := 0;
-    if MinY < 0    then MinY := 0;
-    if MaxX >= AW  then MaxX := AW - 1;
-    if MaxY >= AH  then MaxY := AH - 1;
-
-    if (MinX > MaxX) or (MinY > MaxY) then
-      Exit;
-
-    DX := X2 - X1;
-    DY := Y2 - Y1;
-    LenSq := DX * DX + DY * DY;
-
-    for LY := MinY to MaxY do
-    begin
-      for LX := MinX to MaxX do
-      begin
-        if LenSq > 1E-9 then
-        begin
-          T := ((LX + 0.5 - X1) * DX + (LY + 0.5 - Y1) * DY) / LenSq;
-          if T < 0 then T := 0
-          else if T > 1 then T := 1;
-
-          CX := X1 + T * DX;
-          CY := Y1 + T * DY;
-
-          PX := LX + 0.5 - CX;
-          PY := LY + 0.5 - CY;
-          Dist := Sqrt(PX * PX + PY * PY);
-        end
-        else
-        begin
-          PX := LX + 0.5 - X1;
-          PY := LY + 0.5 - Y1;
-          Dist := Sqrt(PX * PX + PY * PY);
-        end;
-
-        Coverage := Half + 0.5 - Dist;
-
-        if Coverage <= 0 then
-          Continue;
-
-        if Coverage > 1 then
-          Coverage := 1;
-
-        CurPixel := Img.Colors[LX, LY];
-
-        BlendedR := Round(LR * Coverage +
-                         (CurPixel.Red   div 257) * (1 - Coverage));
-        BlendedG := Round(LG * Coverage +
-                         (CurPixel.Green div 257) * (1 - Coverage));
-        BlendedB := Round(LB * Coverage +
-                         (CurPixel.Blue  div 257) * (1 - Coverage));
-
-        if BlendedR < 0   then BlendedR := 0
-        else if BlendedR > 255 then BlendedR := 255;
-
-        if BlendedG < 0   then BlendedG := 0
-        else if BlendedG > 255 then BlendedG := 255;
-
-        if BlendedB < 0   then BlendedB := 0
-        else if BlendedB > 255 then BlendedB := 255;
-
-        CurPixel.Red   := BlendedR * 257;
-        CurPixel.Green := BlendedG * 257;
-        CurPixel.Blue  := BlendedB * 257;
-        CurPixel.Alpha := $FFFF;
-
-        Img.Colors[LX, LY] := CurPixel;
-      end;
-    end;
-  end;
-
-begin
-  if (AW <= 0) or (AH <= 0) or (ABitmap = nil) then
-    Exit;
-
-  ABitmap.PixelFormat := pf32bit;
-  ABitmap.SetSize(AW, AH);
-
-  Img := ABitmap.CreateIntfImage;
-  try
-    BgRGB := ColorToRGB(ABgColor);
-    BgR := Byte(BgRGB and $FF);
-    BgG := Byte((BgRGB shr 8) and $FF);
-    BgB := Byte((BgRGB shr 16) and $FF);
-
-    for Y := 0 to AH - 1 do
-    begin
-      for X := 0 to AW - 1 do
-      begin
-        Pixel.Red   := BgR * 257;   // 0..255 → 0..65535
-        Pixel.Green := BgG * 257;
-        Pixel.Blue  := BgB * 257;
-        Pixel.Alpha := $FFFF;
-        Img.Colors[X, Y] := Pixel;
-      end;
-    end;
-
-    LineRGB := ColorToRGB(ALineColor);
-    LR := Byte(LineRGB and $FF);
-    LG := Byte((LineRGB shr 8) and $FF);
-    LB := Byte((LineRGB shr 16) and $FF);
-
-    Half := ALineWidth / 2;
-
-    DrawSegment(AX1, AY1, AX2, AY2);
-    DrawSegment(AX2, AY2, AX3, AY3);
-
-    ABitmap.LoadFromIntfImage(Img);
-  finally
-    Img.Free;
-  end;
-end;
-
-function TCssCheckMarkCache.GetBitmap(
-  AW, AH: Integer;
-  ALineColor, ABgColor: TColor;
-  ALineWidth: Double): TBitmap;
+function TCssCheckMarkCache.GetMask(
+  AW, AH: Integer; ALineWidth: Double): TCssCheckMarkMaskEntry;
 var
   Idx: Integer;
-  Entry: TCssCheckMarkCacheEntry;
+  E: TCssCheckMarkMaskEntry;
   X1, Y1, X2, Y2, X3, Y3: Double;
 begin
-  Idx := IndexOfEntry(AW, AH, ALineColor, ABgColor, ALineWidth);
+  Idx := IndexOfEntry(AW, AH, ALineWidth);
 
   if Idx >= 0 then
   begin
-    Entry := TCssCheckMarkCacheEntry(FEntries[Idx]);
+    E := TCssCheckMarkMaskEntry(FEntries[Idx]);
     FEntries.Delete(Idx);
-    FEntries.Add(Entry);
-    Exit(Entry.Bitmap);
+    FEntries.Add(E);
+    Exit(E);
   end;
 
   if FEntries.Count >= CSS_CHECKMARK_CACHE_LIMIT then
     Clear;
 
-  Entry := TCssCheckMarkCacheEntry.Create;
-  Entry.Width := AW;
-  Entry.Height := AH;
-  Entry.LineColor := ALineColor;
-  Entry.BgColor := ABgColor;
-  Entry.LineWidthX10 := Round(ALineWidth * 10);
+  E := TCssCheckMarkMaskEntry.Create;
+  E.Width := AW;
+  E.Height := AH;
+  E.LineWidthX10 := Round(ALineWidth * 10);
+
+  SetLength(E.Coverage, AW * AH);
 
   X1 := AW * 0.20;  Y1 := AH * 0.50;
   X2 := AW * 0.40;  Y2 := AH * 0.75;
   X3 := AW * 0.80;  Y3 := AH * 0.22;
 
-  RenderCheckMarkToBitmap(
-    Entry.Bitmap, AW, AH,
+  BuildCheckMarkCoverage(
+    E.Coverage, AW, AH,
     X1, Y1, X2, Y2, X3, Y3,
-    ALineWidth,
-    ALineColor, ABgColor
+    ALineWidth
   );
 
-  FEntries.Add(Entry);
-  Result := Entry.Bitmap;
+  FEntries.Add(E);
+  Result := E;
 end;
 
 var
@@ -1244,17 +1082,14 @@ procedure TCssCheckBox.DrawCheckMarkToCanvas(
 var
   W, H: Integer;
   LineWidth: Double;
-  BgColor: TColor;
-  Bmp: TBitmap;
+  Mask: TCssCheckMarkMaskEntry;
 begin
-  if ACanvas = nil then
-    Exit;
+  if ACanvas = nil then Exit;
 
   W := R.Right - R.Left;
   H := R.Bottom - R.Top;
 
-  if (W <= 0) or (H <= 0) then
-    Exit;
+  if (W <= 0) or (H <= 0) then Exit;
 
   if W < 12 then
     LineWidth := 1.5
@@ -1263,12 +1098,16 @@ begin
   else
     LineWidth := 2.5;
 
-  BgColor := GetCheckBoxBackground;
-
   EnsureCheckMarkCache;
-  Bmp := GCheckMarkCache.GetBitmap(W, H, AColor, BgColor, LineWidth);
+  Mask := GCheckMarkCache.GetMask(W, H, LineWidth);
 
-  ACanvas.Draw(R.Left, R.Top, Bmp);
+  BlendCoverageToCanvas(
+    ACanvas,
+    R.Left, R.Top,
+    W, H,
+    Mask.Coverage,
+    AColor
+  );
 end;
 
 procedure TCssCheckBox.DrawGrayedMarkToCanvas(
@@ -1303,24 +1142,17 @@ end;
 procedure TCssCheckBox.DrawStateToCanvas(
   ACanvas: TCanvas;
   const ARect: TRect;
-  AState: TCheckBoxState
-);
+  AState: TCheckBoxState);
 var
-  BG: TColor;
-  BorderColor: TColor;
-  CheckColor: TColor;
-  LBorderWidth: Integer;
-  Radius: Integer;
-  Size: Integer;
+  BG, BorderColor, CheckColor: TColor;
+  LBorderWidth, Radius, Size: Integer;
+  ABorderStyle: TCssBorderStyle;
+  ParentBG: TColor;
 begin
-  if ACanvas = nil then
-    Exit;
-
-  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
-    Exit;
+  if ACanvas = nil then Exit;
+  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then Exit;
 
   Size := ARect.Bottom - ARect.Top;
-
   if (ARect.Right - ARect.Left) < Size then
     Size := ARect.Right - ARect.Left;
 
@@ -1330,41 +1162,26 @@ begin
   Radius := GetCheckBoxRadius;
   CheckColor := GetCheckColor;
 
-  ACanvas.Brush.Style := bsSolid;
-  ACanvas.Brush.Color := BG;
-
-  if LBorderWidth <= 0 then
-  begin
-    ACanvas.Pen.Width := 1;
-    ACanvas.Pen.Color := BG;
-  end
-  else
-  begin
-    ACanvas.Pen.Width := LBorderWidth;
-    ACanvas.Pen.Color := BorderColor;
-  end;
-
-  ACanvas.Pen.Style := psSolid;
-
   if Radius > (Size div 2) then
     Radius := Size div 2;
 
-  if Radius > 0 then
-    ACanvas.RoundRect(
-      ARect.Left,
-      ARect.Top,
-      ARect.Right,
-      ARect.Bottom,
-      Radius,
-      Radius
-    )
+  if LBorderWidth <= 0 then
+    ABorderStyle := cbsNone
   else
-    ACanvas.Rectangle(
-      ARect.Left,
-      ARect.Top,
-      ARect.Right,
-      ARect.Bottom
-    );
+    ABorderStyle := cbsSolid;
+
+  ParentBG := GetParentBackgroundColor;
+
+  DrawAntiAliasedRoundedBox(
+    ACanvas,
+    ARect,
+    Radius,
+    BG,
+    BorderColor,
+    LBorderWidth,
+    ABorderStyle,
+    ParentBG
+  );
 
   if AState = cbChecked then
     DrawCheckMarkToCanvas(ACanvas, ARect, CheckColor)
