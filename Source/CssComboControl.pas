@@ -621,6 +621,8 @@ begin
   FListBox.MultiSelect := False;
   FListBox.ItemHeight := FItemHeight;
 
+  FListBox.ShowFocusRect := False;
+
   FListBox.OnMouseUp := @ListMouseUp;
   FListBox.OnKeyDown := @ListKeyDown;
 
