@@ -9,11 +9,18 @@ uses
 
 type
   TCssPanel = class(TCssStyledControl)
+  private
+    FPropagatingEnabled: Boolean;
+    procedure PropagateEnabledToChildren;
   protected
     // Initialization and style
+    procedure Loaded; override;
     procedure InitTextProps; override;
     procedure StyleChanged; override;
     procedure HtmlModeChanged; override;
+
+    // State changes
+    procedure EnabledChanged; override;
 
     // Layout
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
@@ -71,6 +78,35 @@ begin
 
   Width := 185;
   Height := 41;
+
+  FPropagatingEnabled := False;
+end;
+
+procedure TCssPanel.PropagateEnabledToChildren;
+var
+  I: Integer;
+begin
+  if FPropagatingEnabled then
+    Exit;
+
+  FPropagatingEnabled := True;
+  try
+    for I := 0 to ControlCount - 1 do
+    begin
+      if Controls[I].Enabled <> Enabled then
+        Controls[I].Enabled := Enabled;
+    end;
+  finally
+    FPropagatingEnabled := False;
+  end;
+end;
+
+procedure TCssPanel.Loaded;
+begin
+  inherited Loaded;
+
+  if not Enabled then
+    PropagateEnabledToChildren;
 end;
 
 procedure TCssPanel.InitTextProps;
@@ -99,6 +135,11 @@ begin
   Invalidate;
 end;
 
+procedure TCssPanel.EnabledChanged;
+begin
+  inherited EnabledChanged;
+end;
+
 procedure TCssPanel.AlignControls(AControl: TControl; var Rect: TRect);
 var
   B: Integer;
@@ -119,6 +160,19 @@ begin
     Rect.Bottom := Rect.Top;
 
   inherited AlignControls(AControl, Rect);
+
+  if (AControl <> nil) and
+     (not Enabled) and
+     AControl.Enabled and
+     (not FPropagatingEnabled) then
+  begin
+    FPropagatingEnabled := True;
+    try
+      AControl.Enabled := False;
+    finally
+      FPropagatingEnabled := False;
+    end;
+  end;
 end;
 
 end.
