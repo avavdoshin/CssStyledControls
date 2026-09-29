@@ -292,6 +292,9 @@ TCssPanel {
   text-align: left;
   vertical-align: top;
 }
+TCssPanel.panel-container        { padding: 4px; }
+TCssPanel.panel-container.tight  { padding: 0px; }
+TCssPanel.panel-container.spaced { padding: 20px; }
 
 TCssMainMenu {
   background-color: #F8FAFC;
@@ -716,6 +719,9 @@ TCssPanel {
   text-align: left;
   vertical-align: top;
 }
+TCssPanel.panel-container        { padding: 4px; }
+TCssPanel.panel-container.tight  { padding: 0px; }
+TCssPanel.panel-container.spaced { padding: 20px; }
 
 TCssMainMenu {
   background-color: #0F172A;
