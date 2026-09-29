@@ -135,7 +135,7 @@ type
     BorderColor: TColor;
     BorderWidth: Integer;
     BorderStyle: TCssBorderStyle;
-    BackColor: TColor;
+    CornerBackColor: array[0..3] of TColor;
     Shadow: TCssBoxShadow;
     Gradient: TCssGradient;
     HasGradient: Boolean;
@@ -284,6 +284,7 @@ type
     function GetOpacityBaseColor: TColor;
     function ApplyOpacity(AColor: TColor): TColor;
 
+    procedure NotifyUpperSiblingsRepaint(AOldBounds: PRect = nil);
   protected
     { AA rounded rect }
     procedure DrawRoundedRectAA(
@@ -291,6 +292,7 @@ type
       const ARect: TRect;
       const AParams: TCssRoundedBoxParams);
     function GetParentBackgroundColor: TColor;
+    function GetBackgroundBeneathAtClientPoint(const AClientPoint: TPoint): TColor;
 
     { Lifecycle }
     procedure Loaded; override;
@@ -318,6 +320,7 @@ type
     procedure SetVAlign(AValue: TCssVAlign);
     procedure SetWordWrap(AValue: Boolean);
     procedure SetShowFocusRect(AValue: Boolean); virtual;
+    procedure SetVisible(AValue: Boolean); override;
 
     { State (getters) }
     function GetMouseInControlState: Boolean;
@@ -375,6 +378,7 @@ type
 
     { Painting }
     procedure Paint; override;
+    procedure ChangeBounds(ALeft, ATop, AWidth, AHeight: Integer; KeepBase: Boolean); override;
 
     procedure DrawHtmlText(const ARect: TRect; const AText: string); overload;
     procedure DrawHtmlText(ACanvas: TCanvas; const ARect: TRect; const AText: string); overload;
@@ -2766,6 +2770,7 @@ var
   Img: TLazIntfImage;
   PW, PH, X, Y: Integer;
   BgR, BgG, BgB: Byte;
+  BgRGB: TColor;
   FillR, FillG, FillB: Byte;
   BorderR, BorderG, BorderB: Byte;
   ShadowR, ShadowG, ShadowB: Byte;
@@ -2775,7 +2780,7 @@ var
   Blur, Spread, ShadowOffX, ShadowOffY: Double;
   PX, PY, SDF, SDF_Shadow: Double;
   OuterCov, InnerCov, BorderCov, ShadowCov: Double;
-  BgRGB, FillRGB, BorderRGB, ShadowRGB: TColor;
+  FillRGB, BorderRGB, ShadowRGB: TColor;
   CompR, CompG, CompB: Double;
   DashMask, Param: Double;
   IsDash, IsDot: Boolean;
@@ -2804,11 +2809,6 @@ begin
 
   IsDash := AParams.BorderStyle = cbsDashed;
   IsDot  := AParams.BorderStyle = cbsDotted;
-
-  BgRGB := ColorToRGB(AParams.BackColor);
-  BgR := Byte(BgRGB and $FF);
-  BgG := Byte((BgRGB shr 8) and $FF);
-  BgB := Byte((BgRGB shr 16) and $FF);
 
   if HasFill then
   begin
@@ -2872,6 +2872,19 @@ begin
         PX := X + 0.5 - APadX - HW;
         PY := Y + 0.5 - APadY - HH;
 
+        if (PX < 0) and (PY < 0) then
+          BgRGB := ColorToRGB(AParams.CornerBackColor[0])   // TL
+        else if (PX >= 0) and (PY < 0) then
+          BgRGB := ColorToRGB(AParams.CornerBackColor[1])   // TR
+        else if (PX >= 0) and (PY >= 0) then
+          BgRGB := ColorToRGB(AParams.CornerBackColor[2])   // BR
+        else
+          BgRGB := ColorToRGB(AParams.CornerBackColor[3]);  // BL
+
+        BgR := Byte(BgRGB and $FF);
+        BgG := Byte((BgRGB shr 8) and $FF);
+        BgB := Byte((BgRGB shr 16) and $FF);
+
         ShadowCov := 0;
         if HasShadow then
         begin
@@ -2898,7 +2911,6 @@ begin
 
         BorderCov := OuterCov - InnerCov;
 
-        // dash / dot
         if HasBorder and (IsDash or IsDot) and (BorderCov > 0.001) then
         begin
           Param := SdPerimeterAngle(PX, PY, HW, HH, RTL, RTR, RBR, RBL);
@@ -3040,7 +3052,10 @@ begin
 
     SB.Append(IntToStr(AParams.FillColor)).Append(',')
       .Append(IntToStr(AParams.BorderColor)).Append(',')
-      .Append(IntToStr(AParams.BackColor)).Append('|');
+      .Append(IntToStr(AParams.CornerBackColor[0])).Append(',')
+      .Append(IntToStr(AParams.CornerBackColor[1])).Append(',')
+      .Append(IntToStr(AParams.CornerBackColor[2])).Append(',')
+      .Append(IntToStr(AParams.CornerBackColor[3])).Append('|');
 
     SB.Append(Ord(AParams.Shadow.Used)).Append(';');
     if AParams.Shadow.Used then
@@ -3642,9 +3657,15 @@ procedure TCssStyledControl.DrawAntiAliasedRoundedBox(
   ABackgroundColor: TColor);
 var
   Params: TCssRoundedBoxParams;
+  Bg: TColor;
 begin
   if ACanvas = nil then Exit;
   if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then Exit;
+
+  if ABackgroundColor = clNone then
+    Bg := GetParentBackgroundColor
+  else
+    Bg := ABackgroundColor;
 
   Params.Radii := ARadii;
   Params.FillColor := AFillColor;
@@ -3652,10 +3673,10 @@ begin
   Params.BorderWidth := ABorderWidth;
   Params.BorderStyle := ABorderStyle;
 
-  if ABackgroundColor = clNone then
-    Params.BackColor := GetParentBackgroundColor
-  else
-    Params.BackColor := ABackgroundColor;
+  Params.CornerBackColor[0] := Bg;
+  Params.CornerBackColor[1] := Bg;
+  Params.CornerBackColor[2] := Bg;
+  Params.CornerBackColor[3] := Bg;
 
   Params.Shadow.Used := False;
   Params.Shadow.HasColor := False;
@@ -3858,7 +3879,10 @@ end;
 procedure TCssStyledControl.ReapplyStyles;
 var
   EffectiveCss: string;
+  OldBg: TColor;
 begin
+  OldBg := GetCssBackgroundColor;
+
   EffectiveCss := GetEffectiveStyleSheet;
 
   if EffectiveCss <> '' then
@@ -3872,6 +3896,9 @@ begin
     StyleChanged;
     Invalidate;
   end;
+
+  if GetCssBackgroundColor <> OldBg then
+    NotifyUpperSiblingsRepaint;
 end;
 
 function TCssStyledControl.GetEffectiveStyleSheet: string;
@@ -4470,6 +4497,19 @@ begin
   Invalidate;
 end;
 
+procedure TCssStyledControl.SetVisible(AValue: Boolean);
+begin
+  if Visible = AValue then
+  begin
+    inherited SetVisible(AValue);
+    Exit;
+  end;
+
+  inherited SetVisible(AValue);
+
+  NotifyUpperSiblingsRepaint;
+end;
+
 procedure TCssStyledControl.SetFocusColor(AValue: TColor);
 begin
   if (FFocusColor = AValue) and FFocusColorSet then Exit;
@@ -4599,6 +4639,58 @@ begin
   B := (((Fore shr 16) and $FF) * Alpha + ((Base shr 16) and $FF) * (255 - Alpha)) div 255;
 
   Result := RGBToColor(R, G, B);
+end;
+
+procedure TCssStyledControl.NotifyUpperSiblingsRepaint(
+  AOldBounds: PRect);
+var
+  P: TWinControl;
+  I, MyIndex: Integer;
+  Sibling: TControl;
+  OldR, NewR, SiblingR, R: TRect;
+  CheckOld: Boolean;
+begin
+  if (csDestroying in ComponentState) or (csLoading in ComponentState) then
+    Exit;
+
+  P := Parent;
+  if P = nil then
+    Exit;
+
+  MyIndex := -1;
+  for I := 0 to P.ControlCount - 1 do
+    if P.Controls[I] = Self then
+    begin
+      MyIndex := I;
+      Break;
+    end;
+
+  if MyIndex < 0 then
+    Exit;
+
+  NewR := BoundsRect;
+  CheckOld := AOldBounds <> nil;
+  if CheckOld then
+    OldR := AOldBounds^;
+
+  for I := MyIndex + 1 to P.ControlCount - 1 do
+  begin
+    Sibling := P.Controls[I];
+
+    if not (Sibling is TCssStyledControl) then
+      Continue;
+
+    if not Sibling.Visible then
+      Continue;
+
+    SiblingR := Sibling.BoundsRect;
+
+    if IntersectRect(R, NewR, SiblingR) or
+       (CheckOld and IntersectRect(R, OldR, SiblingR)) then
+    begin
+      Sibling.Invalidate;
+    end;
+  end;
 end;
 
 function TCssStyledControl.GetShowPrefix: Boolean;
@@ -5738,6 +5830,71 @@ begin
   end;
 end;
 
+function TCssStyledControl.GetBackgroundBeneathAtClientPoint(
+  const AClientPoint: TPoint): TColor;
+var
+  C: TControl;
+  ParentControl: TWinControl;
+  PtInParent: TPoint;
+  SiblingRect: TRect;
+  I, MyIndex: Integer;
+  Sibling: TControl;
+  R: TColor;
+begin
+  PtInParent := Point(AClientPoint.X + Left, AClientPoint.Y + Top);
+  C := Self;
+
+  while C.Parent <> nil do
+  begin
+    ParentControl := C.Parent;
+
+    MyIndex := -1;
+    for I := 0 to ParentControl.ControlCount - 1 do
+      if ParentControl.Controls[I] = C then
+      begin
+        MyIndex := I;
+        Break;
+      end;
+
+    if MyIndex > 0 then
+      for I := MyIndex - 1 downto 0 do
+      begin
+        Sibling := ParentControl.Controls[I];
+
+        if not Sibling.Visible then
+          Continue;
+
+        SiblingRect := Sibling.BoundsRect;
+        if not PtInRect(SiblingRect, PtInParent) then
+          Continue;
+
+        if Sibling is TCssStyledControl then
+          R := TCssStyledControl(Sibling).GetCssBackgroundColor
+        else
+          R := Sibling.Color;
+
+        if (R <> clNone) and (R <> clDefault) then
+          Exit(R);
+      end;
+
+    if ParentControl is TCssStyledControl then
+      R := TCssStyledControl(ParentControl).GetCssBackgroundColor
+    else
+      R := ParentControl.Color;
+
+    if (R <> clNone) and (R <> clDefault) then
+      Exit(R);
+
+    PtInParent := Point(
+      PtInParent.X + ParentControl.Left,
+      PtInParent.Y + ParentControl.Top
+    );
+    C := ParentControl;
+  end;
+
+  Result := clBtnFace;
+end;
+
 procedure TCssStyledControl.DrawRoundedRectAA(
   ACanvas: TCanvas;
   const ARect: TRect;
@@ -6532,6 +6689,7 @@ begin
   end;
 
   RefreshStylesByState;
+  NotifyUpperSiblingsRepaint;
 end;
 
 procedure TCssStyledControl.Click;
@@ -6909,6 +7067,7 @@ var
   Radii: TCssCornerRadii;
   Params: TCssRoundedBoxParams;
   NeedAA: Boolean;
+  TL, TR, BR, BL: TPoint;
 begin
   if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
     Exit;
@@ -6924,6 +7083,11 @@ begin
 
   if NeedAA then
   begin
+    TL := Point(ARect.Left,     ARect.Top);
+    TR := Point(ARect.Right - 1, ARect.Top);
+    BR := Point(ARect.Right - 1, ARect.Bottom - 1);
+    BL := Point(ARect.Left,     ARect.Bottom - 1);
+
     Params.Radii := Radii;
     Params.FillColor := BG;
     Params.BorderColor := ApplyOpacity(FBorderColor);
@@ -6932,7 +7096,11 @@ begin
     Params.Shadow := FBoxShadow;
     Params.Gradient := FBackgroundGradient;
     Params.HasGradient := FBackgroundGradient.Kind <> cgkNone;
-    Params.BackColor := GetParentBackgroundColor;
+
+    Params.CornerBackColor[0] := GetBackgroundBeneathAtClientPoint(TL);
+    Params.CornerBackColor[1] := GetBackgroundBeneathAtClientPoint(TR);
+    Params.CornerBackColor[2] := GetBackgroundBeneathAtClientPoint(BR);
+    Params.CornerBackColor[3] := GetBackgroundBeneathAtClientPoint(BL);
 
     DrawRoundedRectAA(ACanvas, ARect, Params);
   end
@@ -7739,7 +7907,10 @@ begin
     Params.Shadow := FBoxShadow;
     Params.Gradient := FBackgroundGradient;
     Params.HasGradient := FBackgroundGradient.Kind <> cgkNone;
-    Params.BackColor := GetParentBackgroundColor;
+    Params.CornerBackColor[0] := GetBackgroundBeneathAtClientPoint(Point(R.Left, R.Top));
+    Params.CornerBackColor[1] := GetBackgroundBeneathAtClientPoint(Point(R.Right - 1, R.Top));
+    Params.CornerBackColor[2] := GetBackgroundBeneathAtClientPoint(Point(R.Right - 1, R.Bottom - 1));
+    Params.CornerBackColor[3] := GetBackgroundBeneathAtClientPoint(Point(R.Left, R.Bottom - 1));
 
     DrawRoundedRectAA(Canvas, DrawR, Params);
   end
@@ -7789,6 +7960,17 @@ begin
   end;
 
   inherited Paint;
+end;
+
+procedure TCssStyledControl.ChangeBounds(
+  ALeft, ATop, AWidth, AHeight: Integer;
+  KeepBase: Boolean);
+var
+  OldBounds: TRect;
+begin
+  OldBounds := BoundsRect;
+  inherited ChangeBounds(ALeft, ATop, AWidth, AHeight, KeepBase);
+  NotifyUpperSiblingsRepaint(@OldBounds);
 end;
 
 { ============================================================ }
