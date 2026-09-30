@@ -220,6 +220,8 @@ type
     FFocusColor: TColor;
     FFocusColorSet: Boolean;
 
+    FHoveredChildrenCount: Integer;
+
     FBorderRadiusTL, FBorderRadiusTR, FBorderRadiusBR, FBorderRadiusBL: Integer;
     FBackgroundGradient: TCssGradient;
     FBoxShadow: TCssBoxShadow;
@@ -311,6 +313,9 @@ type
     procedure ChildFocusChanged(AChildFocused: Boolean); virtual;
     procedure NotifyParentsFocusChanged(AFocused: Boolean);
 
+    procedure ChildHoverChanged(AChildHovered: Boolean); virtual;
+    procedure NotifyParentsHoverChanged(AHovered: Boolean);
+
     procedure UpdateCursor; virtual;
 
     { State (setters) }
@@ -329,6 +334,7 @@ type
     function GetMousePressedState: Boolean;
     function GetFocusedState: Boolean;
     function GetFocusColor: TColor; virtual;
+    function GetEffectiveHoverState: Boolean; virtual;
     function GetShowPrefix: Boolean; virtual;
     procedure HtmlModeChanged; virtual;
     function ShouldPaintCaption: Boolean; virtual;
@@ -4216,7 +4222,7 @@ begin
   Result := False;
 
   if P = 'hover' then
-    Result := Enabled and FMouseInControl
+    Result := Enabled and GetEffectiveHoverState
   else if P = 'active' then
     Result := Enabled and FMousePressed
   else if P = 'focus' then
@@ -4729,6 +4735,11 @@ begin
 
   if Result = clDefault then
     Result := clWindowText;
+end;
+
+function TCssStyledControl.GetEffectiveHoverState : Boolean;
+begin
+  Result := FMouseInControl or (FHoveredChildrenCount > 0);
 end;
 
 function TCssStyledControl.GetStyledBackgroundColor: TColor;
@@ -6552,6 +6563,7 @@ begin
 
   FMouseInControl := True;
   RefreshStylesByState;
+  NotifyParentsHoverChanged(True);
 end;
 
 procedure TCssStyledControl.MouseLeave;
@@ -6568,6 +6580,7 @@ begin
 
   SetHoverLinkId(0);
   RefreshStylesByState;
+  NotifyParentsHoverChanged(False);
 end;
 
 procedure TCssStyledControl.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -6705,6 +6718,40 @@ begin
   begin
     if C is TCssStyledControl then
       TCssStyledControl(C).ChildFocusChanged(AFocused);
+    C := C.Parent;
+  end;
+end;
+
+procedure TCssStyledControl.ChildHoverChanged(AChildHovered: Boolean);
+var
+  WasHovered, IsHovered: Boolean;
+begin
+  WasHovered := GetEffectiveHoverState;
+
+  if AChildHovered then
+    Inc(FHoveredChildrenCount)
+  else if FHoveredChildrenCount > 0 then
+    Dec(FHoveredChildrenCount);
+
+  IsHovered := GetEffectiveHoverState;
+
+  if WasHovered <> IsHovered then
+  begin
+    RefreshStylesByState;
+    Invalidate;
+  end;
+end;
+
+procedure TCssStyledControl.NotifyParentsHoverChanged(AHovered: Boolean);
+var
+  C: TControl;
+begin
+  C := Parent;
+  while C <> nil do
+  begin
+    if (C is TCssStyledControl) and
+       not (csDestroying in C.ComponentState) then
+      TCssStyledControl(C).ChildHoverChanged(AHovered);
     C := C.Parent;
   end;
 end;
