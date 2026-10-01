@@ -2139,7 +2139,13 @@ begin
   SyncTabs;
 
   if FPages.Count = 1 then
-    SetActivePageIndex(0);
+    SetActivePageIndex(0)
+  else
+  begin
+    LayoutSheets;
+    if csDesigning in ComponentState then
+      SetActivePageIndex(FPages.Count - 1);
+  end;
 
   Invalidate;
 end;
@@ -2224,29 +2230,40 @@ var
   I: Integer;
   ContentR: TRect;
   Sheet: TCssTabSheet;
+  ActiveSheet: TCssTabSheet;
 begin
   if not Assigned(FPages) then
     Exit;
 
   ContentR := GetContentRect;
 
+  ActiveSheet := nil;
+  if (FActivePageIndex >= 0) and (FActivePageIndex < FPages.Count) then
+    ActiveSheet := TCssTabSheet(FPages[FActivePageIndex]);
+
   for I := 0 to FPages.Count - 1 do
   begin
     Sheet := TCssTabSheet(FPages[I]);
 
-    if I = FActivePageIndex then
-    begin
-      Sheet.Visible := True;
-      Sheet.SetBounds(
-        ContentR.Left,
-        ContentR.Top,
-        ContentR.Right - ContentR.Left,
-        ContentR.Bottom - ContentR.Top
-      );
-      Sheet.BringToFront;
-    end
-    else
-      Sheet.Visible := False;
+    if Sheet = ActiveSheet then
+      Continue;
+
+    Sheet.Visible := False;
+
+    if (Sheet.Left <> -32000) or (Sheet.Top <> -32000) then
+      Sheet.SetBounds(-32000, -32000, 1, 1);
+  end;
+
+  if ActiveSheet <> nil then
+  begin
+    ActiveSheet.SetBounds(
+      ContentR.Left,
+      ContentR.Top,
+      ContentR.Right - ContentR.Left,
+      ContentR.Bottom - ContentR.Top
+    );
+    ActiveSheet.Visible := True;
+    ActiveSheet.BringToFront;
   end;
 end;
 
