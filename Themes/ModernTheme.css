@@ -381,6 +381,11 @@ TCssPageControl {
   tab-spacing: 2px;
   tab-padding: 8px;
   tab-cursor: pointer;
+  tab-scroll-button-background: #F1F5F9;
+  tab-scroll-button-hover-background: #E2E8F0;
+  tab-scroll-button-active-background: #CBD5E1;
+  tab-scroll-arrow-color: #475569;
+  tab-scroll-button-radius: 0px;
 }
 TCssTabSheet {
   background-color: #FFFFFF;
@@ -813,6 +818,10 @@ TCssPageControl {
   tab-spacing: 2px;
   tab-padding: 8px;
   tab-cursor: pointer;
+  tab-scroll-button-background: #334155;
+  tab-scroll-button-hover-background: #475569;
+  tab-scroll-button-active-background: #64748B;
+  tab-scroll-arrow-color: #CBD5E1;
 }
 TCssTabSheet {
   background-color: #1E293B;

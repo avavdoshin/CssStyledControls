@@ -8,6 +8,11 @@ uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
   CssStyledControl;
 
+const
+  CSS_TAB_SCROLL_EDGE_MARGIN = 6;
+
+  CSS_TAB_SCROLL_GAP = 6;
+
 type
   TCssTabPosition = (ctpTop, ctpBottom, ctpLeft, ctpRight);
 
@@ -61,6 +66,12 @@ type
     FTabWidth: Integer;
     FHoverIndex: Integer;
 
+    // === Scroll buttons ===
+    FShowScrollButtons: Boolean;
+    FScrollButtonSize: Integer;    // 0 = auto (= FTabHeight)
+    FFirstVisibleTab: Integer;
+    FHoverScrollButton: Integer;   // -1 no, 0 prev, 1 next
+
     // Tab appearance
     FTabBackground: TColor;
     FTabBackgroundSet: Boolean;
@@ -76,6 +87,15 @@ type
     FTabBorderColorSet: Boolean;
     FTabRadius: Integer;
     FTabRadiusSet: Boolean;
+
+    // Scroll button appearance
+    FScrollButtonBackground: TColor;         FScrollButtonBackgroundSet: Boolean;
+    FScrollButtonHoverBackground: TColor;    FScrollButtonHoverBackgroundSet: Boolean;
+    FScrollButtonActiveBackground: TColor;   FScrollButtonActiveBackgroundSet: Boolean;
+    FScrollButtonArrowColor: TColor;         FScrollButtonArrowColorSet: Boolean;
+    FScrollButtonRadius: Integer;            FScrollButtonRadiusSet: Boolean;
+    FScrollButtonDisabledBackground: TColor; FScrollButtonDisabledBackgroundSet: Boolean;
+    FScrollButtonDisabledArrowColor: TColor; FScrollButtonDisabledArrowColorSet: Boolean;
 
     // Layout
     FTabSpacing: Integer;
@@ -121,6 +141,36 @@ type
     function GetTabRect(Index: Integer): TRect;
     function TabAtPos(X, Y: Integer): Integer;
     function GetTabWidth(Index: Integer): Integer;
+
+    // === Scroll buttons ===
+    function  GetScrollButtonBackground: TColor;
+    function  GetScrollButtonHoverBackground: TColor;
+    function  GetScrollButtonActiveBackground: TColor;
+    function  GetScrollButtonArrowColor: TColor;
+    function  GetScrollButtonRadius: Integer;
+    function  GetScrollButtonDisabledBackground: TColor;
+    function  GetScrollButtonDisabledArrowColor: TColor;
+
+    function  GetTabsExtentFrom(AIndex: Integer): Integer;
+    function  CanScrollPrev: Boolean;
+    function  CanScrollNext: Boolean;
+    function  IsScrollButtonEnabled(AWhich: Integer): Boolean;
+
+    function  GetScrollButtonSize: Integer;
+    function  GetTabStripAvailableExtent: Integer;
+    function  GetTotalTabsExtent: Integer;
+    function  NeedScrollButtons: Boolean;
+    function  GetTabStripRect: TRect;
+    function  GetScrollButtonRect(AWhich: Integer): TRect;
+    function  ScrollButtonAt(X, Y: Integer): Integer;
+    procedure EnsureFirstVisibleTab;
+    procedure ScrollTabs(ADelta: Integer);
+    procedure DrawScrollButton(AWhich: Integer);
+    procedure DrawScrollButtons;
+    procedure DrawCornerMasks;
+
+    procedure SetShowScrollButtons(AValue: Boolean);
+    procedure SetScrollButtonSize(AValue: Integer);
   protected
     // Painting
     procedure Paint; override;
@@ -157,6 +207,12 @@ type
 
     // Events
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
+
+    // Scroll buttons
+    property ShowScrollButtons: Boolean read FShowScrollButtons write SetShowScrollButtons default True;
+    property ScrollButtonSize: Integer read FScrollButtonSize write SetScrollButtonSize default 0;
+    property ScrollButtonDisabledBackground: TColor read GetScrollButtonDisabledBackground write FScrollButtonDisabledBackground;
+    property ScrollButtonDisabledArrowColor: TColor read GetScrollButtonDisabledArrowColor write FScrollButtonDisabledArrowColor;
 
     // Standard properties
     property Align;
@@ -218,6 +274,31 @@ type
 implementation
 
 { TCssTabSheet }
+
+function LerpColorRGB(C1, C2: TColor; T: Double): TColor;
+var
+  RGB1, RGB2: LongInt;
+  R1, G1, B1, R2, G2, B2: Integer;
+begin
+  if T <= 0 then Exit(C1);
+  if T >= 1 then Exit(C2);
+
+  RGB1 := ColorToRGB(C1);
+  RGB2 := ColorToRGB(C2);
+
+  R1 := RGB1 and $FF;
+  G1 := (RGB1 shr 8) and $FF;
+  B1 := (RGB1 shr 16) and $FF;
+  R2 := RGB2 and $FF;
+  G2 := (RGB2 shr 8) and $FF;
+  B2 := (RGB2 shr 16) and $FF;
+
+  Result := RGBToColor(
+    Round(R1 + (R2 - R1) * T),
+    Round(G1 + (G2 - G1) * T),
+    Round(B1 + (B2 - B1) * T)
+  );
+end;
 
 constructor TCssTabSheet.Create(AOwner: TComponent);
 begin
@@ -376,6 +457,11 @@ begin
   FTabCursor := crHandPoint;   // default: hand, since tabs are clickable
   FContentCursor := crDefault;
 
+  FShowScrollButtons := True;
+  FScrollButtonSize := 0;
+  FFirstVisibleTab := 0;
+  FHoverScrollButton := -1;
+
   TCssStyledControl(Self).Caption := '';
 end;
 
@@ -433,6 +519,7 @@ begin
   if FTabIndex >= FTabs.Count then
     FTabIndex := FTabs.Count - 1;
 
+  EnsureFirstVisibleTab;
   Invalidate;
 end;
 
@@ -448,6 +535,19 @@ begin
     Exit;
 
   FTabIndex := AValue;
+
+  if FTabIndex >= 0 then
+  begin
+    if FTabIndex < FFirstVisibleTab then
+      FFirstVisibleTab := FTabIndex
+    else
+    begin
+      while (FFirstVisibleTab < FTabIndex) and
+            (GetTabsExtentFrom(FFirstVisibleTab) >
+             GetTabStripAvailableExtent) do
+        Inc(FFirstVisibleTab);
+    end;
+  end;
 
   DoChange;
   Invalidate;
@@ -499,48 +599,40 @@ end;
 
 function TCssTabControl.GetTabRect(Index: Integer): TRect;
 var
-  R: TRect;
+  Strip: TRect;
   X, Y, Spacing, TabW, I: Integer;
 begin
-  R := GetInnerRect;
   Result := Rect(0, 0, 0, 0);
 
+  if (Index < 0) or (Index >= FTabs.Count) then
+    Exit;
+
+  if Index < FFirstVisibleTab then
+    Exit;
+
+  Strip := GetTabStripRect;
   Spacing := GetTabSpacing;
 
-  // Compute X as the sum of the widths of the previous tabs.
-  X := R.Left + 4;
-
-  for I := 0 to Index - 1 do
-    X := X + GetTabWidth(I) + Spacing;
-
-  TabW := GetTabWidth(Index);
-
   case FTabPosition of
-    ctpTop:
-      Result := Rect(X, R.Top + 2, X + TabW, R.Top + 2 + FTabHeight);
-
-    ctpBottom:
-      Result := Rect(X, R.Bottom - 2 - FTabHeight, X + TabW, R.Bottom - 2);
-
-    ctpLeft:
+    ctpTop, ctpBottom:
     begin
-      // For vertical tabs, use a fixed width.
-      Y := R.Top + 4;
+      X := Strip.Left;
 
-      for I := 0 to Index - 1 do
-        Y := Y + FTabHeight + Spacing;
+      for I := FFirstVisibleTab to Index - 1 do
+        X := X + GetTabWidth(I) + Spacing;
 
-      Result := Rect(R.Left + 2, Y, R.Left + 2 + FTabHeight * 3, Y + FTabHeight);
+      TabW := GetTabWidth(Index);
+      Result := Rect(X, Strip.Top, X + TabW, Strip.Bottom);
     end;
 
-    ctpRight:
+    ctpLeft, ctpRight:
     begin
-      Y := R.Top + 4;
+      Y := Strip.Top;
 
-      for I := 0 to Index - 1 do
+      for I := FFirstVisibleTab to Index - 1 do
         Y := Y + FTabHeight + Spacing;
 
-      Result := Rect(R.Right - 2 - FTabHeight * 3, Y, R.Right - 2, Y + FTabHeight);
+      Result := Rect(Strip.Left, Y, Strip.Right, Y + FTabHeight);
     end;
   end;
 end;
@@ -567,18 +659,37 @@ end;
 function TCssTabControl.TabAtPos(X, Y: Integer): Integer;
 var
   I: Integer;
-  R: TRect;
+  R, Strip: TRect;
+  P: TPoint;
 begin
   Result := -1;
+  P := Point(X, Y);
 
-  for I := 0 to FTabs.Count - 1 do
+  if ScrollButtonAt(X, Y) >= 0 then
+    Exit;
+
+  Strip := GetTabStripRect;
+
+  if not PtInRect(Strip, P) then
+    Exit;
+
+  for I := FFirstVisibleTab to FTabs.Count - 1 do
   begin
     R := GetTabRect(I);
 
-    if PtInRect(R, Point(X, Y)) then
-    begin
-      Result := I;
-      Exit;
+    if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+      Continue;
+
+    if PtInRect(R, P) then
+      Exit(I);
+
+    case FTabPosition of
+      ctpTop, ctpBottom:
+        if R.Left >= Strip.Right then
+          Break;
+    else
+      if R.Top >= Strip.Bottom then
+        Break;
     end;
   end;
 end;
@@ -671,10 +782,536 @@ begin
     Result := FTabWidth;
 end;
 
+function TCssTabControl.GetScrollButtonBackground: TColor;
+begin
+  if FScrollButtonBackgroundSet then
+    Result := FScrollButtonBackground
+  else
+    Result := GetTabBackground;
+end;
+
+function TCssTabControl.GetScrollButtonHoverBackground: TColor;
+begin
+  if FScrollButtonHoverBackgroundSet then
+    Result := FScrollButtonHoverBackground
+  else
+    Result := GetTabHoverBackground;
+end;
+
+function TCssTabControl.GetScrollButtonActiveBackground: TColor;
+begin
+  if FScrollButtonActiveBackgroundSet then
+    Result := FScrollButtonActiveBackground
+  else
+    Result := GetTabActiveBackground;
+end;
+
+function TCssTabControl.GetScrollButtonArrowColor: TColor;
+begin
+  if FScrollButtonArrowColorSet then
+    Result := FScrollButtonArrowColor
+  else
+    Result := GetTabTextColor;
+end;
+
+function TCssTabControl.GetScrollButtonRadius: Integer;
+begin
+  if FScrollButtonRadiusSet then
+    Result := FScrollButtonRadius
+  else
+    Result := 0;
+end;
+
+function TCssTabControl.GetScrollButtonDisabledBackground: TColor;
+begin
+  if FScrollButtonDisabledBackgroundSet then
+    Result := FScrollButtonDisabledBackground
+  else
+    Result := GetScrollButtonBackground;
+end;
+
+function TCssTabControl.GetScrollButtonDisabledArrowColor: TColor;
+begin
+  if FScrollButtonDisabledArrowColorSet then
+    Result := FScrollButtonDisabledArrowColor
+  else
+    Result := GetScrollButtonArrowColor;
+end;
+
+function TCssTabControl.GetTabsExtentFrom(AIndex: Integer): Integer;
+var
+  I: Integer;
+  Spacing: Integer;
+begin
+  Result := 0;
+
+  if (AIndex < 0) or (AIndex >= FTabs.Count) then
+    Exit;
+
+  Spacing := GetTabSpacing;
+
+  for I := AIndex to FTabs.Count - 1 do
+  begin
+    if I > AIndex then
+      Inc(Result, Spacing);
+    Inc(Result, GetTabWidth(I));
+  end;
+end;
+
+function TCssTabControl.CanScrollPrev: Boolean;
+begin
+  Result := NeedScrollButtons and (FFirstVisibleTab > 0);
+end;
+
+function TCssTabControl.CanScrollNext: Boolean;
+begin
+  if not NeedScrollButtons then
+    Exit(False);
+
+  if FFirstVisibleTab >= FTabs.Count - 1 then
+    Exit(False);
+
+  Result := GetTabsExtentFrom(FFirstVisibleTab) > GetTabStripAvailableExtent;
+end;
+
+function TCssTabControl.IsScrollButtonEnabled(AWhich: Integer): Boolean;
+begin
+  if AWhich = 0 then
+    Result := CanScrollPrev
+  else if AWhich = 1 then
+    Result := CanScrollNext
+  else
+    Result := False;
+end;
+
+function TCssTabControl.GetScrollButtonSize: Integer;
+begin
+  if FScrollButtonSize > 0 then
+    Result := FScrollButtonSize
+  else
+    Result := FTabHeight;
+
+  if Result < 10 then
+    Result := 10;
+end;
+
+function TCssTabControl.GetTabStripAvailableExtent: Integer;
+var
+  R: TRect;
+begin
+  R := GetInnerRect;
+
+  case FTabPosition of
+    ctpTop, ctpBottom:
+      Result := (R.Right - 4) - (R.Left + 4);
+    ctpLeft, ctpRight:
+      Result := (R.Bottom - 4) - (R.Top + 4);
+  else
+    Result := 0;
+  end;
+
+  if Result < 0 then
+    Result := 0;
+end;
+
+function TCssTabControl.GetTotalTabsExtent: Integer;
+var
+  I: Integer;
+  Spacing: Integer;
+begin
+  Result := 0;
+
+  if FTabs.Count = 0 then
+    Exit;
+
+  Spacing := GetTabSpacing;
+
+  for I := 0 to FTabs.Count - 1 do
+  begin
+    if I > 0 then
+      Inc(Result, Spacing);
+    Inc(Result, GetTabWidth(I));
+  end;
+end;
+
+function TCssTabControl.NeedScrollButtons: Boolean;
+begin
+  Result :=
+    FShowScrollButtons and
+    (FTabs.Count > 0) and
+    (GetTotalTabsExtent > GetTabStripAvailableExtent);
+end;
+
+function TCssTabControl.GetTabStripRect: TRect;
+var
+  R: TRect;
+  BtnArea: Integer;
+begin
+  R := GetInnerRect;
+
+  if NeedScrollButtons then
+    BtnArea := GetScrollButtonSize * 2 + CSS_TAB_SCROLL_GAP
+  else
+    BtnArea := 0;
+
+  case FTabPosition of
+    ctpTop:
+      Result := Rect(
+        R.Left + 4,
+        R.Top + 2,
+        R.Right - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea,
+        R.Top + 2 + FTabHeight
+      );
+
+    ctpBottom:
+      Result := Rect(
+        R.Left + 4,
+        R.Bottom - 2 - FTabHeight,
+        R.Right - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea,
+        R.Bottom - 2
+      );
+
+    ctpLeft:
+      Result := Rect(
+        R.Left + 2,
+        R.Top + 4,
+        R.Left + 2 + FTabHeight * 3,
+        R.Bottom - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea
+      );
+
+    ctpRight:
+      Result := Rect(
+        R.Right - 2 - FTabHeight * 3,
+        R.Top + 4,
+        R.Right - 2,
+        R.Bottom - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea
+      );
+  else
+    Result := R;
+  end;
+end;
+
+function TCssTabControl.GetScrollButtonRect(AWhich: Integer): TRect;
+var
+  R: TRect;
+  BtnSize, X, Y: Integer;
+  BtnGroupW: Integer;
+begin
+  Result := Rect(0, 0, 0, 0);
+
+  if not NeedScrollButtons then
+    Exit;
+
+  R := GetInnerRect;
+  BtnSize := GetScrollButtonSize;
+  BtnGroupW := BtnSize * 2;
+
+  case FTabPosition of
+    ctpTop, ctpBottom:
+    begin
+      X := R.Right
+           - CSS_TAB_SCROLL_EDGE_MARGIN
+           - BtnGroupW
+           + AWhich * (BtnSize + 2);
+
+      if FTabPosition = ctpTop then
+        Y := R.Top + 2 + (FTabHeight - BtnSize) div 2
+      else
+        Y := R.Bottom - 2 - FTabHeight + (FTabHeight - BtnSize) div 2;
+
+      Result := Rect(X, Y, X + BtnSize, Y + BtnSize);
+    end;
+
+    ctpLeft, ctpRight:
+    begin
+      Y := R.Bottom
+           - CSS_TAB_SCROLL_EDGE_MARGIN
+           - BtnGroupW
+           + AWhich * BtnSize;
+
+      if FTabPosition = ctpLeft then
+        X := R.Left + 2 + (FTabHeight * 3 - BtnSize) div 2
+      else
+        X := R.Right - 2 - FTabHeight * 3 + (FTabHeight * 3 - BtnSize) div 2;
+
+      Result := Rect(X, Y, X + BtnSize, Y + BtnSize);
+    end;
+  end;
+end;
+
+function TCssTabControl.ScrollButtonAt(X, Y: Integer): Integer;
+begin
+  Result := -1;
+
+  if not NeedScrollButtons then
+    Exit;
+
+  if PtInRect(GetScrollButtonRect(0), Point(X, Y)) then
+    Result := 0
+  else if PtInRect(GetScrollButtonRect(1), Point(X, Y)) then
+    Result := 1;
+end;
+
+procedure TCssTabControl.EnsureFirstVisibleTab;
+begin
+  if FTabs.Count = 0 then
+    FFirstVisibleTab := 0
+  else
+  begin
+    if FFirstVisibleTab < 0 then
+      FFirstVisibleTab := 0;
+    if FFirstVisibleTab >= FTabs.Count then
+      FFirstVisibleTab := FTabs.Count - 1;
+  end;
+end;
+
+procedure TCssTabControl.ScrollTabs(ADelta: Integer);
+var
+  NewFirst: Integer;
+begin
+  NewFirst := FFirstVisibleTab + ADelta;
+
+  if NewFirst < 0 then
+    NewFirst := 0;
+
+  if (FTabs.Count > 0) and (NewFirst >= FTabs.Count) then
+    NewFirst := FTabs.Count - 1;
+
+  if NewFirst <> FFirstVisibleTab then
+  begin
+    FFirstVisibleTab := NewFirst;
+    Invalidate;
+  end;
+end;
+
+procedure TCssTabControl.DrawScrollButton(AWhich: Integer);
+var
+  R: TRect;
+  Bg, ArrowColor, BgColorForBlend: TColor;
+  Radius, CX, CY, S: Integer;
+  BtnEnabled: Boolean;
+begin
+  R := GetScrollButtonRect(AWhich);
+  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+    Exit;
+
+  BtnEnabled := IsScrollButtonEnabled(AWhich);
+
+  if not BtnEnabled then
+  begin
+    Bg := GetScrollButtonDisabledBackground;
+
+    if FScrollButtonDisabledArrowColorSet then
+      ArrowColor := GetScrollButtonDisabledArrowColor
+    else
+      ArrowColor := LerpColorRGB(
+        GetScrollButtonArrowColor, Bg, 0.6
+      );
+  end
+  else if (FHoverScrollButton = AWhich) and GetMousePressedState then
+    Bg := GetScrollButtonActiveBackground
+  else if FHoverScrollButton = AWhich then
+    Bg := GetScrollButtonHoverBackground
+  else
+    Bg := GetScrollButtonBackground;
+
+  if BtnEnabled then
+    ArrowColor := GetScrollButtonArrowColor;
+
+  Radius := GetScrollButtonRadius;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := Bg;
+  Canvas.Pen.Style := psClear;
+
+  if Radius > 0 then
+    Canvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, Radius, Radius)
+  else
+    Canvas.FillRect(R);
+
+  CX := (R.Left + R.Right) div 2;
+  CY := (R.Top + R.Bottom) div 2;
+  S := (R.Right - R.Left) div 4;
+
+  if S < 3 then S := 3;
+  if S > 7 then S := 7;
+
+  BgColorForBlend := Bg;
+
+  case FTabPosition of
+    ctpTop, ctpBottom:
+      if AWhich = 0 then
+        DrawAntiAliasedTriangle(Canvas,
+          Point(CX + S div 2, CY - S),
+          Point(CX - S div 2, CY),
+          Point(CX + S div 2, CY + S),
+          ArrowColor, BgColorForBlend)
+      else
+        DrawAntiAliasedTriangle(Canvas,
+          Point(CX - S div 2, CY - S),
+          Point(CX + S div 2, CY),
+          Point(CX - S div 2, CY + S),
+          ArrowColor, BgColorForBlend);
+
+    ctpLeft, ctpRight:
+      if AWhich = 0 then
+        DrawAntiAliasedTriangle(Canvas,
+          Point(CX - S, CY + S div 2),
+          Point(CX,     CY - S div 2),
+          Point(CX + S, CY + S div 2),
+          ArrowColor, BgColorForBlend)
+      else
+        DrawAntiAliasedTriangle(Canvas,
+          Point(CX - S, CY - S div 2),
+          Point(CX,     CY + S div 2),
+          Point(CX + S, CY - S div 2),
+          ArrowColor, BgColorForBlend);
+  end;
+end;
+
+procedure TCssTabControl.DrawScrollButtons;
+begin
+  if not NeedScrollButtons then Exit;
+
+  DrawScrollButton(0);
+  DrawScrollButton(1);
+end;
+
+procedure TCssTabControl.DrawCornerMasks;
+var
+  R: TRect;
+  Radius, PtCount: Integer;
+  Pts: array of TPoint;
+  BgColor: TColor;
+
+  procedure AddPt(X, Y: Integer);
+  begin
+    SetLength(Pts, PtCount + 1);
+    Pts[PtCount] := Point(X, Y);
+    Inc(PtCount);
+  end;
+
+  procedure DrawCorner(Corner: Integer);
+  var
+    K, CX, CY: Integer;
+    StartAngle, EndAngle, Angle: Double;
+  begin
+    PtCount := 0;
+    SetLength(Pts, 0);
+
+    case Corner of
+      0: begin // top-left
+        AddPt(R.Left, R.Top);
+        AddPt(R.Left + Radius, R.Top);
+        CX := R.Left + Radius; CY := R.Top + Radius;
+        StartAngle := Pi * 1.5; EndAngle := Pi;
+        for K := 0 to 16 do
+        begin
+          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
+          AddPt(CX + Round(Radius * Cos(Angle)),
+                CY + Round(Radius * Sin(Angle)));
+        end;
+        AddPt(R.Left, R.Top + Radius);
+      end;
+      1: begin // top-right
+        AddPt(R.Right, R.Top);
+        AddPt(R.Right - Radius, R.Top);
+        CX := R.Right - Radius; CY := R.Top + Radius;
+        StartAngle := Pi * 1.5; EndAngle := Pi * 2;
+        for K := 0 to 16 do
+        begin
+          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
+          AddPt(CX + Round(Radius * Cos(Angle)),
+                CY + Round(Radius * Sin(Angle)));
+        end;
+        AddPt(R.Right, R.Top + Radius);
+      end;
+      2: begin // bottom-right
+        AddPt(R.Right, R.Bottom);
+        AddPt(R.Right, R.Bottom - Radius);
+        CX := R.Right - Radius; CY := R.Bottom - Radius;
+        StartAngle := 0; EndAngle := Pi * 0.5;
+        for K := 0 to 16 do
+        begin
+          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
+          AddPt(CX + Round(Radius * Cos(Angle)),
+                CY + Round(Radius * Sin(Angle)));
+        end;
+        AddPt(R.Right - Radius, R.Bottom);
+      end;
+      3: begin // bottom-left
+        AddPt(R.Left, R.Bottom);
+        AddPt(R.Left + Radius, R.Bottom);
+        CX := R.Left + Radius; CY := R.Bottom - Radius;
+        StartAngle := Pi * 0.5; EndAngle := Pi;
+        for K := 0 to 16 do
+        begin
+          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
+          AddPt(CX + Round(Radius * Cos(Angle)),
+                CY + Round(Radius * Sin(Angle)));
+        end;
+        AddPt(R.Left, R.Bottom - Radius);
+      end;
+    end;
+
+    if PtCount > 2 then
+      Canvas.Polygon(Pts);
+  end;
+
+begin
+  Radius := GetCssBorderRadius;
+  if Radius <= 0 then Exit;
+
+  R := ClientRect;
+
+  if Radius > (R.Right - R.Left) div 2 then
+    Radius := (R.Right - R.Left) div 2;
+  if Radius > (R.Bottom - R.Top) div 2 then
+    Radius := (R.Bottom - R.Top) div 2;
+  if Radius <= 0 then Exit;
+
+  Canvas.Pen.Style := psClear;
+  Canvas.Brush.Style := bsSolid;
+
+  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Left, R.Top));
+  Canvas.Brush.Color := BgColor;
+  DrawCorner(0);
+
+  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Right - 1, R.Top));
+  Canvas.Brush.Color := BgColor;
+  DrawCorner(1);
+
+  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Right - 1, R.Bottom - 1));
+  Canvas.Brush.Color := BgColor;
+  DrawCorner(2);
+
+  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Left, R.Bottom - 1));
+  Canvas.Brush.Color := BgColor;
+  DrawCorner(3);
+
+  Canvas.Pen.Style := psSolid;
+end;
+
+procedure TCssTabControl.SetShowScrollButtons(AValue: Boolean);
+begin
+  if FShowScrollButtons = AValue then Exit;
+  FShowScrollButtons := AValue;
+  EnsureFirstVisibleTab;
+  Invalidate;
+end;
+
+procedure TCssTabControl.SetScrollButtonSize(AValue: Integer);
+begin
+  if AValue < 0 then AValue := 0;
+  if FScrollButtonSize = AValue then Exit;
+  FScrollButtonSize := AValue;
+  Invalidate;
+end;
+
 procedure TCssTabControl.Paint;
 var
   I: Integer;
-  TabR: TRect;
+  TabR, Strip, SavedClip: TRect;
   BG, FG, BorderC: TColor;
   TS: TTextStyle;
 begin
@@ -682,90 +1319,142 @@ begin
 
   AssignCssFontToFont(Canvas.Font);
 
-  for I := 0 to FTabs.Count - 1 do
+  EnsureFirstVisibleTab;
+
+  Strip := GetTabStripRect;
+
+  if (Strip.Right > Strip.Left) and (Strip.Bottom > Strip.Top) then
   begin
-    TabR := GetTabRect(I);
+    SavedClip := Canvas.ClipRect;
+    Canvas.ClipRect := Strip;
+    try
+      for I := FFirstVisibleTab to FTabs.Count - 1 do
+      begin
+        TabR := GetTabRect(I);
 
-    if I = FTabIndex then
-    begin
-      BG := GetTabActiveBackground;
-      FG := GetTabActiveTextColor;
-    end
-    else if I = FHoverIndex then
-    begin
-      BG := GetTabHoverBackground;
-      FG := GetTabTextColor;
-    end
-    else
-    begin
-      BG := GetTabBackground;
-      FG := GetTabTextColor;
-    end;
+        if (TabR.Right <= TabR.Left) or (TabR.Bottom <= TabR.Top) then
+          Continue;
 
-    BorderC := GetTabBorderColor;
+        case FTabPosition of
+          ctpTop, ctpBottom:
+            if TabR.Left >= Strip.Right then Break;
+        else
+          if TabR.Top >= Strip.Bottom then Break;
+        end;
 
-    Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := BG;
-    Canvas.Pen.Style := psSolid;
-    Canvas.Pen.Color := BorderC;
-    Canvas.Pen.Width := 1;
+        if I = FTabIndex then
+        begin
+          BG := GetTabActiveBackground;
+          FG := GetTabActiveTextColor;
+        end
+        else if I = FHoverIndex then
+        begin
+          BG := GetTabHoverBackground;
+          FG := GetTabTextColor;
+        end
+        else
+        begin
+          BG := GetTabBackground;
+          FG := GetTabTextColor;
+        end;
 
-    if GetTabRadius > 0 then
-      Canvas.RoundRect(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom, GetTabRadius, GetTabRadius)
-    else
-      Canvas.Rectangle(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom);
+        BorderC := GetTabBorderColor;
 
-    Canvas.Font.Color := FG;
+        Canvas.Brush.Style := bsSolid;
+        Canvas.Brush.Color := BG;
+        Canvas.Pen.Style := psSolid;
+        Canvas.Pen.Color := BorderC;
+        Canvas.Pen.Width := 1;
 
-    if HtmlMode then
-      DrawHtmlText(TabR, FTabs[I])
-    else
-    begin
-      TS := Default(TTextStyle);
-      FillChar(TS, SizeOf(TS), 0);
-      TS.Alignment := taCenter;
-      TS.Layout := tlCenter;
-      TS.Clipping := True;
+        if GetTabRadius > 0 then
+          Canvas.RoundRect(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom,
+                           GetTabRadius, GetTabRadius)
+        else
+          Canvas.Rectangle(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom);
 
-      Canvas.TextRect(TabR, TabR.Left, TabR.Top, FTabs[I], TS);
+        Canvas.Font.Color := FG;
+
+        if HtmlMode then
+          DrawHtmlText(TabR, FTabs[I])
+        else
+        begin
+          TS := Default(TTextStyle);
+          FillChar(TS, SizeOf(TS), 0);
+          TS.Alignment := taCenter;
+          TS.Layout := tlCenter;
+          TS.Clipping := True;
+
+          Canvas.TextRect(TabR, TabR.Left, TabR.Top, FTabs[I], TS);
+        end;
+      end;
+    finally
+      Canvas.ClipRect := SavedClip;
     end;
   end;
+
+  if NeedScrollButtons then
+    DrawScrollButtons;
+
+  DrawCornerMasks;
 end;
 
 procedure TCssTabControl.MouseDown(Button: TMouseButton; Shift: TShiftState;
   X, Y: Integer);
 var
-  Idx: Integer;
+  Idx, BtnIdx: Integer;
 begin
   inherited MouseDown(Button, Shift, X, Y);
 
-  if not Enabled then
-    Exit;
+  if not Enabled then Exit;
+  if Button <> mbLeft then Exit;
 
-  if Button <> mbLeft then
+  BtnIdx := ScrollButtonAt(X, Y);
+  if BtnIdx >= 0 then
+  begin
+    if not IsScrollButtonEnabled(BtnIdx) then
+      Exit;
+
+    if BtnIdx = 0 then
+      ScrollTabs(-1)
+    else
+      ScrollTabs(1);
     Exit;
+  end;
 
   Idx := TabAtPos(X, Y);
-
   if (Idx >= 0) and (Idx <> FTabIndex) then
     TabIndex := Idx;
 end;
 
 procedure TCssTabControl.MouseMove(Shift: TShiftState; X, Y: Integer);
 var
-  Idx: Integer;
+  Idx, BtnIdx: Integer;
 begin
   inherited MouseMove(Shift, X, Y);
 
-  if not Enabled then
+  if not Enabled then Exit;
+
+  BtnIdx := ScrollButtonAt(X, Y);
+
+  if (BtnIdx >= 0) and not IsScrollButtonEnabled(BtnIdx) then
+    BtnIdx := -1;
+
+  if BtnIdx <> FHoverScrollButton then
+  begin
+    FHoverScrollButton := BtnIdx;
+    Invalidate;
+  end;
+
+  if BtnIdx >= 0 then
+  begin
+    Cursor := FTabCursor;
     Exit;
+  end;
 
   Idx := TabAtPos(X, Y);
 
   if Idx >= 0 then
   begin
-    // Over the active tab — content-area cursor;
-    // over an inactive tab — tab cursor.
     if Idx = TabIndex then
       Cursor := FContentCursor
     else
@@ -785,9 +1474,10 @@ procedure TCssTabControl.MouseLeave;
 begin
   Cursor := FContentCursor;
 
-  if FHoverIndex <> -1 then
+  if (FHoverIndex <> -1) or (FHoverScrollButton <> -1) then
   begin
     FHoverIndex := -1;
+    FHoverScrollButton := -1;
     Invalidate;
   end;
 
@@ -808,6 +1498,13 @@ begin
   FTabAutoSize := True;
   FTabCursor := crHandPoint;
   FContentCursor := crDefault;
+  FScrollButtonBackgroundSet := False;
+  FScrollButtonHoverBackgroundSet := False;
+  FScrollButtonActiveBackgroundSet := False;
+  FScrollButtonArrowColorSet := False;
+  FScrollButtonRadiusSet := False;
+  FScrollButtonDisabledBackgroundSet := False;
+  FScrollButtonDisabledArrowColorSet := False;
 
   inherited ResetStyle;
 end;
@@ -923,6 +1620,83 @@ begin
   begin
     FContentCursor := ParseCssCursor(AValue);
     Cursor := FContentCursor;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-button-background' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FScrollButtonBackground := C;
+      FScrollButtonBackgroundSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-button-hover-background' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FScrollButtonHoverBackground := C;
+      FScrollButtonHoverBackgroundSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-button-active-background' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FScrollButtonActiveBackground := C;
+      FScrollButtonActiveBackgroundSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-arrow-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FScrollButtonArrowColor := C;
+      FScrollButtonArrowColorSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-button-radius' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      FScrollButtonRadius := Px;
+      FScrollButtonRadiusSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-button-size' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+      SetScrollButtonSize(Px);
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-button-disabled-background' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FScrollButtonDisabledBackground := C;
+      FScrollButtonDisabledBackgroundSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-scroll-arrow-disabled-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FScrollButtonDisabledArrowColor := C;
+      FScrollButtonDisabledArrowColorSet := True;
+    end;
     Exit;
   end;
 
