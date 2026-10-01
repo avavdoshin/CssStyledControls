@@ -205,6 +205,9 @@ type
 
 implementation
 
+type
+  TCssListBoxCracker = class(TCssListBox);
+
 { TCssComboBox }
 
 constructor TCssComboBox.Create(AOwner: TComponent);
@@ -603,10 +606,21 @@ begin
 
     FListBox.ScrollBarCssClass := FScrollBarCssClass;
     FListBox.ScrollBarCssStyle := FScrollBarCssStyle;
+    if Assigned(FPopup) then
+    begin
+      FPopup.Color := TCssListBoxCracker(FListBox).GetCssBackgroundColor;
+      if (FPopup.Color = clNone) or (FPopup.Color = clDefault) then
+        FPopup.Color := GetCssBackgroundColor;
+
+      if (FPopup.Color = clNone) or (FPopup.Color = clDefault) then
+        FPopup.Color := clWindow;
+    end;
   end;
 end;
 
 procedure TCssComboBox.EnsurePopup;
+var
+  PopupBG: TColor;
 begin
   if Assigned(FPopup) then
     Exit;
@@ -617,6 +631,12 @@ begin
   FPopup.ShowInTaskBar := stNever;
   FPopup.Visible := False;
   FPopup.OnDeactivate := @PopupDeactivate;
+
+  PopupBG := GetCssBackgroundColor;
+  if (PopupBG = clNone) or (PopupBG = clDefault) then
+    PopupBG := clBtnFace;
+  FPopup.Color := PopupBG;
+  FPopup.DoubleBuffered := True;
 
   FListBox := TCssListBox.Create(FPopup);
   FListBox.Parent := FPopup;
