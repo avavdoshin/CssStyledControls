@@ -23,8 +23,8 @@ type
 
     // Property setters
     procedure SetTabVisible(AValue: Boolean);
-    procedure SetPageControl(AValue: TCssPageControl);
   protected
+    procedure SetParent(AParent: TWinControl); override;
     // Painting
     procedure Paint; override;
 
@@ -32,9 +32,14 @@ type
     procedure SetCaption(const AValue: TCaption); override;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor  Destroy; override;
+    function    HasParent: Boolean; override;
+    function    GetParentComponent: TComponent; override;
+    procedure   SetParentComponent(Value: TComponent); override;
+    procedure   InheritStyleFromPageControl;
   published
     property TabVisible: Boolean read FTabVisible write SetTabVisible default True;
-    property PageControl: TCssPageControl read FPageControl write SetPageControl;
+    property PageControl: TCssPageControl read FPageControl;
 
     property Align;
     property Color;
@@ -188,6 +193,9 @@ type
 
     // Sizing
     procedure Resize; override;
+
+    procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
+    procedure StyleChanged; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -226,6 +234,40 @@ begin
   TCssStyledControl(Self).Caption := '';
 end;
 
+destructor TCssTabSheet.Destroy;
+var
+  PC: TCssPageControl;
+begin
+  PC := FPageControl;
+  FPageControl := nil;
+
+  if (PC <> nil) and not (csDestroying in PC.ComponentState) then
+    PC.RemovePage(Self);
+
+  inherited Destroy;
+end;
+
+function TCssTabSheet.HasParent : Boolean;
+begin
+  Result := (FPageControl <> nil) or (Parent <> nil);
+end;
+
+function TCssTabSheet.GetParentComponent : TComponent;
+begin
+  if FPageControl <> nil then
+    Result := FPageControl
+  else
+    Result := Parent;
+end;
+
+procedure TCssTabSheet.SetParentComponent(Value : TComponent);
+begin
+  if Value is TCssPageControl then
+    Parent := TCssPageControl(Value)
+  else if Value = nil then
+    Parent := nil;
+end;
+
 procedure TCssTabSheet.Paint;
 begin
   // Draw only the CSS background/border; the caption is drawn on the tab
@@ -261,18 +303,55 @@ begin
   end;
 end;
 
-procedure TCssTabSheet.SetPageControl(AValue: TCssPageControl);
+procedure TCssTabSheet.InheritStyleFromPageControl;
 begin
-  if FPageControl = AValue then
+  if FPageControl = nil then
     Exit;
 
-  if Assigned(FPageControl) then
-    FPageControl.RemovePage(Self);
+  if StyleProvider <> FPageControl.StyleProvider then
+    StyleProvider := FPageControl.StyleProvider;
 
-  FPageControl := AValue;
+  if (StyleName = '') and (FPageControl.StyleName <> '') then
+    StyleName := FPageControl.StyleName;
+end;
 
-  if Assigned(AValue) then
-    AValue.AddPage(Self);
+procedure TCssTabSheet.SetParent(AParent: TWinControl);
+var
+  OldPC: TCssPageControl;
+begin
+  if Parent = AParent then
+  begin
+    inherited SetParent(AParent);
+    Exit;
+  end;
+
+  OldPC := FPageControl;
+
+  inherited SetParent(AParent);
+
+  if csDestroying in ComponentState then
+    Exit;
+
+  if AParent is TCssPageControl then
+  begin
+    if OldPC <> TCssPageControl(AParent) then
+    begin
+      FPageControl := TCssPageControl(AParent);
+      TCssPageControl(AParent).AddPage(Self);
+
+      if (OldPC <> nil) and not (csDestroying in OldPC.ComponentState) then
+        OldPC.RemovePage(Self);
+    end;
+
+    InheritStyleFromPageControl;
+  end
+  else if OldPC <> nil then
+  begin
+    FPageControl := nil;
+
+    if not (csDestroying in OldPC.ComponentState) then
+      OldPC.RemovePage(Self);
+  end;
 end;
 
 { TCssTabControl }
@@ -861,9 +940,23 @@ begin
 end;
 
 destructor TCssPageControl.Destroy;
+var
+  I: Integer;
+  Sheet: TCssTabSheet;
 begin
-  FPages.Clear;
-  FPages.Free;
+  if Assigned(FPages) then
+  begin
+    for I := 0 to FPages.Count - 1 do
+    begin
+      Sheet := TCssTabSheet(FPages[I]);
+
+      if Sheet.FPageControl = Self then
+        Sheet.FPageControl := nil;
+    end;
+
+    FPages.Clear;
+    FreeAndNil(FPages);
+  end;
 
   inherited Destroy;
 end;
@@ -1017,11 +1110,13 @@ procedure TCssPageControl.RemovePage(APage: TCssTabSheet);
 var
   Idx: Integer;
 begin
+  if csDestroying in ComponentState then
+    Exit;
+
   if not Assigned(FPages) then
     Exit;
 
   Idx := FPages.IndexOf(APage);
-
   if Idx < 0 then
     Exit;
 
@@ -1029,8 +1124,6 @@ begin
 
   if APage.FPageControl = Self then
     APage.FPageControl := nil;
-
-  APage.Parent := nil;
 
   if FActivePageIndex >= FPages.Count then
     FActivePageIndex := FPages.Count - 1;
@@ -1126,5 +1219,38 @@ begin
   if Assigned(FPages) then
     LayoutSheets;
 end;
+
+procedure TCssPageControl.GetChildren(Proc: TGetChildProc; Root: TComponent);
+var
+  I: Integer;
+begin
+  if not Assigned(FPages) then Exit;
+
+  for I := 0 to FPages.Count - 1 do
+    Proc(TCssTabSheet(FPages[I]));
+end;
+
+procedure TCssPageControl.StyleChanged;
+var
+  I: Integer;
+begin
+  inherited StyleChanged;
+
+  if not Assigned(FPages) then
+    Exit;
+
+  for I := 0 to FPages.Count - 1 do
+    TCssTabSheet(FPages[I]).InheritStyleFromPageControl;
+end;
+
+initialization
+  RegisterClass(TCssTabSheet);
+  RegisterClass(TCssTabControl);
+  RegisterClass(TCssPageControl);
+
+finalization
+  UnregisterClass(TCssTabSheet);
+  UnregisterClass(TCssTabControl);
+  UnregisterClass(TCssPageControl);
 
 end.

@@ -6,9 +6,16 @@ interface
 
 uses
   Classes, SysUtils, TypInfo, PropEdits, ComponentEditors, Forms, Controls,
-  StdCtrls, ExtCtrls, Dialogs, CssStyledControl;
+  StdCtrls, ExtCtrls, Dialogs, FormEditingIntf, CssStyledControl, CssTabbedControl;
 
 type
+  TCssPageControlEditor = class(TComponentEditor)
+  public
+    procedure ExecuteVerb(Index: Integer); override;
+    function GetVerb(Index: Integer): string; override;
+    function GetVerbCount: Integer; override;
+  end;
+
   TCssTextPropertyEditor = class(TStringProperty)
   public
     function GetAttributes: TPropertyAttributes; override;
@@ -94,6 +101,89 @@ begin
     end;
   finally
     Dlg.Free;
+  end;
+end;
+
+{ TCssPageControlEditor }
+
+const
+  vNewPage      = 0;
+  vDeletePage   = 1;
+  vNextPage     = 2;
+  vPreviousPage = 3;
+
+function TCssPageControlEditor.GetVerbCount: Integer;
+begin
+  Result := 4;
+end;
+
+function TCssPageControlEditor.GetVerb(Index: Integer): string;
+begin
+  case Index of
+    vNewPage:      Result := 'New Page';
+    vDeletePage:   Result := 'Delete Page';
+    vNextPage:     Result := 'Next Page';
+    vPreviousPage: Result := 'Previous Page';
+  else
+    Result := inherited GetVerb(Index);
+  end;
+end;
+
+procedure TCssPageControlEditor.ExecuteVerb(Index: Integer);
+var
+  PC: TCssPageControl;
+  NewPage: TCssTabSheet;
+begin
+  if not (Component is TCssPageControl) then
+    Exit;
+
+  PC := TCssPageControl(Component);
+
+  case Index of
+    vNewPage:
+      begin
+        NewPage := TCssTabSheet(
+          FormEditingHook.CreateComponent(
+            PC,              // ParentComp
+            TCssTabSheet,    // TypeClass
+            '',              // AUnitName
+            0, 0, 200, 150,  // X, Y, W, H
+            False            // DisableAutoSize
+          )
+        );
+
+        if NewPage <> nil then
+        begin
+          NewPage.Parent := PC;
+          NewPage.Caption := 'Page' + IntToStr(PC.PageCount + 1);
+          PC.ActivePage := NewPage;
+
+          if Assigned(Designer) then
+            Designer.Modified;
+        end;
+      end;
+
+    vDeletePage:
+      begin
+        if PC.ActivePage <> nil then
+        begin
+          PC.ActivePage.Free;
+          Designer.Modified;
+        end;
+      end;
+
+    vNextPage:
+      if PC.PageCount > 1 then
+        PC.ActivePageIndex := (PC.ActivePageIndex + 1) mod PC.PageCount;
+
+    vPreviousPage:
+      if PC.PageCount > 1 then
+      begin
+        if PC.ActivePageIndex > 0 then
+          PC.ActivePageIndex := PC.ActivePageIndex - 1
+        else
+          PC.ActivePageIndex := PC.PageCount - 1;
+      end;
   end;
 end;
 
@@ -215,6 +305,11 @@ begin
   RegisterComponentEditor(
     TCssStyleProvider,
     TCssStyleProviderEditor
+  );
+
+  RegisterComponentEditor(
+    TCssPageControl,
+    TCssPageControlEditor
   );
 end;
 
