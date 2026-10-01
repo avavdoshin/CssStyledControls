@@ -1,4 +1,10 @@
 ﻿@variant light
+{
+  .standart-form { background-color: #ffffff; color: #000000; font-family: 'Segoe UI', 'Segoe UI Variable', 'Helvetica Neue', Arial, sans-serif; }
+  .standart-btn { background: #eeeeee; font-weight: bold; }
+  .standart-edit { background: #f9f9f9; text-align: left; }
+}
+
 * {
   font-family: 'Segoe UI', 'Segoe UI Variable', 'Helvetica Neue', Arial, sans-serif;
   font-size: 10pt;
@@ -447,6 +453,12 @@ TCssVirtualStringTree:focus { border-color: #2563EB; }
 }
 
 @variant dark
+{
+  .standart-form { background-color: #1E293B; color: #ffffff; font-family: 'Segoe UI', 'Segoe UI Variable', 'Helvetica Neue', Arial, sans-serif; }
+  .standart-btn { background: #333333; color: #cccccc; }
+  .standart-edit { background: #222222; color: #ffffff; }
+}
+
 * {
   font-family: 'Segoe UI', 'Segoe UI Variable', 'Helvetica Neue', Arial, sans-serif;
   font-size: 10pt;

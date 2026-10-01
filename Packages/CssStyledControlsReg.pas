@@ -11,12 +11,12 @@ implementation
 uses
   Classes, LResources, CssStyledControl, CssButtonControl, CssCheckboxControl, CssComboControl, CssEditControl, CssGroupControl, CssLabelControl,
   CssListboxControl, CssMemoControl, CssMenuControl, CssPanelControl, CssRadioControl, CssScrollControl, CssSplitterControl, CssTabbedControl,
-  CssVirtualTreeControl;
+  CssVirtualTreeControl, CssProxyControl;
 
 procedure Register;
 begin
   RegisterComponents('CSSStyledControls', [
-    TCssStyleProvider,
+    TCssStyleProvider, TCssProxy,
     TCssButton, TCssCheckBox, TCssCheckGroup, TCssComboBox,
     TCssEdit, TCssGroupBox, TCssLabel, TCssListBox,
     TCssMemo, TCssMainMenu, TCssPopupMenu, TCssPanel,
