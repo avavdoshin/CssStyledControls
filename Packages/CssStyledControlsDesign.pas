@@ -8,7 +8,8 @@ unit CssStyledControlsDesign;
 interface
 
 uses
-  CssStyledControlDesign, CssMenuReg, CssMenuDesigner, LazarusPackageIntf;
+  CssStyledControlDesign, CssMenuReg, CssMenuDesigner, 
+  CssVirtualTreeColumnsEditor, LazarusPackageIntf;
 
 implementation
 

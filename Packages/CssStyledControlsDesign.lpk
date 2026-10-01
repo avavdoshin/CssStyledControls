@@ -30,6 +30,10 @@
         <Filename Value="..\Source\CssMenuDesigner.pas"/>
         <UnitName Value="CssMenuDesigner"/>
       </Item>
+      <Item>
+        <Filename Value="CssVirtualTreeColumnsEditor.pas"/>
+        <UnitName Value="CssVirtualTreeColumnsEditor"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

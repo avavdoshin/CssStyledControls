@@ -223,6 +223,7 @@ type
     function GetItem(Index: Integer): TCssVirtualTreeColumn;
     procedure SetItem(Index: Integer; AValue: TCssVirtualTreeColumn);
   protected
+    function GetOwner: TPersistent; override;
     procedure Update(Item: TCollectionItem); override;
   public
     constructor Create(AOwner: TCssVirtualStringTree); reintroduce;
@@ -1052,6 +1053,11 @@ procedure TCssVirtualTreeColumns.SetItem(
 );
 begin
   inherited SetItem(Index, AValue);
+end;
+
+function TCssVirtualTreeColumns.GetOwner : TPersistent;
+begin
+  Result := FOwner;
 end;
 
 procedure TCssVirtualTreeColumns.Update(Item: TCollectionItem);
@@ -6625,5 +6631,13 @@ begin
   if ShouldAutoSort then
     SortNodeChildren(Node, Recursive);
 end;
+
+initialization
+  RegisterClass(TCssVirtualTreeColumn);
+  RegisterClass(TCssVirtualTreeColumns);
+
+finalization
+  UnregisterClass(TCssVirtualTreeColumn);
+  UnregisterClass(TCssVirtualTreeColumns);
 
 end.
