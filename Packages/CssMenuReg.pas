@@ -93,16 +93,28 @@ begin
     FDesigner.Modified;
 end;
 
-procedure TCssMenuDesignNotifier.NotifyRemoved(AItem : TCssMenuItem);
+procedure TCssMenuDesignNotifier.NotifyRemoved(AItem: TCssMenuItem);
+var
+  Persistent: TPersistent;
 begin
-  if (FDesigner <> nil) and (AItem <> nil) then
-  begin
-    if Assigned(GlobalDesignHook) then
-      GlobalDesignHook.Unselect(AItem);
+  if AItem = nil then
+    Exit;
 
-    FDesigner.Notification(AItem, opRemove);
-    FDesigner.Modified;
+  if Assigned(GlobalDesignHook) then
+  begin
+    Persistent := AItem;
+    GlobalDesignHook.DeletePersistent(Persistent);
+  end
+  else
+  begin
+    if FDesigner <> nil then
+      FDesigner.Notification(AItem, opRemove);
+
+    AItem.Free;
   end;
+
+  if FDesigner <> nil then
+    FDesigner.Modified;
 end;
 
 procedure TCssMenuDesignNotifier.SelectInDesigner(AComponent: TComponent);

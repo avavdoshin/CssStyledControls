@@ -31,6 +31,10 @@ type
 
     FThemeVariantCss: string;
     FThemeGlobalCss: string;
+
+    FApplyPending: Boolean;
+    procedure AsyncApplyThemes(Data: PtrInt);
+
     procedure RefreshThemeCss;
 
     procedure SetThemeProvider(AValue: TCssStyleProvider);
@@ -49,6 +53,7 @@ type
     destructor Destroy; override;
     
     procedure ApplyStyles;
+    procedure RequestApplyThemes;
   published
     property ThemeProvider: TCssStyleProvider read FThemeProvider write SetThemeProvider;
     property DefaultStyleName: string read FDefaultStyleName write FDefaultStyleName;
@@ -81,7 +86,7 @@ begin
   if Assigned(Proxy) and
      not (csLoading in ComponentState) and
      not (csDestroying in ComponentState) then
-    TCssProxy(Proxy).ApplyThemes;
+    TCssProxy(Proxy).RequestApplyThemes;
 end;
 
 { TProxyHiddenControl }
@@ -96,6 +101,7 @@ begin
   FHiddenControl.Proxy := Self;
   FHiddenControl.Visible := False;
   FHiddenControl.Parent := nil;
+  FApplyPending := False;
 end;
 
 destructor TCssProxy.Destroy;
@@ -116,6 +122,13 @@ begin
   inherited Notification(AComponent, Operation);
   if (Operation = opRemove) and (AComponent = FThemeProvider) then
     FThemeProvider := nil;
+end;
+
+procedure TCssProxy.AsyncApplyThemes(Data : PtrInt);
+begin
+  FApplyPending := False;
+  if not (csDestroying in ComponentState) then
+    ApplyThemes;
 end;
 
 procedure TCssProxy.RefreshThemeCss;
@@ -204,6 +217,13 @@ end;
 procedure TCssProxy.ApplyStyles;
 begin
   ApplyThemes;
+end;
+
+procedure TCssProxy.RequestApplyThemes;
+begin
+  if FApplyPending then Exit;
+  FApplyPending := True;
+  Application.QueueAsyncCall(@AsyncApplyThemes, 0);
 end;
 
 procedure TCssProxy.ApplyThemes;
@@ -376,7 +396,7 @@ begin
   end;
 
   if Font <> nil then
-    AControl.Refresh;
+    AControl.Invalidate;
 end;
 
 function TCssProxy.ParseColor(const AValue: string; out AColor: TColor): Boolean;

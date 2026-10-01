@@ -700,14 +700,7 @@ begin
 
   FTree.Selected := nil;
 
-  It.Detach;
-
-  if Assigned(GlobalDesignHook) then
-    GlobalDesignHook.Unselect(It);
-
   NotifyRemove(It);
-
-  It.Free;
 
   RebuildTree;
 

@@ -118,6 +118,8 @@ TCssRadioGroup {
   padding: 12px;
   text-align: left;
   vertical-align: top;
+  focus-within: true;
+  focus-color: #60A5FA; 
 }
 TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #94A3B8; }
 TCssCheckGroup:disabled,
@@ -140,6 +142,8 @@ TCssComboBox {
   combo-button-active-background: #CBD5E1;
   combo-button-arrow-color: #475569;
   combo-button-radius: 0px;
+  focus-within: true;
+  focus-color: #60A5FA; 
 }
 TCssComboBox:hover  { border-color: #94A3B8; }
 TCssComboBox:focus  { border-color: #2563EB; }
@@ -290,6 +294,8 @@ TCssGroupBox {
   padding: 12px;
   text-align: left;
   vertical-align: top;
+  focus-within: true;
+  focus-color: #60A5FA;
 }
 TCssGroupBox:hover { border-color: #94A3B8; }
 TCssPanel {
@@ -301,6 +307,7 @@ TCssPanel {
   text-align: left;
   vertical-align: top;
   focus-within: true;
+  focus-color: #60A5FA;
 }
 TCssPanel:hover { border-color: #94A3B8; }
 TCssPanel.panel-container        { padding: 4px; focus-within: false;}
@@ -572,6 +579,8 @@ TCssRadioGroup {
   padding: 12px;
   text-align: left;
   vertical-align: top;
+  focus-within: true;
+  focus-color: #60A5FA;
 }
 TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #64748B; }
 TCssCheckGroup:disabled,
@@ -594,6 +603,8 @@ TCssComboBox {
   combo-button-active-background: #64748B;
   combo-button-arrow-color: #CBD5E1;
   combo-button-radius: 0px;
+  focus-within: true;
+  focus-color: #60A5FA;
 }
 TCssComboBox:hover  { border-color: #64748B; }
 TCssComboBox:focus  { border-color: #60A5FA; }
@@ -744,6 +755,8 @@ TCssGroupBox {
   padding: 12px;
   text-align: left;
   vertical-align: top;
+  focus-within: true;
+  focus-color: #60A5FA;
 }
 TCssGroupBox:hover { border-color: #64748B; }
 TCssPanel {
@@ -755,6 +768,7 @@ TCssPanel {
   text-align: left;
   vertical-align: top;
   focus-within: true;
+  focus-color: #60A5FA;
 }
 TCssPanel:hover { border-color: #64748B; }
 TCssPanel.panel-container        { padding: 4px; focus-within: false;}
