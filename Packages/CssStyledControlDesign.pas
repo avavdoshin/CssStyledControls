@@ -133,6 +133,7 @@ procedure TCssPageControlEditor.ExecuteVerb(Index: Integer);
 var
   PC: TCssPageControl;
   NewPage: TCssTabSheet;
+  PersistentPage: TPersistent;
 begin
   if not (Component is TCssPageControl) then
     Exit;
@@ -158,6 +159,13 @@ begin
           NewPage.Caption := 'Page' + IntToStr(PC.PageCount + 1);
           PC.ActivePage := NewPage;
 
+          // CreateComponent creates the instance, but the IDE's persistent-added
+          // hook refreshes the Components tree and registers it with the form source.
+          if Assigned(GlobalDesignHook) then
+            GlobalDesignHook.PersistentAdded(NewPage, True)
+          else if Assigned(Designer) and Assigned(Designer.PropertyEditorHook) then
+            Designer.PropertyEditorHook.PersistentAdded(NewPage, True);
+
           if Assigned(Designer) then
             Designer.Modified;
         end;
@@ -167,8 +175,17 @@ begin
       begin
         if PC.ActivePage <> nil then
         begin
-          PC.ActivePage.Free;
-          Designer.Modified;
+          // Let the IDE remove the page from the Components tree and form source.
+          PersistentPage := PC.ActivePage;
+          if Assigned(GlobalDesignHook) then
+            GlobalDesignHook.DeletePersistent(PersistentPage)
+          else if Assigned(Designer) and Assigned(Designer.PropertyEditorHook) then
+            Designer.PropertyEditorHook.DeletePersistent(PersistentPage)
+          else
+            PC.ActivePage.Free;
+
+          if Assigned(Designer) then
+            Designer.Modified;
         end;
       end;
 

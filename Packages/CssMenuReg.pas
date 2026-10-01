@@ -82,11 +82,15 @@ begin
   if (AItem.Owner = nil) and (FRoot <> nil) then
     TMenuComponentFriend(FRoot).AddOwnedComponent(AItem);
 
-  if FDesigner <> nil then
-  begin
+  // PersistentAdded is the IDE-supported way to register a newly-created
+  // component. Notification(opInsert) alone does not refresh the Components tree.
+  if Assigned(GlobalDesignHook) then
+    GlobalDesignHook.PersistentAdded(AItem, True)
+  else if FDesigner <> nil then
     FDesigner.Notification(AItem, opInsert);
+
+  if FDesigner <> nil then
     FDesigner.Modified;
-  end;
 end;
 
 procedure TCssMenuDesignNotifier.NotifyRemoved(AItem : TCssMenuItem);
