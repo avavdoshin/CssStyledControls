@@ -1436,15 +1436,23 @@ begin
       begin
         TabR := GetTabRect(I);
 
-        if (TabR.Right <= TabR.Left) or (TabR.Bottom <= TabR.Top) then
-          Continue;
-
         case FTabPosition of
           ctpTop, ctpBottom:
-            if TabR.Left >= Strip.Right then Break;
+            if TabR.Left >= Strip.Right then
+              Break;
         else
-          if TabR.Top >= Strip.Bottom then Break;
+          if TabR.Top >= Strip.Bottom then
+            Break;
         end;
+
+        if TabR.Right > Strip.Right then
+          TabR.Right := Strip.Right;
+
+        if TabR.Bottom > Strip.Bottom then
+          TabR.Bottom := Strip.Bottom;
+
+        if (TabR.Right <= TabR.Left) or (TabR.Bottom <= TabR.Top) then
+          Continue;
 
         if I = FTabIndex then
         begin
