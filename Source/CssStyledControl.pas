@@ -263,7 +263,6 @@ type
     procedure SetFocusColor(AValue: TColor);
 
     { State }
-    procedure RefreshStylesByState;
     function MatchPseudo(const APseudo: string): Boolean;
     function TryEvaluateSelector(const ASelector: string; out SpecA, SpecB, SpecC: Integer): Boolean;
 
@@ -347,7 +346,6 @@ type
     procedure ResetStyle; virtual;
     procedure ApplyDeclaration(const AName, AValue: string); virtual;
     procedure InitTextProps; virtual;
-    procedure DrawFocusRect(ACanvas: TCanvas; const ARect: TRect); virtual;
 
     { Layout helpers }
     function  GetContentRect: TRect; virtual;
@@ -377,6 +375,9 @@ type
     { Font }
     procedure AssignCssFontToFont(AFont: TFont);
     procedure UpdateCanvasFont;
+
+    { Style }
+    procedure RefreshStylesByState;
 
     { Parsing }
     function ParseColor(const AValue: string; out AColor: TColor): Boolean;
@@ -432,6 +433,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+
+    procedure DrawFocusRect(ACanvas: TCanvas; const ARect: TRect); virtual;
 
     // === Anti-aliased primitives (public for descendants) ===
     // Triangle with anti-aliased edges. AP1..AP3 - polygon vertices,
@@ -5069,7 +5072,7 @@ end;
 
 procedure TCssStyledControl.DrawFocusRect(ACanvas: TCanvas; const ARect: TRect);
 var
-  R: TRect;
+  GeomR, LoopR: TRect;
   Radius: Integer;
   HW, HH, RR: Double;
   CX, CY: Double;
@@ -5084,15 +5087,15 @@ var
 begin
   if ACanvas = nil then Exit;
 
-  R := ARect;
-  InflateRect(R, -1, -1);
-  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then Exit;
+  GeomR := ARect;
+  InflateRect(GeomR, -1, -1);
+  if (GeomR.Right <= GeomR.Left) or (GeomR.Bottom <= GeomR.Top) then Exit;
 
   Radius := GetCssBorderRadius;
-  if Radius > (R.Bottom - R.Top) div 2 then
-    Radius := (R.Bottom - R.Top) div 2;
-  if Radius > (R.Right - R.Left) div 2 then
-    Radius := (R.Right - R.Left) div 2;
+  if Radius > (GeomR.Bottom - GeomR.Top) div 2 then
+    Radius := (GeomR.Bottom - GeomR.Top) div 2;
+  if Radius > (GeomR.Right - GeomR.Left) div 2 then
+    Radius := (GeomR.Right - GeomR.Left) div 2;
 
   if Radius <= 0 then
   begin
@@ -5100,7 +5103,7 @@ begin
     ACanvas.Pen.Style := psSolid;
     ACanvas.Pen.Width := 1;
     ACanvas.Pen.Color := GetFocusColor;
-    ACanvas.Rectangle(R.Left, R.Top, R.Right, R.Bottom);
+    ACanvas.Rectangle(GeomR.Left, GeomR.Top, GeomR.Right, GeomR.Bottom);
     Exit;
   end;
 
@@ -5109,25 +5112,28 @@ begin
   FocusG := Byte((FocusRGB shr 8) and $FF);
   FocusB := Byte((FocusRGB shr 16) and $FF);
 
-  HW := (R.Right - R.Left) / 2.0;
-  HH := (R.Bottom - R.Top) / 2.0;
-  CX := R.Left + HW;
-  CY := R.Top + HH;
+  HW := (GeomR.Right - GeomR.Left) / 2.0;
+  HH := (GeomR.Bottom - GeomR.Top) / 2.0;
+  CX := GeomR.Left + HW;
+  CY := GeomR.Top + HH;
   RR := Radius;
 
-  for Y := R.Top to R.Bottom - 1 do
+  // Clip iteration to the canvas bounds — pixels outside are simply not touched.
+  LoopR := GeomR;
+  if LoopR.Left < 0 then LoopR.Left := 0;
+  if LoopR.Top < 0 then LoopR.Top := 0;
+  if LoopR.Right > ACanvas.Width then LoopR.Right := ACanvas.Width;
+  if LoopR.Bottom > ACanvas.Height then LoopR.Bottom := ACanvas.Height;
+
+  for Y := LoopR.Top to LoopR.Bottom - 1 do
   begin
-    for X := R.Left to R.Right - 1 do
+    for X := LoopR.Left to LoopR.Right - 1 do
     begin
       SDOuter := SdRoundBox(X + 0.5 - CX, Y + 0.5 - CY, HW, HH, RR);
-
       if SDOuter > 1.0 then
         Continue;
 
-      SDInner := SdRoundBox(
-        X + 0.5 - CX, Y + 0.5 - CY,
-        HW - 1, HH - 1, RR - 1
-      );
+      SDInner := SdRoundBox(X + 0.5 - CX, Y + 0.5 - CY, HW - 1, HH - 1, RR - 1);
 
       OuterCov := ClampD(0.5 - SDOuter, 0, 1);
       InnerCov := ClampD(0.5 - SDInner, 0, 1);

@@ -392,8 +392,12 @@ TCssPageControl {
   tab-scroll-button-disabled-background: #F8FAFC;
   tab-scroll-arrow-color: #475569;
   tab-scroll-arrow-disabled-color: #CBD5E1;
-  tab-scroll-button-radius: 0px;
+  tab-scroll-button-radius: 6px;
+
+  focus-within: true;
+  focus-color: #2563EB;   
 }
+TCssPageControl:hover { border-color: #94A3B8; }
 TCssTabSheet {
   background-color: #FFFFFF;
   color: #1E293B;
@@ -836,7 +840,12 @@ TCssPageControl {
   tab-scroll-button-disabled-background: #1E293B;
   tab-scroll-arrow-color: #CBD5E1;
   tab-scroll-arrow-disabled-color: #475569;
+  tab-scroll-button-radius: 6px;
+
+  focus-within: true;
+  focus-color: #60A5FA;
 }
+TCssPageControl:hover { border-color: #94A3B8; }
 TCssTabSheet {
   background-color: #1E293B;
   color: #E2E8F0;

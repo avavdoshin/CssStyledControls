@@ -120,6 +120,11 @@ type
     // Events
     FOnChange: TNotifyEvent;
 
+    // Focus
+    FShowFocusWhenChildFocused: Boolean;
+    FShowFocusWhenChildFocusedSet: Boolean;
+    FHasFocusedChild: Boolean;
+
     // Appearance getters
     function GetTabBackground: TColor;
     function GetTabHoverBackground: TColor;
@@ -180,13 +185,25 @@ type
 
     procedure SetShowScrollButtons(AValue: Boolean);
     procedure SetScrollButtonSize(AValue: Integer);
+
+    // Focus
+    function  HasFocusedChild: Boolean;
+    procedure UpdateFocusedChildState;
+
+    // Hover
+    function  GetEffectiveHoverState: Boolean; override;
   protected
+    // Focus
+    procedure ChildFocusChanged(AChildFocused: Boolean); override;
+    procedure Loaded; override;
+
     // Painting
     procedure Paint; override;
 
     // Initialization and style
     procedure ResetStyle; override;
     procedure ApplyDeclaration(const AName, AValue: string); override;
+    procedure StyleChanged; override;
 
     // Mouse events
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
@@ -201,6 +218,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function ShouldShowChildFocusRing: Boolean;
   published
     // Tab data
     property Tabs: TStrings read GetTabs write SetTabs;
@@ -359,10 +377,18 @@ begin
 end;
 
 procedure TCssTabSheet.Paint;
+var
+  ParentR: TRect;
 begin
-  // Draw only the CSS background/border; the caption is drawn on the tab
-  // by the PageControl itself.
   inherited Paint;
+
+  if (FPageControl = nil) or not FPageControl.ShouldShowChildFocusRing then
+    Exit;
+
+  ParentR := FPageControl.ClientRect;
+  OffsetRect(ParentR, -Left, -Top);
+
+  FPageControl.DrawFocusRect(Canvas, ParentR);
 end;
 
 procedure TCssTabSheet.SetCaption(const AValue: TCaption);
@@ -435,6 +461,8 @@ var
   ParentPage: TCssPageControl;
   RgnAll, RgnTopFlat: HRGN;
   Rgn: TRegion;
+  ParentInset, Inset: Integer;
+  Pad: TRect;
 begin
   if not HandleAllocated then
     Exit;
@@ -450,7 +478,27 @@ begin
   R := GetCssBorderRadius;
 
   if (R <= 0) and (ParentPage <> nil) then
+  begin
     R := ParentPage.GetCssBorderRadius;
+
+    if R > 0 then
+    begin
+      ParentInset := ParentPage.GetCssBorderWidth;
+      Pad := ParentPage.GetCssPadding;
+
+      Inset := ParentInset + Pad.Left;
+      if ParentInset + Pad.Bottom > Inset then
+        Inset := ParentInset + Pad.Bottom;
+      if ParentInset + Pad.Right > Inset then
+        Inset := ParentInset + Pad.Right;
+      if ParentInset + Pad.Top > Inset then
+        Inset := ParentInset + Pad.Top;
+
+      R := R - Inset;
+      if R < 0 then
+        R := 0;
+    end;
+  end;
 
   if R <= 0 then
   begin
@@ -572,6 +620,15 @@ begin
   FTabs.Free;
 
   inherited Destroy;
+end;
+
+function TCssTabControl.ShouldShowChildFocusRing: Boolean;
+begin
+  Result :=
+    FShowFocusWhenChildFocused and
+    ShowFocusRect and
+    FHasFocusedChild and
+    Enabled;
 end;
 
 function TCssTabControl.GetTabPadding: Integer;
@@ -1412,6 +1469,69 @@ begin
   Invalidate;
 end;
 
+function TCssTabControl.HasFocusedChild: Boolean;
+var
+  H: HWND;
+  aFocused: TWinControl;
+  C: TControl;
+begin
+  Result := False;
+
+  H := GetFocus;
+  if H = 0 then
+    Exit;
+
+  aFocused := FindControl(H);
+  if aFocused = nil then
+    Exit;
+
+  C := aFocused;
+  while C <> nil do
+  begin
+    if C = Self then
+      Exit(True);
+
+    C := C.Parent;
+  end;
+end;
+
+procedure TCssTabControl.UpdateFocusedChildState;
+var
+  NewState: Boolean;
+begin
+  NewState := HasFocusedChild;
+
+  if NewState <> FHasFocusedChild then
+  begin
+    FHasFocusedChild := NewState;
+
+    if FShowFocusWhenChildFocused then
+    begin
+      RefreshStylesByState;
+      Invalidate;
+    end;
+  end;
+end;
+
+function TCssTabControl.GetEffectiveHoverState: Boolean;
+begin
+  if FShowFocusWhenChildFocused and FHasFocusedChild then
+    Exit(False);
+
+  Result := inherited GetEffectiveHoverState;
+end;
+
+procedure TCssTabControl.ChildFocusChanged(AChildFocused : Boolean);
+begin
+  UpdateFocusedChildState;
+end;
+
+procedure TCssTabControl.Loaded;
+begin
+  inherited Loaded;
+  UpdateFocusedChildState;
+end;
+
 procedure TCssTabControl.Paint;
 var
   I: Integer;
@@ -1518,7 +1638,12 @@ begin
   if NeedScrollButtons then
     DrawScrollButtons;
 
-  DrawCornerMasks;
+  if ShouldShowChildFocusRing then
+  begin
+    DrawFocusRect(Canvas, ClientRect);
+  end;
+
+//  DrawCornerMasks;
 end;
 
 procedure TCssTabControl.MouseDown(Button: TMouseButton; Shift: TShiftState;
@@ -1636,6 +1761,7 @@ procedure TCssTabControl.ApplyDeclaration(const AName, AValue: string);
 var
   C: TColor;
   Px: Integer;
+  S: string;
 begin
   if AName = 'tab-background' then
   begin
@@ -1823,7 +1949,22 @@ begin
     Exit;
   end;
 
+  if AName = 'focus-within' then
+  begin
+    S := LowerCase(Trim(AValue));
+    FShowFocusWhenChildFocused := (S = 'true') or (S = '1') or (S = 'yes');
+    FShowFocusWhenChildFocusedSet := True;
+    Invalidate;
+    Exit;
+  end;
+
   inherited ApplyDeclaration(AName, AValue);
+end;
+
+procedure TCssTabControl.StyleChanged;
+begin
+  inherited StyleChanged;
+  UpdateFocusedChildState;
 end;
 
 { TCssPageControl }
@@ -2141,6 +2282,7 @@ begin
     TCssTabSheet(FPages[I]).InheritStyleFromPageControl;
     TCssTabSheet(FPages[I]).UpdateShape;
   end;
+  UpdateFocusedChildState;
 end;
 
 initialization

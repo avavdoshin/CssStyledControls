@@ -85,6 +85,9 @@ type
     procedure EnabledChanged; override;
     procedure LayoutItems; override;
 
+    // Hover
+    function GetEffectiveHoverState: Boolean; override;
+
     // Painting
     procedure Paint; override;
 
@@ -1625,6 +1628,14 @@ begin
   end;
 end;
 
+function TCssRadioGroup.GetEffectiveHoverState: Boolean;
+begin
+  if FGroupFocusRect and FChildFocused then
+    Exit(False);
+
+  Result := inherited GetEffectiveHoverState;
+end;
+
 procedure TCssRadioGroup.UpdateChildStyles;
 var
   I: Integer;
@@ -1809,6 +1820,7 @@ begin
   if not FChildFocused then
   begin
     FChildFocused := True;
+    RefreshStylesByState;
     Invalidate;
   end;
 end;
@@ -1818,6 +1830,7 @@ begin
   if FChildFocused then
   begin
     FChildFocused := False;
+    RefreshStylesByState;
     Invalidate;
   end;
 end;

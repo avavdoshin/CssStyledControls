@@ -29,6 +29,9 @@ type
     procedure Paint; override;
     procedure ChildFocusChanged(AChildFocused: Boolean); override;
 
+    // Hover
+    function GetEffectiveHoverState: Boolean; override;
+
     // State changes
     procedure EnabledChanged; override;
     procedure SetEnabled(AValue: Boolean); override;
@@ -181,7 +184,10 @@ begin
     FHasFocusedChild := NewState;
 
     if FShowFocusWhenChildFocused then
+    begin
+      RefreshStylesByState;
       Invalidate;
+    end;
   end;
 end;
 
@@ -223,9 +229,6 @@ end;
 
 procedure TCssPanel.ResetStyle;
 begin
-  FShowFocusWhenChildFocused := False;
-  FShowFocusWhenChildFocusedSet := False;
-
   inherited ResetStyle;
 end;
 
@@ -263,6 +266,14 @@ end;
 procedure TCssPanel.ChildFocusChanged(AChildFocused : Boolean);
 begin
   UpdateFocusedChildState;
+end;
+
+function TCssPanel.GetEffectiveHoverState : Boolean;
+begin
+  if FShowFocusWhenChildFocused and FHasFocusedChild then
+    Exit(False);
+
+  Result := inherited GetEffectiveHoverState;
 end;
 
 procedure TCssPanel.EnabledChanged;

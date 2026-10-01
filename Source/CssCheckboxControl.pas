@@ -211,6 +211,9 @@ type
     procedure SetShowFocusRect(AValue: Boolean); override;
     procedure LayoutItems; override;
 
+    // Hover
+    function GetEffectiveHoverState: Boolean; override;
+
     // Painting
     procedure Paint; override;
 
@@ -1341,6 +1344,7 @@ begin
   if not FChildFocused then
   begin
     FChildFocused := True;
+    RefreshStylesByState;
     Invalidate;
   end;
 end;
@@ -1350,6 +1354,7 @@ begin
   if FChildFocused then
   begin
     FChildFocused := False;
+    RefreshStylesByState;
     Invalidate;
   end;
 end;
@@ -1666,6 +1671,14 @@ begin
 
     Cb.SetBounds(X, Y, ColW, ItemH);
   end;
+end;
+
+function TCssCheckGroup.GetEffectiveHoverState : Boolean;
+begin
+  if FGroupFocusRect and FChildFocused then
+    Exit(False);
+
+  Result := inherited GetEffectiveHoverState;
 end;
 
 function TCssCheckGroup.GetChecked(Index: Integer): Boolean;
