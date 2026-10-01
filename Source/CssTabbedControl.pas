@@ -5,8 +5,8 @@ unit CssTabbedControl;
 interface
 
 uses
-  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
-  CssStyledControl;
+  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf,
+  IntfGraphics, FPImage, CssStyledControl;
 
 const
   CSS_TAB_SCROLL_EDGE_MARGIN = 6;
@@ -26,6 +26,9 @@ type
     FPageControl: TCssPageControl;
     FTabVisible: Boolean;
 
+    FLastAppliedRadius: Integer;
+    FLastAppliedSize: TPoint;
+
     // Property setters
     procedure SetTabVisible(AValue: Boolean);
   protected
@@ -35,6 +38,11 @@ type
 
     // Caption
     procedure SetCaption(const AValue: TCaption); override;
+
+    procedure CreateWnd; override;
+    procedure Resize; override;
+    procedure Loaded; override;
+    procedure StyleChanged; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
@@ -42,6 +50,7 @@ type
     function    GetParentComponent: TComponent; override;
     procedure   SetParentComponent(Value: TComponent); override;
     procedure   InheritStyleFromPageControl;
+    procedure   UpdateShape;
   published
     property TabVisible: Boolean read FTabVisible write SetTabVisible default True;
     property PageControl: TCssPageControl read FPageControl;
@@ -370,6 +379,30 @@ begin
   end;
 end;
 
+procedure TCssTabSheet.CreateWnd;
+begin
+  inherited CreateWnd;
+  UpdateShape;
+end;
+
+procedure TCssTabSheet.Resize;
+begin
+  inherited Resize;
+  UpdateShape;
+end;
+
+procedure TCssTabSheet.Loaded;
+begin
+  inherited Loaded;
+  UpdateShape;
+end;
+
+procedure TCssTabSheet.StyleChanged;
+begin
+  inherited StyleChanged;
+  UpdateShape;
+end;
+
 procedure TCssTabSheet.SetTabVisible(AValue: Boolean);
 begin
   if FTabVisible = AValue then
@@ -394,6 +427,72 @@ begin
 
   if (StyleName = '') and (FPageControl.StyleName <> '') then
     StyleName := FPageControl.StyleName;
+end;
+
+procedure TCssTabSheet.UpdateShape;
+var
+  R, W, H: Integer;
+  ParentPage: TCssPageControl;
+  RgnAll, RgnTopFlat: HRGN;
+  Rgn: TRegion;
+begin
+  if not HandleAllocated then
+    Exit;
+
+  W := Width;
+  H := Height;
+
+  if (W <= 0) or (H <= 0) then
+    Exit;
+
+  ParentPage := FPageControl;
+
+  R := GetCssBorderRadius;
+
+  if (R <= 0) and (ParentPage <> nil) then
+    R := ParentPage.GetCssBorderRadius;
+
+  if R <= 0 then
+  begin
+    if FLastAppliedRadius <> 0 then
+    begin
+      SetShape(TRegion(nil));
+      FLastAppliedRadius := 0;
+      FLastAppliedSize := Point(0, 0);
+    end;
+    Exit;
+  end;
+
+  if R > W div 2 then
+    R := W div 2;
+
+  if R > H div 2 then
+    R := H div 2;
+
+  if (R = FLastAppliedRadius) and
+     (FLastAppliedSize.X = W) and
+     (FLastAppliedSize.Y = H) then
+    Exit;
+
+  RgnAll := CreateRoundRectRgn(0, 0, W + 1, H + 1, 2 * R, 2 * R);
+  RgnTopFlat := CreateRectRgn(0, 0, W + 1, R);
+  CombineRgn(RgnAll, RgnAll, RgnTopFlat, RGN_OR);
+  DeleteObject(RgnTopFlat);
+
+  Rgn := TRegion.Create;
+  try
+    {$push}
+    {$warn 6058 off}
+    Rgn.Handle := RgnAll;
+    {$pop}
+
+    SetShape(Rgn);
+  finally
+    Rgn.Free;
+  end;
+
+  FLastAppliedRadius := R;
+  FLastAppliedSize := Point(W, H);
 end;
 
 procedure TCssTabSheet.SetParent(AParent: TWinControl);
@@ -433,6 +532,9 @@ begin
     if not (csDestroying in OldPC.ComponentState) then
       OldPC.RemovePage(Self);
   end;
+
+  if HandleAllocated then
+    UpdateShape;
 end;
 
 { TCssTabControl }
@@ -511,6 +613,8 @@ begin
   if FTabIndex >= FTabs.Count then
     FTabIndex := FTabs.Count - 1;
 
+  FFirstVisibleTab := 0;
+  EnsureFirstVisibleTab;
   Invalidate;
 end;
 
@@ -1360,11 +1464,22 @@ begin
 
         BorderC := GetTabBorderColor;
 
-        Canvas.Brush.Style := bsSolid;
-        Canvas.Brush.Color := BG;
-        Canvas.Pen.Style := psSolid;
-        Canvas.Pen.Color := BorderC;
-        Canvas.Pen.Width := 1;
+        if BG <> clNone then
+        begin
+          Canvas.Brush.Style := bsSolid;
+          Canvas.Brush.Color := BG;
+        end
+        else
+          Canvas.Brush.Style := bsClear;
+
+        if BorderC <> clNone then
+        begin
+          Canvas.Pen.Style := psSolid;
+          Canvas.Pen.Color := BorderC;
+          Canvas.Pen.Width := 1;
+        end
+        else
+          Canvas.Pen.Style := psClear;
 
         if GetTabRadius > 0 then
           Canvas.RoundRect(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom,
@@ -2014,7 +2129,10 @@ begin
     Exit;
 
   for I := 0 to FPages.Count - 1 do
+  begin
     TCssTabSheet(FPages[I]).InheritStyleFromPageControl;
+    TCssTabSheet(FPages[I]).UpdateShape;
+  end;
 end;
 
 initialization

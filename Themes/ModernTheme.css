@@ -371,20 +371,27 @@ TCssPageControl {
   border: 1px solid #E2E8F0;
   border-radius: 8px;
   padding: 0px;
-  tab-background: #F1F5F9;
-  tab-hover-background: #E2E8F0;
-  tab-active-background: #FFFFFF;
-  tab-text-color: #475569;
-  tab-active-text-color: #2563EB;
-  tab-border-color: #E2E8F0;
+
+  tab-background: transparent;
+  tab-hover-background: #F1F5F9;
+  tab-active-background: #EFF6FF;   
+
+  tab-text-color: #64748B;
+  tab-active-text-color: #1D4ED8;  
+
+  tab-border-color: transparent;
+
   tab-radius: 6px;
   tab-spacing: 2px;
-  tab-padding: 8px;
+  tab-padding: 10px;
+
   tab-cursor: pointer;
   tab-scroll-button-background: #F1F5F9;
   tab-scroll-button-hover-background: #E2E8F0;
   tab-scroll-button-active-background: #CBD5E1;
+  tab-scroll-button-disabled-background: #F8FAFC;
   tab-scroll-arrow-color: #475569;
+  tab-scroll-arrow-disabled-color: #CBD5E1;
   tab-scroll-button-radius: 0px;
 }
 TCssTabSheet {
@@ -808,20 +815,27 @@ TCssPageControl {
   border: 1px solid #334155;
   border-radius: 8px;
   padding: 0px;
-  tab-background: #0F172A;
+
+  tab-background: transparent;
   tab-hover-background: #334155;
-  tab-active-background: #1E293B;
+  tab-active-background: #1E3A5F;
+
   tab-text-color: #94A3B8;
-  tab-active-text-color: #60A5FA;
-  tab-border-color: #334155;
+  tab-active-text-color: #93C5FD;
+
+  tab-border-color: transparent;
+
   tab-radius: 6px;
   tab-spacing: 2px;
-  tab-padding: 8px;
+  tab-padding: 10px;
+
   tab-cursor: pointer;
   tab-scroll-button-background: #334155;
   tab-scroll-button-hover-background: #475569;
   tab-scroll-button-active-background: #64748B;
+  tab-scroll-button-disabled-background: #1E293B;
   tab-scroll-arrow-color: #CBD5E1;
+  tab-scroll-arrow-disabled-color: #475569;
 }
 TCssTabSheet {
   background-color: #1E293B;
