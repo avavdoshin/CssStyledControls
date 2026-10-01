@@ -7186,6 +7186,9 @@ begin
   end
   else
   begin
+    if BG = clNone then
+      BG := GetParentBackgroundColor;
+
     if BG <> clNone then
     begin
       ACanvas.Brush.Style := bsSolid;
@@ -7996,6 +7999,9 @@ begin
   end
   else
   begin
+    if BG = clNone then
+      BG := GetParentBackgroundColor;
+
     if BG <> clNone then
     begin
       Canvas.Brush.Style := bsSolid;
