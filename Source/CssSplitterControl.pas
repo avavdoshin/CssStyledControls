@@ -43,6 +43,10 @@ type
     FOnCanResize: TCanResizeEvent;
     FOnMoved: TNotifyEvent;
 
+    // External hover
+    FHighlightAdjacentControls: Boolean;
+    FHoverNotifyList: TList;
+
     // Property setters
     procedure SetMinSize(AValue: Integer);
     procedure SetResizeStyle(AValue: TCssResizeStyle);
@@ -70,6 +74,11 @@ type
 
     // Appearance
     function GetGripColor: TColor;
+
+    // Adjacent Hover
+    procedure UpdateAdjacentHoverItem(C: TControl; AHover: Boolean);
+    procedure FindAdjacentControls(out AResize, AOther: TControl);
+    procedure UpdateAdjacentHover(AHover: Boolean);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -85,6 +94,8 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseEnter; override;
+    procedure MouseLeave; override;
 
     // Component notification
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
@@ -115,6 +126,8 @@ type
     // Events
     property OnCanResize: TCanResizeEvent read FOnCanResize write FOnCanResize;
     property OnMoved: TNotifyEvent read FOnMoved write FOnMoved;
+
+    property HighlightAdjacentControls: Boolean read FHighlightAdjacentControls write FHighlightAdjacentControls default True;
 
     // Standard properties
     property Anchors;
@@ -182,12 +195,23 @@ begin
   FGripSize := 2;
   FGripSpacing := 3;
 
+  FHighlightAdjacentControls := True;
+  FHoverNotifyList := TList.Create;
+
   UpdateCursor;
 end;
 
 destructor TCssSplitter.Destroy;
 begin
   HideDragLine;
+
+  if Assigned(FHoverNotifyList) then
+  begin
+    // Снять подсветку со всех, кому мы её выставили
+    while FHoverNotifyList.Count > 0 do
+      UpdateAdjacentHoverItem(TControl(FHoverNotifyList.Last), False);
+    FreeAndNil(FHoverNotifyList);
+  end;
 
   inherited Destroy;
 end;
@@ -612,6 +636,112 @@ begin
     Result := clBtnShadow;
 end;
 
+procedure TCssSplitter.UpdateAdjacentHoverItem(C: TControl; AHover: Boolean);
+var
+  Idx: Integer;
+begin
+  if (C = nil) or not (C is TCssStyledControl) then Exit;
+  if not Assigned(FHoverNotifyList) then Exit;
+
+  Idx := FHoverNotifyList.IndexOf(C);
+
+  if AHover then
+  begin
+    if Idx < 0 then
+    begin
+      TCssStyledControl(C).SetExternalHoverState(True);
+      FHoverNotifyList.Add(C);
+    end;
+  end
+  else
+  begin
+    if Idx >= 0 then
+    begin
+      TCssStyledControl(C).SetExternalHoverState(False);
+      FHoverNotifyList.Delete(Idx);
+    end;
+  end;
+end;
+
+procedure TCssSplitter.FindAdjacentControls(
+  out AResize, AOther: TControl);
+var
+  P: TWinControl;
+  I, MyIdx: Integer;
+  C: TControl;
+  OppAligns: set of TAlign;
+begin
+  AResize := nil;
+  AOther  := nil;
+
+  P := Parent;
+  if P = nil then Exit;
+
+  MyIdx := -1;
+  for I := 0 to P.ControlCount - 1 do
+    if P.Controls[I] = Self then
+    begin
+      MyIdx := I;
+      Break;
+    end;
+
+  if MyIdx < 0 then Exit;
+
+  AResize := FindResizeControl;
+
+  case Align of
+    alLeft:   OppAligns := [alClient, alRight];
+    alRight:  OppAligns := [alClient, alLeft];
+    alTop:    OppAligns := [alClient, alBottom];
+    alBottom: OppAligns := [alClient, alTop];
+  else
+    OppAligns := [alClient];
+  end;
+
+  for I := MyIdx + 1 to P.ControlCount - 1 do
+  begin
+    C := P.Controls[I];
+    if C.Visible and (C <> AResize) and (C.Align in OppAligns) then
+    begin
+      AOther := C;
+      Break;
+    end;
+  end;
+
+  if AOther = nil then
+    for I := MyIdx - 1 downto 0 do
+    begin
+      C := P.Controls[I];
+      if C.Visible and (C <> AResize) and (C.Align in OppAligns) then
+      begin
+        AOther := C;
+        Break;
+      end;
+    end;
+end;
+
+procedure TCssSplitter.UpdateAdjacentHover(AHover: Boolean);
+var
+  ResizeCtl, OtherCtl: TControl;
+begin
+  if not Assigned(FHoverNotifyList) then Exit;
+
+  if not FHighlightAdjacentControls then
+  begin
+    if not AHover then
+      while FHoverNotifyList.Count > 0 do
+        UpdateAdjacentHoverItem(TControl(FHoverNotifyList.Last), False);
+    Exit;
+  end;
+
+  if AHover and not Enabled then Exit;
+
+  FindAdjacentControls(ResizeCtl, OtherCtl);
+
+  UpdateAdjacentHoverItem(ResizeCtl, AHover);
+  UpdateAdjacentHoverItem(OtherCtl,  AHover);
+end;
+
 procedure TCssSplitter.Paint;
 var
   R, GripR: TRect;
@@ -803,6 +933,18 @@ begin
     if Delta <> 0 then
       ApplyResize(Delta);
   end;
+end;
+
+procedure TCssSplitter.MouseEnter;
+begin
+  inherited MouseEnter;
+  UpdateAdjacentHover(True);
+end;
+
+procedure TCssSplitter.MouseLeave;
+begin
+  UpdateAdjacentHover(False);
+  inherited MouseLeave;
 end;
 
 procedure TCssSplitter.DrawDragLine(const R: TRect);

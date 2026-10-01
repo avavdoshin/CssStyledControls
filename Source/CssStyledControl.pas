@@ -221,6 +221,7 @@ type
     FFocusColorSet: Boolean;
 
     FHoveredChildrenCount: Integer;
+    FExternalHoverCount: Integer;
 
     FBorderRadiusTL, FBorderRadiusTR, FBorderRadiusBR, FBorderRadiusBL: Integer;
     FBackgroundGradient: TCssGradient;
@@ -501,6 +502,8 @@ type
     procedure ClickLinkAtPoint(const P: TPoint);
 
     procedure UpdateEnabledVisualState;
+
+    procedure SetExternalHoverState(AHover: Boolean);
   published
     property Align;
     property Anchors;
@@ -4739,7 +4742,9 @@ end;
 
 function TCssStyledControl.GetEffectiveHoverState : Boolean;
 begin
-  Result := FMouseInControl or (FHoveredChildrenCount > 0);
+  Result := FMouseInControl
+         or (FHoveredChildrenCount > 0)
+         or (FExternalHoverCount > 0);
 end;
 
 function TCssStyledControl.GetStyledBackgroundColor: TColor;
@@ -8471,6 +8476,27 @@ procedure TCssStyledControl.UpdateEnabledVisualState;
 begin
   RefreshStylesByState;
   Invalidate;
+end;
+
+procedure TCssStyledControl.SetExternalHoverState(AHover: Boolean);
+var
+  WasHovered: Boolean;
+begin
+  if csDestroying in ComponentState then
+    Exit;
+
+  WasHovered := GetEffectiveHoverState;
+
+  if AHover then
+    Inc(FExternalHoverCount)
+  else if FExternalHoverCount > 0 then
+    Dec(FExternalHoverCount);
+
+  if WasHovered <> GetEffectiveHoverState then
+  begin
+    RefreshStylesByState;
+    Invalidate;
+  end;
 end;
 
 { ============================================================ }
