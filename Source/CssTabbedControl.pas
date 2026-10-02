@@ -195,6 +195,7 @@ type
   protected
     // Focus
     procedure ChildFocusChanged(AChildFocused: Boolean); override;
+    procedure TabPositionChanged; virtual;
     procedure Loaded; override;
 
     // Painting
@@ -279,6 +280,7 @@ type
 
     procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
     procedure StyleChanged; override;
+    procedure TabPositionChanged; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -459,10 +461,11 @@ procedure TCssTabSheet.UpdateShape;
 var
   R, W, H: Integer;
   ParentPage: TCssPageControl;
-  RgnAll, RgnTopFlat: HRGN;
+  RgnAll, RgnFlat: HRGN;
   Rgn: TRegion;
   ParentInset, Inset: Integer;
   Pad: TRect;
+  TabPos: TCssTabPosition;
 begin
   if not HandleAllocated then
     Exit;
@@ -523,9 +526,35 @@ begin
     Exit;
 
   RgnAll := CreateRoundRectRgn(0, 0, W + 1, H + 1, 2 * R, 2 * R);
-  RgnTopFlat := CreateRectRgn(0, 0, W + 1, R);
-  CombineRgn(RgnAll, RgnAll, RgnTopFlat, RGN_OR);
-  DeleteObject(RgnTopFlat);
+
+  // Flatten the side that faces the tab strip, so the sheet does not
+  // poke out of the parent's rounded corner on the opposite side.
+  if ParentPage <> nil then
+    TabPos := ParentPage.TabPosition
+  else
+    TabPos := ctpTop;
+
+  case TabPos of
+    ctpTop:
+      RgnFlat := CreateRectRgn(0, 0, W + 1, R + 1);
+
+    ctpBottom:
+      RgnFlat := CreateRectRgn(0, H - R, W + 1, H + 1);
+
+    ctpLeft:
+      RgnFlat := CreateRectRgn(0, 0, R + 1, H + 1);
+
+    ctpRight:
+      RgnFlat := CreateRectRgn(W - R, 0, W + 1, H + 1);
+  else
+    RgnFlat := 0;
+  end;
+
+  if RgnFlat <> 0 then
+  begin
+    CombineRgn(RgnAll, RgnAll, RgnFlat, RGN_OR);
+    DeleteObject(RgnFlat);
+  end;
 
   Rgn := TRegion.Create;
   try
@@ -533,7 +562,6 @@ begin
     {$warn 6058 off}
     Rgn.Handle := RgnAll;
     {$pop}
-
     SetShape(Rgn);
   finally
     Rgn.Free;
@@ -720,6 +748,7 @@ begin
     Exit;
 
   FTabPosition := AValue;
+  TabPositionChanged;
   Invalidate;
 end;
 
@@ -1002,7 +1031,7 @@ end;
 function TCssTabControl.GetTabsExtentFrom(AIndex: Integer): Integer;
 var
   I: Integer;
-  Spacing: Integer;
+  Spacing, ItemExtent: Integer;
 begin
   Result := 0;
 
@@ -1015,7 +1044,15 @@ begin
   begin
     if I > AIndex then
       Inc(Result, Spacing);
-    Inc(Result, GetTabWidth(I));
+
+    case FTabPosition of
+      ctpTop, ctpBottom:
+        ItemExtent := GetTabWidth(I);
+    else
+      ItemExtent := FTabHeight;
+    end;
+
+    Inc(Result, ItemExtent);
   end;
 end;
 
@@ -1078,7 +1115,7 @@ end;
 function TCssTabControl.GetTotalTabsExtent: Integer;
 var
   I: Integer;
-  Spacing: Integer;
+  Spacing, ItemExtent: Integer;
 begin
   Result := 0;
 
@@ -1091,7 +1128,15 @@ begin
   begin
     if I > 0 then
       Inc(Result, Spacing);
-    Inc(Result, GetTabWidth(I));
+
+    case FTabPosition of
+      ctpTop, ctpBottom:
+        ItemExtent := GetTabWidth(I);
+    else
+      ItemExtent := FTabHeight;
+    end;
+
+    Inc(Result, ItemExtent);
   end;
 end;
 
@@ -1524,6 +1569,11 @@ end;
 procedure TCssTabControl.ChildFocusChanged(AChildFocused : Boolean);
 begin
   UpdateFocusedChildState;
+end;
+
+procedure TCssTabControl.TabPositionChanged;
+begin
+  // Nothing to do by default.
 end;
 
 procedure TCssTabControl.Loaded;
@@ -2300,6 +2350,25 @@ begin
     TCssTabSheet(FPages[I]).UpdateShape;
   end;
   UpdateFocusedChildState;
+end;
+
+procedure TCssPageControl.TabPositionChanged;
+var
+  I: Integer;
+  Sheet: TCssTabSheet;
+begin
+  if not Assigned(FPages) then
+    Exit;
+
+  for I := 0 to FPages.Count - 1 do
+  begin
+    Sheet := TCssTabSheet(FPages[I]);
+
+    Sheet.FLastAppliedRadius := -1;
+    Sheet.UpdateShape;
+  end;
+
+  LayoutSheets;
 end;
 
 initialization
