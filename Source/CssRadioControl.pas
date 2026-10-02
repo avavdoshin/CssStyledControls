@@ -164,6 +164,10 @@ type
     FBoxRadiusSet: Boolean;
     FDotColor: TColor;
     FDotColorSet: Boolean;
+    FToggleStyle: Boolean;
+    FToggleWidth, FToggleHeight: Integer;
+    FToggleThumbColor: TColor;
+    FToggleThumbColorSet: Boolean;
 
     // Events
     FOnChange: TNotifyEvent;
@@ -174,6 +178,9 @@ type
 
     // Appearance getters
     function GetBoxSize: Integer;
+    function GetBoxWidth: Integer;
+    function GetBoxHeight: Integer;
+    function GetToggleThumbColor: TColor;
     function GetRadioBackground: TColor;
     function GetRadioBorderColor: TColor;
     function GetRadioBorderWidth: Integer;
@@ -439,6 +446,11 @@ begin
   Caption := 'RadioButton';
   FChecked := False;
 
+  FToggleStyle := False;
+  FToggleWidth := 40;
+  FToggleHeight := 20;
+  FToggleThumbColorSet := False;
+
   FClicked := False;
   FSpacePressed := False;
   ShowFocusRect := False;
@@ -488,6 +500,10 @@ begin
   FBoxBorderWidthSet := False;
   FBoxRadiusSet := False;
   FDotColorSet := False;
+  FToggleStyle := False;
+  FToggleWidth := 40;
+  FToggleHeight := 20;
+  FToggleThumbColorSet := False;
 
   inherited ResetStyle;
 end;
@@ -496,7 +512,46 @@ procedure TCssRadioButton.ApplyDeclaration(const AName, AValue: string);
 var
   C: TColor;
   Px: Integer;
+  V: string;
 begin
+  if AName = 'radio-style' then
+  begin
+    V := LowerCase(Trim(AValue));
+    FToggleStyle := (V = 'toggle') or (V = 'switch');
+    if AutoSize then AdjustSize;
+    Invalidate;
+    Exit;
+  end;
+
+  if (AName = 'toggle-width') or (AName = 'toggle-height') then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      if AName = 'toggle-width' then
+      begin
+        FToggleWidth := Px;
+        if FToggleWidth < 12 then FToggleWidth := 12;
+        if FToggleWidth > 200 then FToggleWidth := 200;
+      end
+      else
+      begin
+        FToggleHeight := Px;
+        if FToggleHeight < 12 then FToggleHeight := 12;
+        if FToggleHeight > 80 then FToggleHeight := 80;
+      end;
+      if AutoSize then AdjustSize;
+      Invalidate;
+    end;
+    Exit;
+  end;
+
+  if AName = 'toggle-thumb-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin FToggleThumbColor := C; FToggleThumbColorSet := True; end;
+    Exit;
+  end;
+
   if AName = 'radio-background' then
   begin
     if ParseCssColor(AValue, C) then
@@ -632,6 +687,23 @@ begin
   end;
 end;
 
+function TCssRadioButton.GetBoxWidth: Integer;
+begin
+  if FToggleStyle then Result := FToggleWidth else Result := GetBoxSize;
+end;
+
+function TCssRadioButton.GetBoxHeight: Integer;
+begin
+  if FToggleStyle then Result := FToggleHeight else Result := GetBoxSize;
+end;
+
+function TCssRadioButton.GetToggleThumbColor: TColor;
+begin
+  if FToggleThumbColorSet then Result := FToggleThumbColor
+  else if FDotColorSet then Result := FDotColor
+  else Result := clWhite;
+end;
+
 function TCssRadioButton.GetRadioBackground: TColor;
 begin
   if FBoxBackgroundSet then
@@ -725,7 +797,7 @@ var
   R, Box, TextR: TRect;
   B: Integer;
   P: TRect;
-  BoxSize: Integer;
+  BoxSize, BoxHeight: Integer;
   Radius: Integer;
   LBorderWidth: Integer;
   BG, BorderColor, TextColor, DotColor: TColor;
@@ -745,12 +817,13 @@ begin
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
     Exit;
 
-  BoxSize := GetBoxSize;
+  BoxSize := GetBoxWidth;
+  BoxHeight := GetBoxHeight;
 
   Box.Left := R.Left;
-  Box.Top := R.Top + (((R.Bottom - R.Top) - BoxSize) div 2);
+  Box.Top := R.Top + (((R.Bottom - R.Top) - BoxHeight) div 2);
   Box.Right := Box.Left + BoxSize;
-  Box.Bottom := Box.Top + BoxSize;
+  Box.Bottom := Box.Top + BoxHeight;
 
   AssignCssFontToFont(Canvas.Font);
 
@@ -777,8 +850,27 @@ begin
 
   Canvas.Pen.Style := psSolid;
 
-  // Bordered circle / rounded box with AA.
-  if FBoxRadiusSet and (Radius < (BoxSize div 2)) then
+  if FToggleStyle then
+  begin
+    Radius := BoxHeight div 2;
+    DrawAntiAliasedRoundedBox(Canvas, Box, Radius, BG, BorderColor,
+      LBorderWidth, cbsSolid, GetParentBackgroundColor);
+    BoxHeight := Box.Bottom - Box.Top;
+    if BoxHeight > Box.Right - Box.Left then
+      BoxHeight := Box.Right - Box.Left;
+    Dec(BoxHeight, 6);
+    if BoxHeight < 2 then BoxHeight := 2;
+    if FChecked then
+      Radius := Box.Right - Box.Left - BoxHeight - 3
+    else
+      Radius := 3;
+    if Radius < 3 then Radius := 3;
+    DrawAntiAliasedCircle(Canvas,
+      Rect(Box.Left + Radius, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
+           Box.Left + Radius + BoxHeight, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
+      GetToggleThumbColor, GetToggleThumbColor, 0, BG);
+  end
+  else if FBoxRadiusSet and (Radius < (BoxSize div 2)) then
   begin
     DrawAntiAliasedRoundedBox(
       Canvas,
@@ -803,7 +895,7 @@ begin
     );
   end;
 
-  if FChecked then
+  if FChecked and (not FToggleStyle) then
     DrawDot(Box, DotColor);
 
   TextR := Rect(Box.Right + 4, R.Top, R.Right, R.Bottom);
@@ -821,7 +913,7 @@ var
   S: TSize;
   P: TRect;
   B: Integer;
-  BoxSize: Integer;
+  BoxSize, BoxHeight: Integer;
   Spacing: Integer;
   NewWidth, NewHeight: Integer;
 begin
@@ -840,7 +932,8 @@ begin
   B := GetCssBorderWidth;
   P := GetCssPadding;
 
-  BoxSize := GetBoxSize;
+  BoxSize := GetBoxWidth;
+  BoxHeight := GetBoxHeight;
   Spacing := 4;
 
   if HtmlMode then
@@ -860,7 +953,7 @@ begin
     (B * 2) +
     P.Top +
     P.Bottom +
-    BoxSize;
+    BoxHeight;
 
   if S.cy > NewHeight then
     NewHeight :=

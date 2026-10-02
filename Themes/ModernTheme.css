@@ -109,6 +109,88 @@ TCssRadioButton:focus { radio-border-color: #93C5FD; }
   background-color: #FFFFFF;
 }
 
+/* Optional Windows 11-style switches. Opt in by adding the `toggle` class.
+   For groups set CheckBoxCssClass / RadioCssClass to `toggle`. */
+TCssCheckBox.toggle,
+checkbox.toggle {
+  checkbox-style: toggle;
+  toggle-width: 40px;
+  toggle-height: 20px;
+  padding: 0px;
+  checkbox-background: #F3F3F3;
+  checkbox-border-color: #8A8886;
+  checkbox-border-width: 1px;
+  toggle-thumb-color: #5F5F5F;
+}
+TCssCheckBox.toggle:hover,
+checkbox.toggle:hover {
+  checkbox-background: #E5E5E5;
+  checkbox-border-color: #6B6967;
+}
+TCssCheckBox.toggle:checked,
+checkbox.toggle:checked {
+  checkbox-background: #0067C0;
+  checkbox-border-color: #0067C0;
+  toggle-thumb-color: #FFFFFF;
+}
+TCssCheckBox.toggle:checked:hover,
+checkbox.toggle:checked:hover {
+  checkbox-background: #1975C9;
+  checkbox-border-color: #1975C9;
+}
+TCssCheckBox.toggle:disabled,
+checkbox.toggle:disabled {
+  checkbox-background: #F3F3F3;
+  checkbox-border-color: #D1D1D1;
+  toggle-thumb-color: #C5C5C5;
+}
+TCssCheckBox.toggle:checked:disabled,
+checkbox.toggle:checked:disabled {
+  checkbox-background: #A7C9E8;
+  checkbox-border-color: #A7C9E8;
+  toggle-thumb-color: #F3F3F3;
+}
+
+TCssRadioButton.toggle,
+radio.toggle {
+  radio-style: toggle;
+  toggle-width: 40px;
+  toggle-height: 20px;
+  padding: 0px;
+  radio-background: #F3F3F3;
+  radio-border-color: #8A8886;
+  radio-border-width: 1px;
+  toggle-thumb-color: #5F5F5F;
+}
+TCssRadioButton.toggle:hover,
+radio.toggle:hover {
+  radio-background: #E5E5E5;
+  radio-border-color: #6B6967;
+}
+TCssRadioButton.toggle:checked,
+radio.toggle:checked {
+  radio-background: #0067C0;
+  radio-border-color: #0067C0;
+  toggle-thumb-color: #FFFFFF;
+}
+TCssRadioButton.toggle:checked:hover,
+radio.toggle:checked:hover {
+  radio-background: #1975C9;
+  radio-border-color: #1975C9;
+}
+TCssRadioButton.toggle:disabled,
+radio.toggle:disabled {
+  radio-background: #F3F3F3;
+  radio-border-color: #D1D1D1;
+  toggle-thumb-color: #C5C5C5;
+}
+TCssRadioButton.toggle:checked:disabled,
+radio.toggle:checked:disabled {
+  radio-background: #A7C9E8;
+  radio-border-color: #A7C9E8;
+  toggle-thumb-color: #F3F3F3;
+}
+
 TCssCheckGroup,
 TCssRadioGroup {
   background-color: #FFFFFF;

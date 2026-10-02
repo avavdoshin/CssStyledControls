@@ -31,6 +31,10 @@ type
     FBoxRadiusSet: Boolean;
     FCheckColor: TColor;
     FCheckColorSet: Boolean;
+    FToggleStyle: Boolean;
+    FToggleWidth, FToggleHeight: Integer;
+    FToggleThumbColor: TColor;
+    FToggleThumbColorSet: Boolean;
 
     // Property getters
     function GetCheckBoxBackground: TColor;
@@ -40,6 +44,9 @@ type
     function GetCheckColor: TColor;
     function GetChecked: Boolean;
     function GetBoxSize: Integer;
+    function GetBoxWidth: Integer;
+    function GetBoxHeight: Integer;
+    function GetToggleThumbColor: TColor;
 
     // Property setters
     procedure SetChecked(AValue: Boolean);
@@ -451,6 +458,10 @@ begin
   Caption := 'CheckBox';
   FState := cbUnchecked;
   FAllowGrayed := False;
+  FToggleStyle := False;
+  FToggleWidth := 40;
+  FToggleHeight := 20;
+  FToggleThumbColorSet := False;
 
   FClicked := False;
   FSpacePressed := False;
@@ -630,7 +641,49 @@ procedure TCssCheckBox.ApplyDeclaration(const AName, AValue: string);
 var
   C: TColor;
   Px: Integer;
+  V: string;
 begin
+  if AName = 'checkbox-style' then
+  begin
+    V := LowerCase(Trim(AValue));
+    FToggleStyle := (V = 'toggle') or (V = 'switch');
+    if AutoSize then AdjustSize;
+    Invalidate;
+    Exit;
+  end;
+
+  if (AName = 'toggle-width') or (AName = 'toggle-height') then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      if AName = 'toggle-width' then
+      begin
+        FToggleWidth := Px;
+        if FToggleWidth < 12 then FToggleWidth := 12;
+        if FToggleWidth > 200 then FToggleWidth := 200;
+      end
+      else
+      begin
+        FToggleHeight := Px;
+        if FToggleHeight < 12 then FToggleHeight := 12;
+        if FToggleHeight > 80 then FToggleHeight := 80;
+      end;
+      if AutoSize then AdjustSize;
+      Invalidate;
+    end;
+    Exit;
+  end;
+
+  if AName = 'toggle-thumb-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FToggleThumbColor := C;
+      FToggleThumbColorSet := True;
+    end;
+    Exit;
+  end;
+
   if AName = 'checkbox-background' then
   begin
     if ParseCssColor(AValue, C) then
@@ -782,6 +835,10 @@ begin
   FBoxBorderWidthSet := False;
   FBoxRadiusSet := False;
   FCheckColorSet := False;
+  FToggleStyle := False;
+  FToggleWidth := 40;
+  FToggleHeight := 20;
+  FToggleThumbColorSet := False;
   inherited ResetStyle;
 end;
 
@@ -915,6 +972,23 @@ begin
   end;
 end;
 
+function TCssCheckBox.GetBoxWidth: Integer;
+begin
+  if FToggleStyle then Result := FToggleWidth else Result := GetBoxSize;
+end;
+
+function TCssCheckBox.GetBoxHeight: Integer;
+begin
+  if FToggleStyle then Result := FToggleHeight else Result := GetBoxSize;
+end;
+
+function TCssCheckBox.GetToggleThumbColor: TColor;
+begin
+  if FToggleThumbColorSet then Result := FToggleThumbColor
+  else if FCheckColorSet then Result := FCheckColor
+  else Result := clWhite;
+end;
+
 procedure TCssCheckBox.DrawCheckMark(const R: TRect; AColor: TColor);
 begin
   DrawCheckMarkToCanvas(Canvas, R, AColor);
@@ -930,7 +1004,7 @@ var
   R, Box, TextR: TRect;
   B: Integer;
   P: TRect;
-  BoxSize: Integer;
+  BoxSize, BoxHeight: Integer;
   TextColor: TColor;
 begin
   inherited Paint;
@@ -948,12 +1022,13 @@ begin
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
     Exit;
 
-  BoxSize := GetBoxSize;
+  BoxSize := GetBoxWidth;
+  BoxHeight := GetBoxHeight;
 
   Box.Left := R.Left;
-  Box.Top := R.Top + (((R.Bottom - R.Top) - BoxSize) div 2);
+  Box.Top := R.Top + (((R.Bottom - R.Top) - BoxHeight) div 2);
   Box.Right := Box.Left + BoxSize;
-  Box.Bottom := Box.Top + BoxSize;
+  Box.Bottom := Box.Top + BoxHeight;
 
   AssignCssFontToFont(Canvas.Font);
 
@@ -979,7 +1054,7 @@ var
   S: TSize;
   P: TRect;
   B: Integer;
-  BoxSize: Integer;
+  BoxSize, BoxHeight: Integer;
   Spacing: Integer;
   NewWidth, NewHeight: Integer;
   TextToMeasure: string;
@@ -999,7 +1074,8 @@ begin
   B := GetCssBorderWidth;
   P := GetCssPadding;
 
-  BoxSize := GetBoxSize;
+  BoxSize := GetBoxWidth;
+  BoxHeight := GetBoxHeight;
   Spacing := 4;
 
   TextToMeasure := Caption;
@@ -1021,7 +1097,7 @@ begin
     (B * 2) +
     P.Top +
     P.Bottom +
-    BoxSize;
+    BoxHeight;
 
   if S.cy > NewHeight then
     NewHeight :=
@@ -1164,6 +1240,31 @@ begin
   LBorderWidth := GetCheckBoxBorderWidth;
   Radius := GetCheckBoxRadius;
   CheckColor := GetCheckColor;
+
+  if FToggleStyle then
+  begin
+    Size := ARect.Bottom - ARect.Top;
+    Radius := Size div 2;
+    DrawAntiAliasedRoundedBox(ACanvas, ARect, Radius, BG, BorderColor,
+      LBorderWidth, cbsSolid, GetParentBackgroundColor);
+    Size := ARect.Bottom - ARect.Top;
+    if Size > ARect.Right - ARect.Left then
+      Size := ARect.Right - ARect.Left;
+    Dec(Size, 6);
+    if Size < 2 then Size := 2;
+    if AState = cbChecked then
+      Radius := ARect.Right - ARect.Left - Size - 3
+    else if AState = cbGrayed then
+      Radius := (ARect.Right - ARect.Left - Size) div 2
+    else
+      Radius := 3;
+    if Radius < 3 then Radius := 3;
+    DrawAntiAliasedCircle(ACanvas,
+      Rect(ARect.Left + Radius, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2),
+           ARect.Left + Radius + Size, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2) + Size),
+      GetToggleThumbColor, GetToggleThumbColor, 0, BG);
+    Exit;
+  end;
 
   if Radius > (Size div 2) then
     Radius := Size div 2;
