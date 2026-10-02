@@ -166,6 +166,32 @@ type
     Column: Integer
   ) of object;
 
+  TCssClearNodeDataEvent = procedure(
+    Sender: TObject;
+    Node: TCssVirtualNode) of object;
+
+  TCssAfterCellPaintEvent = procedure(
+    Sender: TObject;
+    Node: TCssVirtualNode;
+    Column: Integer;
+    const CellRect: TRect) of object;
+
+  TCssGetCellHintEvent = procedure(
+    Sender: TObject;
+    Node: TCssVirtualNode;
+    Column: Integer;
+    var HintText: string) of object;
+
+  TCssNodeMovedEvent = procedure(
+    Sender: TObject;
+    Node: TCssVirtualNode;
+    OldParent, NewParent: TCssVirtualNode) of object;
+
+  TCssIncrementalSearchEvent = function(
+    Sender: TObject;
+    const SearchText: string;
+    Node: TCssVirtualNode): Boolean of object;
+
   TCssSortDirection = (csdNone, csdAscending, csdDescending);
 
   TCssVirtualTreeSortColumn = record
@@ -200,6 +226,10 @@ type
     procedure SetHeaderVAlign(AValue: TCssTreeVAlign);
     procedure SetCellHAlign(AValue: TCssTreeHAlign);
     procedure SetCellVAlign(AValue: TCssTreeVAlign);
+  protected
+    procedure AssignTo(Dest: TPersistent); override;
+  public
+    procedure Assign(Source: TPersistent); override;
   published
     property Text: string read FText write SetText;
     property Width: Integer read FWidth write SetWidth default 100;
@@ -301,6 +331,8 @@ type
     FFixedColumns: Integer;
     FFixedHeader: Boolean;
 
+    FLastColumnStretch: Boolean;
+
     // Incremental search
     FIncrementalSearch: Boolean;
     FSearchText: string;
@@ -354,6 +386,29 @@ type
     FCheckBoxCssClass: string;
     FCheckBoxCssStyle: string;
     FCheckBoxInlineCss: string;
+    FHoverCellColumn: Integer;
+    FHoverHeaderColumn: Integer;
+
+    // Placeholder
+    FPlaceholder: string;
+    FPlaceholderColor: TColor;
+    FPlaceholderColorSet: Boolean;
+    FPlaceholderAlign: TCssTextAlign;
+    FPlaceholderAlignSet: Boolean;
+    FPlaceholderVAlign: TCssVAlign;
+    FPlaceholderVAlignSet: Boolean;
+    FPlaceholderFontBold: Boolean;
+    FPlaceholderFontBoldSet: Boolean;
+    FPlaceholderFontItalic: Boolean;
+    FPlaceholderFontItalicSet: Boolean;
+    FPlaceholderFontUnderline: Boolean;
+    FPlaceholderFontUnderlineSet: Boolean;
+    FPlaceholderFontStrikeOut: Boolean;
+    FPlaceholderFontStrikeOutSet: Boolean;
+
+    // Header hover
+    FHeaderHoverBackground: TColor;
+    FHeaderHoverBackgroundSet: Boolean;
 
     // Events
     FOnGetNodeDataSize: TCssGetNodeDataSizeEvent;
@@ -380,6 +435,12 @@ type
     FOnDragOverNodes: TCssDragNodesEvent;
     FOnDropNodes: TCssDropNodesEvent;
     FOnDropNodesEx: TCssDropNodesExEvent;
+
+    FOnClearNodeData: TCssClearNodeDataEvent;
+    FOnAfterCellPaint: TCssAfterCellPaintEvent;
+    FOnGetCellHint: TCssGetCellHintEvent;
+    FOnNodeMoved: TCssNodeMovedEvent;
+    FOnIncrementalSearch: TCssIncrementalSearchEvent;
 
     // --- Tree structure ---
     function GetVisibleCount: Integer;
@@ -417,6 +478,9 @@ type
 
     function GetColumnWidth(Index: Integer): Integer;
     function GetColumnLeft(Index: Integer): Integer;
+    function GetBaseColumnWidth(Index: Integer): Integer;
+    function GetEffectiveColumnWidth(Index: Integer): Integer;
+    function GetStretchAvailableWidth: Integer;
 
     function GetButtonRect(Node: TCssVirtualNode; const RowR: TRect): TRect;
     function GetCheckBoxSize: Integer;
@@ -442,6 +506,7 @@ type
     procedure SetFixedColumns(AValue: Integer);
     procedure SetFixedHeader(AValue: Boolean);
     procedure SetEditStyleName(const AValue: string);
+    procedure SetLastColumnStretch(AValue: Boolean);
 
     procedure SetColumns(AValue: TCssVirtualTreeColumns);
     procedure SetNodeDataSize(AValue: Integer);
@@ -450,6 +515,8 @@ type
     procedure SetSelectedNode(AValue: TCssVirtualNode);
 
     procedure SetAlwaysReserveScrollBar(AValue: Boolean);
+
+    procedure SetPlaceholder(const AValue: string);
 
     // --- Scroll handling ---
     procedure DoVScroll(Sender: TObject);
@@ -494,6 +561,10 @@ type
 
     procedure DrawButton(Node: TCssVirtualNode; const RowR: TRect);
     procedure DrawCheckBox(Node: TCssVirtualNode; const RowR: TRect);
+
+    procedure DrawPlaceholder(const R: TRect);
+    function GetHeaderHoverBackground: TColor;
+    procedure DrawHoverRoundedRect(const ARect: TRect; ARadii: TCssCornerRadii; AColor: TColor);
 
     procedure DrawInternalScrollBars;
     procedure DrawRoundedCornerMask;
@@ -598,6 +669,8 @@ type
 
     // State changes
     procedure EnabledChanged; override;
+
+    function CustomHintForPoint(const APoint: TPoint; out AHint: string): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -740,6 +813,8 @@ type
     property FixedColumns: Integer read FFixedColumns write SetFixedColumns default 0;
     property FixedHeader: Boolean read FFixedHeader write SetFixedHeader default True;
 
+    property LastColumnStretch: Boolean read FLastColumnStretch write SetLastColumnStretch default False;
+
     property IncrementalSearch: Boolean
       read FIncrementalSearch write FIncrementalSearch default True;
 
@@ -865,12 +940,29 @@ type
 
     property OnDropNodesEx: TCssDropNodesExEvent
       read FOnDropNodesEx write FOnDropNodesEx;
+
+    property OnClearNodeData: TCssClearNodeDataEvent
+      read FOnClearNodeData write FOnClearNodeData;
+
+    property OnAfterCellPaint: TCssAfterCellPaintEvent
+      read FOnAfterCellPaint write FOnAfterCellPaint;
+
+    property OnGetCellHint: TCssGetCellHintEvent
+      read FOnGetCellHint write FOnGetCellHint;
+
+    property OnNodeMoved: TCssNodeMovedEvent
+      read FOnNodeMoved write FOnNodeMoved;
+
+    property OnIncrementalSearch: TCssIncrementalSearchEvent
+      read FOnIncrementalSearch write FOnIncrementalSearch;
+
+    property Placeholder: string read FPlaceholder write SetPlaceholder;
   end;
 
 implementation
 
 uses
-  CssUtils;
+  CssUtils, Math;
 
 { Helper functions }
 
@@ -1028,6 +1120,33 @@ begin
   Changed(False);
 end;
 
+procedure TCssVirtualTreeColumn.Assign(Source: TPersistent);
+var
+  Src: TCssVirtualTreeColumn;
+begin
+  if Source is TCssVirtualTreeColumn then
+  begin
+    Src := TCssVirtualTreeColumn(Source);
+    FText := Src.FText;
+    FWidth := Src.FWidth;
+    FHeaderHAlign := Src.FHeaderHAlign;
+    FHeaderVAlign := Src.FHeaderVAlign;
+    FCellHAlign := Src.FCellHAlign;
+    FCellVAlign := Src.FCellVAlign;
+    Changed(False);
+  end
+  else
+    inherited Assign(Source);
+end;
+
+procedure TCssVirtualTreeColumn.AssignTo(Dest: TPersistent);
+begin
+  if Dest is TCssVirtualTreeColumn then
+    TCssVirtualTreeColumn(Dest).Assign(Self)
+  else
+    inherited AssignTo(Dest);
+end;
+
 { TCssVirtualTreeColumns }
 
 constructor TCssVirtualTreeColumns.Create(AOwner: TCssVirtualStringTree);
@@ -1117,6 +1236,7 @@ begin
 
   FFixedColumns := 0;
   FFixedHeader := True;
+  FLastColumnStretch := False;
 
   FIncrementalSearch := True;
   FSearchText := '';
@@ -1143,6 +1263,28 @@ begin
   FCheckBoxCssClass := 'css-tree-checkbox checkbox';
   FCheckBoxCssStyle := '';
   FCheckBoxInlineCss := '';
+
+  FHoverCellColumn := -1;
+  FHoverHeaderColumn := -1;
+
+  FPlaceholder := '';
+  FPlaceholderColor := clNone;
+  FPlaceholderColorSet := False;
+  FPlaceholderAlign := ctaLeft;
+  FPlaceholderAlignSet := False;
+  FPlaceholderVAlign := cvaTop;
+  FPlaceholderVAlignSet := False;
+  FPlaceholderFontBold := False;
+  FPlaceholderFontBoldSet := False;
+  FPlaceholderFontItalic := False;
+  FPlaceholderFontItalicSet := False;
+  FPlaceholderFontUnderline := False;
+  FPlaceholderFontUnderlineSet := False;
+  FPlaceholderFontStrikeOut := False;
+  FPlaceholderFontStrikeOutSet := False;
+
+  FHeaderHoverBackground := clNone;
+  FHeaderHoverBackgroundSet := False;
 
   FCheckBoxNormal := CreateCheckBoxHelper(False, False);
   FCheckBoxChecked := CreateCheckBoxHelper(True, False);
@@ -1239,8 +1381,13 @@ begin
     if I < FFixedColumns then
       Continue;
 
+    // The stretched last column is not resizable by dragging:
+    // its width is determined by layout.
+    if FLastColumnStretch and (I = FColumns.Count - 1) then
+      Continue;
+
     ColLeft := GetColumnLeft(I);
-    ColRight := ColLeft + FColumns[I].Width;
+    ColRight := ColLeft + GetEffectiveColumnWidth(I);
 
     if Abs(X - ColRight) <= Tol then
       Exit(I);
@@ -1313,7 +1460,7 @@ begin
     Exit;
 
   for I := CssMax(0, FFixedColumns) to FColumns.Count - 1 do
-    Inc(Result, FColumns[I].Width);
+    Inc(Result, GetEffectiveColumnWidth(I));
 end;
 
 function TCssVirtualStringTree.GetTotalHeight: Integer;
@@ -1361,10 +1508,7 @@ end;
 
 function TCssVirtualStringTree.GetColumnWidth(Index: Integer): Integer;
 begin
-  if Assigned(FColumns) and (Index >= 0) and (Index < FColumns.Count) then
-    Result := FColumns[Index].Width
-  else
-    Result := 0;
+  Result := GetEffectiveColumnWidth(Index);
 end;
 
 function TCssVirtualStringTree.GetColumnLeft(Index: Integer): Integer;
@@ -1391,8 +1535,79 @@ begin
     Result := GetTreeRect.Left + FixedW - FHorzOffset;
 
     for I := FFixedColumns to Index - 1 do
-      Inc(Result, FColumns[I].Width);
+      Inc(Result, GetEffectiveColumnWidth(I));
   end;
+end;
+
+function TCssVirtualStringTree.GetBaseColumnWidth(Index: Integer): Integer;
+begin
+  if Assigned(FColumns) and (Index >= 0) and (Index < FColumns.Count) then
+    Result := FColumns[Index].Width
+  else
+    Result := 0;
+end;
+
+function TCssVirtualStringTree.GetEffectiveColumnWidth(Index: Integer): Integer;
+var
+  I, Sum, Avail: Integer;
+begin
+  if Index < 0 then
+    Exit(0);
+
+  // "No columns" mode: single virtual column covering the whole tree.
+  if not Assigned(FColumns) or (FColumns.Count = 0) then
+  begin
+    if Index = 0 then
+      Exit(GetTreeRect.Width)
+    else
+      Exit(0);
+  end;
+
+  if Index >= FColumns.Count then
+    Exit(0);
+
+  if not FLastColumnStretch then
+    Exit(FColumns[Index].Width);
+
+  // Stretch only affects the last column, and only when it lives in
+  // the scrollable area (not in the fixed region).
+  if (Index <> FColumns.Count - 1) or (Index < FFixedColumns) then
+    Exit(FColumns[Index].Width);
+
+  Avail := GetStretchAvailableWidth;
+
+  Sum := 0;
+  for I := FFixedColumns to FColumns.Count - 2 do
+    Inc(Sum, FColumns[I].Width);
+
+  Result := Avail - Sum;
+
+  if Result < FMinColumnWidth then
+    Result := FMinColumnWidth;
+
+  if Result < 0 then
+    Result := 0;
+end;
+
+function TCssVirtualStringTree.GetStretchAvailableWidth: Integer;
+var
+  ContentR: TRect;
+  FW: Integer;
+begin
+  ContentR := GetContentRect;
+  FW := GetFixedWidth;
+
+  Result := ContentR.Width - FW;
+
+  // Reserve space for the vertical scrollbar. This must match the logic
+  // used by UpdateScrollBars: reserve either always, or when visible.
+  if FAlwaysReserveScrollBar then
+    Dec(Result, FScrollBarSize)
+  else if Assigned(FVScroll) and FVScroll.Visible then
+    Dec(Result, FScrollBarSize);
+
+  if Result < 0 then
+    Result := 0;
 end;
 
 // --- Node depth / subtree ---
@@ -1552,6 +1767,17 @@ begin
     FEdit.StyleName := AValue;
 end;
 
+procedure TCssVirtualStringTree.SetLastColumnStretch(AValue: Boolean);
+begin
+  if FLastColumnStretch = AValue then
+    Exit;
+
+  FLastColumnStretch := AValue;
+
+  UpdateScrollBars;
+  Invalidate;
+end;
+
 procedure TCssVirtualStringTree.SetColumns(AValue: TCssVirtualTreeColumns);
 begin
   FResizingColumn := -1;
@@ -1668,6 +1894,17 @@ begin
 
   UpdateScrollBars;
   Invalidate;
+end;
+
+procedure TCssVirtualStringTree.SetPlaceholder(const AValue: string);
+begin
+  if FPlaceholder = AValue then
+    Exit;
+
+  FPlaceholder := AValue;
+
+  if VisibleCount = 0 then
+    Invalidate;
 end;
 
 // --- Scrollbar notifications ---
@@ -1882,6 +2119,11 @@ begin
   finally
     FUpdatingScroll := False;
   end;
+
+  // Clamp the horizontal offset to the new maximum, in case columns were
+  // removed or the control was resized.
+  if FHorzOffset > CssMax(0, TotalW - ScrollW) then
+    FHorzOffset := CssMax(0, TotalW - ScrollW);
 end;
 
 // --- Visible list building ---
@@ -1980,6 +2222,9 @@ begin
   end;
 
   DoFreeNode(Node);
+
+  if Assigned(FOnClearNodeData) then
+    FOnClearNodeData(Self, Node);
 
   if Assigned(Node.Data) then
     FreeMem(Node.Data);
@@ -2220,6 +2465,8 @@ var
   SavedClip: TRect;
   FixedR, ScrollR: TRect;
   I: Integer;
+  Radii: TCssCornerRadii;
+  HeaderFullR: TRect;
 begin
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
     Exit;
@@ -2232,55 +2479,73 @@ begin
   ScrollR.Top := R.Top;
   ScrollR.Bottom := R.Bottom;
 
-  SavedClip := Canvas.ClipRect;
-  Canvas.ClipRect := R;
-  try
-    UpdateCanvasFont;
+  UpdateCanvasFont;
 
+  HeaderFullR := Rect(
+    ClientRect.Left,
+    ClientRect.Top,
+    ClientRect.Right,
+    R.Bottom
+  );
+
+  if GetCssBorderRadius > 0 then
+  begin
+    Radii.TL := GetCssBorderRadius;
+    Radii.TR := GetCssBorderRadius;
+    Radii.BR := 0;
+    Radii.BL := 0;
+
+    DrawAntiAliasedRoundedBox(
+      Canvas,
+      HeaderFullR,
+      Radii,
+      GetHeaderBackground,
+      GetEffectiveBorderColor,
+      GetCssBorderWidth,
+      cbsSolid,
+      GetParentBackgroundColor
+    );
+  end
+  else
+  begin
     Canvas.Brush.Style := bsSolid;
     Canvas.Brush.Color := GetHeaderBackground;
-    Canvas.FillRect(R);
-
-    Canvas.Pen.Width := 1;
-    Canvas.Pen.Color := GetLineColor;
-
-    Canvas.MoveTo(R.Left, R.Bottom - 1);
-    Canvas.LineTo(R.Right, R.Bottom - 1);
-  finally
-    Canvas.ClipRect := SavedClip;
+    Canvas.FillRect(HeaderFullR);
   end;
+
+  Canvas.Pen.Style := psSolid;
+  Canvas.Pen.Width := 1;
+  Canvas.Pen.Color := GetLineColor;
+
+  Canvas.MoveTo(R.Left, HeaderFullR.Bottom - 1);
+  Canvas.LineTo(R.Right, HeaderFullR.Bottom - 1);
 
   Canvas.Font.Color := GetHeaderTextColor;
   Canvas.Brush.Style := bsClear;
 
-  if ScrollR.Right > ScrollR.Left then
-  begin
-    SavedClip := Canvas.ClipRect;
-    Canvas.ClipRect := ScrollR;
-    try
+  SavedClip := Canvas.ClipRect;
+  Canvas.ClipRect := R;
+  try
+    if ScrollR.Right > ScrollR.Left then
+    begin
       for I := CssMax(0, FFixedColumns) to FColumns.Count - 1 do
         DrawHeaderCell(I, R);
-    finally
-      Canvas.ClipRect := SavedClip;
     end;
-  end;
 
-  if FixedR.Right > FixedR.Left then
-  begin
-    SavedClip := Canvas.ClipRect;
-    Canvas.ClipRect := FixedR;
-    try
+    if FixedR.Right > FixedR.Left then
+    begin
       for I := 0 to CssMin(FFixedColumns, FColumns.Count) - 1 do
         DrawHeaderCell(I, R);
 
+      Canvas.Pen.Style := psSolid;
       Canvas.Pen.Color := GetLineColor;
       Canvas.Pen.Width := 1;
 
       Canvas.MoveTo(FixedR.Right - 1, FixedR.Top);
       Canvas.LineTo(FixedR.Right - 1, FixedR.Bottom);
-    finally
-      Canvas.ClipRect := SavedClip;
     end;
+  finally
+    Canvas.ClipRect := SavedClip;
   end;
 
   DrawSortMarkers(R);
@@ -2298,12 +2563,14 @@ var
   TS: TTextStyle;
   HAlign: TCssTextAlign;
   VAlign: TCssVAlign;
+  HoverR: TRect;
+  HoverRadii: TCssCornerRadii;
 begin
   if (Index < 0) or (Index >= FColumns.Count) then
     Exit;
 
   X := GetColumnLeft(Index);
-  W := FColumns[Index].Width;
+  W := GetEffectiveColumnWidth(Index);
 
   CellR := Rect(
     X,
@@ -2314,6 +2581,29 @@ begin
 
   if CellR.Right <= CellR.Left then
     Exit;
+
+  if Index = FHoverHeaderColumn then
+  begin
+    HoverR := CellR;
+    HoverR.Top := HoverR.Top + 2;
+
+    HoverRadii.TL := 0;
+    HoverRadii.TR := 0;
+    HoverRadii.BR := 0;
+    HoverRadii.BL := 0;
+
+    if (Index = 0) and
+       (HoverR.Left <= ClientRect.Left + GetCssBorderWidth) and
+       (GetCssBorderRadius > 0) then
+      HoverRadii.TL := GetCssBorderRadius;
+
+    if (Index = FColumns.Count - 1) and
+       (HoverR.Right >= ClientRect.Right - GetCssBorderWidth) and
+       (GetCssBorderRadius > 0) then
+      HoverRadii.TR := GetCssBorderRadius;
+
+    DrawHoverRoundedRect(HoverR, HoverRadii, GetHeaderHoverBackground);
+  end;
 
   Canvas.Pen.Color := GetLineColor;
   Canvas.Pen.Width := 1;
@@ -2530,96 +2820,33 @@ begin
     Canvas.FillRect(RowR);
   end;
 
-  // Branch with no columns.
+  // Branch with no columns — treated as a single virtual column,
+  // using the same drawing pipeline as the normal (columned) path.
   if FColumns.Count = 0 then
   begin
-    S := GetCellText(Node, 0);
+    ScrollR := GetScrollAreaRect;
+    ScrollR.Top := RowR.Top;
+    ScrollR.Bottom := RowR.Bottom;
 
-    TextColor := GetCssTextColor;
+    SavedClip := Canvas.ClipRect;
+    Canvas.ClipRect := ScrollR;
+    try
+      if FShowCheckboxes then
+        DrawCheckBox(Node, RowR);
 
-    if IsDisabled then
-      TextColor := GetDisabledColor
-    else if IsSelectedRow and FSelectionColorSet then
-      TextColor := GetSelectionColor;
+      DrawButton(Node, RowR);
+      DrawCellContent(Node, 0, RowR, IsSelectedRow);
+    finally
+      Canvas.ClipRect := SavedClip;
+    end;
 
-    ContentR := RowR;
-    ContentR.Left := GetTextStartX(Node, RowR);
-
-    if ContentR.Right <= ContentR.Left then
-      Exit;
-
-    HAlign := ResolveCellHAlign(Node, 0);
-    VAlign := ResolveCellVAlign(Node, 0);
-
-    if HtmlMode then
+    if FLineColorSet then
     begin
-      DrawHtmlTextWithAlign(
-        Canvas,
-        ContentR,
-        S,
-        HAlign,
-        VAlign,
-        TextColor
-      );
-    end
-    else
-    begin
-      UpdateCanvasFont;
+      Canvas.Pen.Color := GetLineColor;
+      Canvas.Pen.Width := 1;
 
-      Canvas.Font.Color := TextColor;
-      Canvas.Brush.Style := bsClear;
-
-      TextW := Canvas.TextWidth(S);
-      ContentW := ContentR.Right - ContentR.Left;
-
-      case HAlign of
-        ctaCenter:
-          X := ContentR.Left + CssMax(0, (ContentW - TextW) div 2);
-
-        ctaRight:
-          X := ContentR.Right - TextW - 3;
-
-      else
-        X := ContentR.Left + 3;
-      end;
-
-      if X < ContentR.Left then
-        X := ContentR.Left;
-
-      RowH := RowR.Bottom - RowR.Top;
-      TextH := Canvas.TextHeight('Ag');
-
-      if TextH >= RowH then
-        Y := RowR.Top
-      else
-      begin
-        case VAlign of
-          cvaTop:
-            Y := RowR.Top + 1;
-
-          cvaMiddle:
-            Y := RowR.Top + ((RowH - TextH) div 2);
-
-          cvaBottom:
-            Y := RowR.Bottom - TextH - 1;
-
-        else
-          Y := RowR.Top;
-        end;
-      end;
-
-      TS := Canvas.TextStyle;
-      TS.Alignment := taLeftJustify;
-
-      // Vertical position already computed manually via Y.
-      TS.Layout := tlTop;
-
-      TS.Wordbreak := False;
-      TS.Clipping := True;
-      TS.Opaque := False;
-      TS.ShowPrefix := False;
-
-      Canvas.TextRect(ContentR, X, Y, S, TS);
+      Canvas.MoveTo(TreeR.Left, RowR.Bottom - 1);
+      Canvas.LineTo(TreeR.Right, RowR.Bottom - 1);
     end;
 
     Exit;
@@ -2702,24 +2929,39 @@ var
   HAlign: TCssTextAlign;
   VAlign: TCssVAlign;
   IsDisabled: Boolean;
+  TreeR: TRect;
 begin
-  if (Column < 0) or (Column >= FColumns.Count) then
-    Exit;
+  if FColumns.Count = 0 then
+  begin
+    if Column <> 0 then
+      Exit;
 
-  CellR := Rect(
-    GetColumnLeft(Column),
-    RowR.Top,
-    GetColumnLeft(Column) + FColumns[Column].Width,
-    RowR.Bottom
-  );
+    TreeR := GetTreeRect;
 
-  if CellR.Right <= CellR.Left then
-    Exit;
+    CellR := Rect(TreeR.Left, RowR.Top, TreeR.Right, RowR.Bottom);
 
-  // Rectangle where cell content is actually allowed to be drawn.
-  // For the scrollable part, for example, it will be clipped to the area
-  // before the vertical scrollbar.
-  ClipR := GetColumnClipRect(Column, RowR);
+    ClipR := GetScrollAreaRect;
+    ClipR.Top := RowR.Top;
+    ClipR.Bottom := RowR.Bottom;
+  end
+  else
+  begin
+    if (Column < 0) or (Column >= FColumns.Count) then
+      Exit;
+
+    CellR := Rect(
+      GetColumnLeft(Column),
+      RowR.Top,
+      GetColumnLeft(Column) + GetEffectiveColumnWidth(Column),
+      RowR.Bottom
+    );
+
+    if CellR.Right <= CellR.Left then
+      Exit;
+
+    // Rectangle where cell content is actually allowed to be drawn.
+    ClipR := GetColumnClipRect(Column, RowR);
+  end;
 
   Handled := False;
 
@@ -2727,7 +2969,11 @@ begin
     FOnDrawCell(Self, Node, Column, CellR, Handled);
 
   if Handled then
+  begin
+    if Assigned(FOnAfterCellPaint) then
+      FOnAfterCellPaint(Self, Node, Column, CellR);
     Exit;
+  end;
 
   S := GetCellText(Node, Column);
 
@@ -2778,10 +3024,9 @@ begin
     );
   end;
 
-  if FLineColorSet then
+  // Vertical separator only makes sense in real-columns mode.
+  if (FColumns.Count > 0) and FLineColorSet then
   begin
-    // Draw the vertical separator only if it actually falls
-    // within the visible/allowed area.
     if (CellR.Right - 1 >= ClipR.Left) and
        (CellR.Right - 1 < ClipR.Right) then
     begin
@@ -2792,6 +3037,9 @@ begin
       Canvas.LineTo(CellR.Right - 1, RowR.Bottom - 2);
     end;
   end;
+
+  if Assigned(FOnAfterCellPaint) then
+    FOnAfterCellPaint(Self, Node, Column, CellR);
 end;
 
 procedure TCssVirtualStringTree.DrawCellText(
@@ -2898,7 +3146,8 @@ procedure TCssVirtualStringTree.DrawButton(
   const RowR: TRect);
 var
   R: TRect;
-  MidY: Integer;
+  MidY, MidX, BarSize: Integer;
+  BtnColor: TColor;
 begin
   if Node = nil then
     Exit;
@@ -2911,24 +3160,40 @@ begin
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
     Exit;
 
-  Canvas.Pen.Width := 1;
   if IsNodeDisabled(Node) then
-    Canvas.Pen.Color := GetDisabledColor
+    BtnColor := GetDisabledColor
   else
-    Canvas.Pen.Color := GetButtonColor;
-  Canvas.Brush.Style := bsClear;
+    BtnColor := GetButtonColor;
 
-  Canvas.Rectangle(R.Left, R.Top, R.Right, R.Bottom);
+  DrawAntiAliasedRoundedBox(
+    Canvas,
+    R,
+    3,
+    clNone,
+    BtnColor,
+    1,
+    cbsSolid,
+    GetCssBackgroundColor
+  );
 
+  MidX := (R.Left + R.Right) div 2;
   MidY := (R.Top + R.Bottom) div 2;
+  BarSize := (R.Right - R.Left) div 3;
 
-  Canvas.MoveTo(R.Left + 2, MidY);
-  Canvas.LineTo(R.Right - 2, MidY);
+  if BarSize < 2 then
+    BarSize := 2;
+
+  Canvas.Pen.Style := psSolid;
+  Canvas.Pen.Width := 1;
+  Canvas.Pen.Color := BtnColor;
+
+  Canvas.MoveTo(MidX - BarSize, MidY);
+  Canvas.LineTo(MidX + BarSize + 1, MidY);
 
   if not (cvsExpanded in Node.States) then
   begin
-    Canvas.MoveTo((R.Left + R.Right) div 2, R.Top + 2);
-    Canvas.LineTo((R.Left + R.Right) div 2, R.Bottom - 2);
+    Canvas.MoveTo(MidX, MidY - BarSize);
+    Canvas.LineTo(MidX, MidY + BarSize + 1);
   end;
 end;
 
@@ -2976,6 +3241,177 @@ begin
 
   if Assigned(Helper) then
     Helper.DrawToCanvas(Canvas, R);
+end;
+
+procedure TCssVirtualStringTree.DrawPlaceholder(const R: TRect);
+var
+  TS: TTextStyle;
+  TextH, TextW, TextX, TextY: Integer;
+  PColor: TColor;
+  SavedStyle: TFontStyles;
+begin
+  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+    Exit;
+
+  if FPlaceholder = '' then
+    Exit;
+
+  UpdateCanvasFont;
+
+  Canvas.Brush.Style := bsClear;
+
+  if FPlaceholderColorSet and (FPlaceholderColor <> clNone) then
+    PColor := FPlaceholderColor
+  else
+    PColor := RGBToColor(150, 150, 150);
+
+  Canvas.Font.Color := PColor;
+
+  SavedStyle := Canvas.Font.Style;
+
+  if FPlaceholderFontBoldSet then
+  begin
+    if FPlaceholderFontBold then
+      Canvas.Font.Style := Canvas.Font.Style + [fsBold]
+    else
+      Canvas.Font.Style := Canvas.Font.Style - [fsBold];
+  end;
+
+  if FPlaceholderFontItalicSet then
+  begin
+    if FPlaceholderFontItalic then
+      Canvas.Font.Style := Canvas.Font.Style + [fsItalic]
+    else
+      Canvas.Font.Style := Canvas.Font.Style - [fsItalic];
+  end;
+
+  if FPlaceholderFontUnderlineSet then
+  begin
+    if FPlaceholderFontUnderline then
+      Canvas.Font.Style := Canvas.Font.Style + [fsUnderline]
+    else
+      Canvas.Font.Style := Canvas.Font.Style - [fsUnderline];
+  end;
+
+  if FPlaceholderFontStrikeOutSet then
+  begin
+    if FPlaceholderFontStrikeOut then
+      Canvas.Font.Style := Canvas.Font.Style + [fsStrikeOut]
+    else
+      Canvas.Font.Style := Canvas.Font.Style - [fsStrikeOut];
+  end;
+
+  TextW := Canvas.TextWidth(FPlaceholder);
+  TextH := Canvas.TextHeight(FPlaceholder);
+
+  case FPlaceholderAlign of
+    ctaCenter:
+      TextX := R.Left + CssMax(0, (R.Width - TextW) div 2);
+
+    ctaRight:
+      TextX := R.Right - TextW - 4;
+
+  else
+    TextX := R.Left + 4;
+  end;
+
+  case FPlaceholderVAlign of
+    cvaMiddle:
+      TextY := R.Top + CssMax(0, (R.Height - TextH) div 2);
+
+    cvaBottom:
+      TextY := R.Bottom - TextH - 2;
+
+  else
+    TextY := R.Top + 2;
+  end;
+
+  if TextX < R.Left then
+    TextX := R.Left;
+
+  if TextY < R.Top then
+    TextY := R.Top;
+
+  TS := Canvas.TextStyle;
+  TS.Alignment := taLeftJustify;
+  TS.Layout := tlTop;
+  TS.Wordbreak := False;
+  TS.Clipping := True;
+  TS.Opaque := False;
+  TS.ShowPrefix := False;
+
+  Canvas.TextRect(R, TextX, TextY, FPlaceholder, TS);
+
+  Canvas.Font.Style := SavedStyle;
+end;
+
+function TCssVirtualStringTree.GetHeaderHoverBackground: TColor;
+begin
+  if FHeaderHoverBackgroundSet then
+    Result := FHeaderHoverBackground
+  else
+    Result := GetHeaderBackground;
+end;
+
+procedure TCssVirtualStringTree.DrawHoverRoundedRect(
+  const ARect: TRect;
+  ARadii: TCssCornerRadii;
+  AColor: TColor);
+var
+  W, H, X, Y: Integer;
+  Coverage: array of Byte;
+  HW, HH, R: Double;
+  CX, CY, QX, QY, SDF, Cov: Double;
+begin
+  if AColor = clNone then
+    Exit;
+
+  W := ARect.Right - ARect.Left;
+  H := ARect.Bottom - ARect.Top;
+
+  if (W <= 0) or (H <= 0) then
+    Exit;
+
+  HW := W / 2.0;
+  HH := H / 2.0;
+
+  SetLength(Coverage, W * H);
+
+  for Y := 0 to H - 1 do
+    for X := 0 to W - 1 do
+    begin
+      CX := X + 0.5 - HW;
+      CY := Y + 0.5 - HH;
+
+      if (CX >= 0) and (CY < 0) then
+        R := ARadii.TR
+      else if (CX < 0) and (CY < 0) then
+        R := ARadii.TL
+      else if (CX < 0) and (CY >= 0) then
+        R := ARadii.BL
+      else
+        R := ARadii.BR;
+
+      if R < 0 then
+        R := 0;
+
+      QX := Abs(CX) - HW + R;
+      QY := Abs(CY) - HH + R;
+
+      SDF :=
+        Min(Max(QX, QY), 0.0) +
+        Sqrt(Sqr(Max(QX, 0.0)) + Sqr(Max(QY, 0.0))) - R;
+
+      Cov := 0.5 - SDF;
+      if Cov < 0 then
+        Cov := 0
+      else if Cov > 1 then
+        Cov := 1;
+
+      Coverage[Y * W + X] := Round(Cov * 255);
+    end;
+
+  BlendCoverageToCanvas(Canvas, ARect.Left, ARect.Top, W, H, Coverage, AColor);
 end;
 
 // --- Button/checkbox/text geometry ---
@@ -3128,7 +3564,7 @@ begin
 
   if FColumns.Count = 0 then
   begin
-    if X >= TreeR.Left then
+    if (X >= TreeR.Left) and (X < TreeR.Right) then
       Result := 0;
 
     Exit;
@@ -3159,7 +3595,7 @@ begin
 
     for I := FFixedColumns to FColumns.Count - 1 do
     begin
-      Inc(Acc, FColumns[I].Width);
+      Inc(Acc, GetEffectiveColumnWidth(I));
 
       if X < Acc then
         Exit(I);
@@ -3201,7 +3637,7 @@ begin
     Result := Rect(
       GetColumnLeft(Column),
       RowTop,
-      GetColumnLeft(Column) + FColumns[Column].Width,
+      GetColumnLeft(Column) + GetEffectiveColumnWidth(Column),
       RowTop + FItemHeight
     );
   end;
@@ -3502,24 +3938,34 @@ begin
 end;
 
 procedure TCssVirtualStringTree.SortList(AList: TList);
-var
-  I, J: Integer;
-  Key: TCssVirtualNode;
-begin
-  for I := 1 to AList.Count - 1 do
+
+  procedure QuickSort(L, R: Integer);
+  var
+    I, J: Integer;
+    Pivot, Tmp: TCssVirtualNode;
   begin
-    Key := TCssVirtualNode(AList[I]);
-    J := I - 1;
-
-    while (J >= 0) and
-          (CompareNodesMulti(TCssVirtualNode(AList[J]), Key) > 0) do
-    begin
-      AList[J + 1] := AList[J];
-      Dec(J);
-    end;
-
-    AList[J + 1] := Key;
+    I := L;
+    J := R;
+    Pivot := TCssVirtualNode(AList[(L + R) div 2]);
+    repeat
+      while CompareNodesMulti(TCssVirtualNode(AList[I]), Pivot) < 0 do Inc(I);
+      while CompareNodesMulti(TCssVirtualNode(AList[J]), Pivot) > 0 do Dec(J);
+      if I <= J then
+      begin
+        Tmp := TCssVirtualNode(AList[I]);
+        AList[I] := AList[J];
+        AList[J] := Tmp;
+        Inc(I);
+        Dec(J);
+      end;
+    until I > J;
+    if L < J then QuickSort(L, J);
+    if I < R then QuickSort(I, R);
   end;
+
+begin
+  if AList.Count > 1 then
+    QuickSort(0, AList.Count - 1);
 end;
 
 function TCssVirtualStringTree.GetPrimarySortColumn: Integer;
@@ -3578,16 +4024,28 @@ end;
 
 procedure TCssVirtualStringTree.FindSearchNode;
 var
-  I: Integer;
+  I, Start, Count: Integer;
   Node: TCssVirtualNode;
   S: string;
 begin
   if FSearchText = '' then
     Exit;
 
-  for I := 0 to VisibleCount - 1 do
+  Count := VisibleCount;
+
+  if Count = 0 then
+    Exit;
+
+  Start := FVisibleNodes.IndexOf(FSelectedNode);
+
+  if Start < 0 then
+    Start := 0
+  else
+    Start := (Start + 1) mod Count;
+
+  for I := 0 to Count - 1 do
   begin
-    Node := GetVisibleNode(I);
+    Node := GetVisibleNode((Start + I) mod Count);
 
     if Node = nil then
       Continue;
@@ -3595,13 +4053,25 @@ begin
     if IsNodeDisabled(Node) then
       Continue;
 
-    S := LowerCase(PlainCellText(Node, 0));
-
-    if Pos(FSearchText, S) = 1 then
+    if Assigned(FOnIncrementalSearch) then
     begin
-      SetSelectedNode(Node);
-      MakeVisible(Node);
-      Exit;
+      if FOnIncrementalSearch(Self, FSearchText, Node) then
+      begin
+        SetSelectedNode(Node);
+        MakeVisible(Node);
+        Exit;
+      end;
+    end
+    else
+    begin
+      S := LowerCase(PlainCellText(Node, 0));
+
+      if Pos(FSearchText, S) = 1 then
+      begin
+        SetSelectedNode(Node);
+        MakeVisible(Node);
+        Exit;
+      end;
     end;
   end;
 end;
@@ -3630,9 +4100,9 @@ begin
   if FHeaderVisible then
   begin
     HeaderR := Rect(
-      ContentR.Left,
-      ContentR.Top,
-      TreeR.Right,
+      ClientRect.Left + GetCssBorderWidth,
+      ClientRect.Top + GetCssBorderWidth,
+      ClientRect.Right - GetCssBorderWidth,
       ContentR.Top + GetHeaderHeight
     );
 
@@ -3642,27 +4112,33 @@ begin
   if (TreeR.Right <= TreeR.Left) or (TreeR.Bottom <= TreeR.Top) then
   begin
     DrawInternalScrollBars;
-    DrawRoundedCornerMask;
     Exit;
   end;
 
   SavedClip := Canvas.ClipRect;
   Canvas.ClipRect := TreeR;
   try
-    LastRow := CssMin(VisibleCount - 1, FTopNode + GetPageRows - 1);
-
-    for I := FTopNode to LastRow do
+    if (VisibleCount = 0) and (FPlaceholder <> '') then
     begin
-      Node := GetVisibleNode(I);
-      if Node <> nil then
-        DrawNodeRow(Node, I, TreeR);
+      DrawPlaceholder(TreeR);
+    end
+    else
+    begin
+      LastRow := CssMin(VisibleCount - 1, FTopNode + GetPageRows - 1);
+
+      for I := FTopNode to LastRow do
+      begin
+        Node := GetVisibleNode(I);
+        if Node <> nil then
+          DrawNodeRow(Node, I, TreeR);
+      end;
     end;
   finally
     Canvas.ClipRect := SavedClip;
   end;
 
   DrawInternalScrollBars;
-  DrawRoundedCornerMask;
+
 end;
 
 // --- CSS declaration handling ---
@@ -3674,6 +4150,7 @@ var
   Px: Integer;
   HA: TCssTreeHAlign;
   VA: TCssTreeVAlign;
+  S: string;
 begin
   if AValue = '' then
     Exit;
@@ -3857,6 +4334,82 @@ begin
     Exit;
   end;
 
+  if AName = 'header-hover-background' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FHeaderHoverBackground := C;
+      FHeaderHoverBackgroundSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'placeholder-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FPlaceholderColor := C;
+      FPlaceholderColorSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'placeholder-align' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderAlignSet := True;
+
+    if S = 'center' then
+      FPlaceholderAlign := ctaCenter
+    else if S = 'right' then
+      FPlaceholderAlign := ctaRight
+    else
+      FPlaceholderAlign := ctaLeft;
+
+    Exit;
+  end;
+
+  if AName = 'placeholder-vertical-align' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderVAlignSet := True;
+
+    if (S = 'middle') or (S = 'center') then
+      FPlaceholderVAlign := cvaMiddle
+    else if S = 'bottom' then
+      FPlaceholderVAlign := cvaBottom
+    else
+      FPlaceholderVAlign := cvaTop;
+
+    Exit;
+  end;
+
+  if AName = 'placeholder-font-weight' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderFontBoldSet := True;
+    FPlaceholderFontBold := (S = 'bold') or (S = 'bolder');
+    Exit;
+  end;
+
+  if AName = 'placeholder-font-style' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderFontItalicSet := True;
+    FPlaceholderFontItalic := (S = 'italic') or (S = 'oblique');
+    Exit;
+  end;
+
+  if AName = 'placeholder-text-decoration' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderFontUnderlineSet := True;
+    FPlaceholderFontStrikeOutSet := True;
+    FPlaceholderFontUnderline := Pos('underline', S) > 0;
+    FPlaceholderFontStrikeOut := Pos('line-through', S) > 0;
+    Exit;
+  end;
+
   if (AName = 'header-text-align') or
      (AName = 'header-align') then
   begin
@@ -3928,6 +4481,24 @@ begin
 
   FDisabledBackgroundSet := False;
   FDisabledColorSet := False;
+
+  FHeaderHoverBackground := clNone;
+  FHeaderHoverBackgroundSet := False;
+
+  FPlaceholderColorSet := False;
+  FPlaceholderColor := clNone;
+  FPlaceholderAlignSet := False;
+  FPlaceholderAlign := ctaLeft;
+  FPlaceholderVAlignSet := False;
+  FPlaceholderVAlign := cvaTop;
+  FPlaceholderFontBoldSet := False;
+  FPlaceholderFontBold := False;
+  FPlaceholderFontItalicSet := False;
+  FPlaceholderFontItalic := False;
+  FPlaceholderFontUnderlineSet := False;
+  FPlaceholderFontUnderline := False;
+  FPlaceholderFontStrikeOutSet := False;
+  FPlaceholderFontStrikeOut := False;
 
   FHeaderHAlignCss := thaInherit;
   FHeaderHAlignCssSet := False;
@@ -4070,7 +4641,7 @@ begin
 
     Col := GetHeaderColumnAt(X);
 
-    if Assigned(FOnHeaderClick) then
+    if Assigned(FOnHeaderClick) and (Col >= 0) then
       FOnHeaderClick(Self, Col);
 
     if FAutoSort and (Col >= 0) then
@@ -4194,6 +4765,7 @@ var
   LChanged: Boolean;
   NewWidth: Integer;
   TreeR: TRect;
+  NewHeaderCol: Integer;
 begin
   inherited MouseMove(Shift, X, Y);
 
@@ -4333,6 +4905,25 @@ begin
   if (Node <> nil) and IsNodeDisabled(Node) then
     Node := nil;
 
+  FHoverCellColumn := GetColumnAt(X);
+
+  // Header hover column
+  NewHeaderCol := -1;
+
+  if FHeaderVisible then
+  begin
+    TreeR := GetTreeRect;
+
+    if (Y >= GetContentRect.Top) and (Y < TreeR.Top) then
+      NewHeaderCol := GetHeaderColumnAt(X);
+  end;
+
+  if NewHeaderCol <> FHoverHeaderColumn then
+  begin
+    FHoverHeaderColumn := NewHeaderCol;
+    Invalidate;
+  end;
+
   if Node <> FHoverNode then
   begin
     FHoverNode := Node;
@@ -4392,6 +4983,8 @@ begin
   // If a column resize is in progress, do not reset the state.
   if FResizingColumn >= 0 then
     Exit;
+
+  FHoverHeaderColumn := -1;
 
   if not FDragPending then
     FHoverNode := nil;
@@ -5551,7 +6144,8 @@ procedure TCssVirtualStringTree.MoveNodes(
   NewParent: TCssVirtualNode);
 var
   I: Integer;
-  Node: TCssVirtualNode;
+  Node, OldP: TCssVirtualNode;
+  MovedList, OldParents: TList;
 begin
   if Nodes = nil then
     Exit;
@@ -5559,28 +6153,49 @@ begin
   if NewParent = nil then
     NewParent := FRoot;
 
-  BeginUpdate;
+  MovedList := TList.Create;
+  OldParents := TList.Create;
   try
-    for I := 0 to Nodes.Count - 1 do
-    begin
-      Node := TCssVirtualNode(Nodes[I]);
+    BeginUpdate;
+    try
+      for I := 0 to Nodes.Count - 1 do
+      begin
+        Node := TCssVirtualNode(Nodes[I]);
 
-      if Node = nil then
-        Continue;
+        if Node = nil then
+          Continue;
 
-      if Node = FRoot then
-        Continue;
+        if Node = FRoot then
+          Continue;
 
-      if IsNodeInSubTree(NewParent, Node) then
-        Continue;
+        if IsNodeInSubTree(NewParent, Node) then
+          Continue;
 
-      if IsNodeInSubTreeOfAny(Node, Nodes) then
-        Continue;
+        if IsNodeInSubTreeOfAny(Node, Nodes) then
+          Continue;
 
-      MoveNode(Node, NewParent);
+        OldP := Node.Parent;
+
+        MovedList.Add(Node);
+        OldParents.Add(OldP);
+
+        MoveNode(Node, NewParent);
+      end;
+    finally
+      EndUpdate;
     end;
+
+    if Assigned(FOnNodeMoved) then
+      for I := 0 to MovedList.Count - 1 do
+        FOnNodeMoved(
+          Self,
+          TCssVirtualNode(MovedList[I]),
+          TCssVirtualNode(OldParents[I]),
+          NewParent
+        );
   finally
-    EndUpdate;
+    OldParents.Free;
+    MovedList.Free;
   end;
 end;
 
@@ -5593,11 +6208,45 @@ var
   S: string;
   Node: TCssVirtualNode;
   Size: TSize;
+  LeadingExtra: Integer;
+  MaxDepth, D: Integer;
+  HasAnyBtn: Boolean;
 begin
   if FColumns.Count = 0 then
     Exit;
 
   UpdateCanvasFont;
+
+  LeadingExtra := 0;
+  if (VisibleCount > 0) then
+  begin
+    LeadingExtra := 6;
+
+    if FShowCheckboxes then
+      Inc(LeadingExtra, GetCheckBoxSize + 7);
+
+    MaxDepth := 0;
+    HasAnyBtn := False;
+
+    for J := 0 to VisibleCount - 1 do
+    begin
+      Node := GetVisibleNode(J);
+      if Node = nil then
+        Continue;
+
+      D := GetNodeDepth(Node);
+      if D > MaxDepth then
+        MaxDepth := D;
+
+      if cvsHasChildren in Node.States then
+        HasAnyBtn := True;
+    end;
+
+    Inc(LeadingExtra, MaxDepth * FIndent);
+
+    if HasAnyBtn then
+      Inc(LeadingExtra, 12);
+  end;
 
   for I := 0 to FColumns.Count - 1 do
   begin
@@ -5619,9 +6268,15 @@ begin
       if HtmlMode then
         Size := MeasureHtmlTextSize(S, 0)
       else
+      begin
         Size.cx := Canvas.TextWidth(S);
+        Size.cy := 0;
+      end;
 
       W := Size.cx + 16;
+
+      if I = 0 then
+        Inc(W, LeadingExtra);
 
       if W > MaxW then
         MaxW := W;
@@ -6478,6 +7133,31 @@ begin
     FCheckBoxCheckedHover.Enabled := Enabled;
 
   Invalidate;
+end;
+
+function TCssVirtualStringTree.CustomHintForPoint(
+  const APoint: TPoint;
+  out AHint: string): Boolean;
+var
+  Node: TCssVirtualNode;
+  Col: Integer;
+begin
+  AHint := '';
+  Result := False;
+
+  if not Assigned(FOnGetCellHint) then
+    Exit;
+
+  Node := GetNodeAt(APoint.X, APoint.Y);
+
+  if Node = nil then
+    Exit;
+
+  Col := GetColumnAt(APoint.X);
+
+  FOnGetCellHint(Self, Node, Col, AHint);
+
+  Result := AHint <> '';
 end;
 
 // --- Node enabled/disabled API ---

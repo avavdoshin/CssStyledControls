@@ -539,8 +539,14 @@ TCssVirtualStringTree {
   header-vertical-align: middle;
   cell-text-align: left;
   cell-vertical-align: middle;
+  header-hover-background: #E2E8F0;
+  placeholder-color: #94A3B8;
+  placeholder-align: center;
+  placeholder-vertical-align: middle;
+  placeholder-font-style: italic;
 }
 TCssVirtualStringTree:focus { border-color: #2563EB; }
+TCssVirtualStringTree:hover { border-color: #94A3B8; }
 
 .css-tree-edit {
   background-color: #FFFFFF;
@@ -1090,8 +1096,14 @@ TCssVirtualStringTree {
   header-vertical-align: middle;
   cell-text-align: left;
   cell-vertical-align: middle;
+  header-hover-background: #334155;
+  placeholder-color: #94A3B8;
+  placeholder-align: center;
+  placeholder-vertical-align: middle;
+  placeholder-font-style: italic;
 }
 TCssVirtualStringTree:focus { border-color: #60A5FA; }
+TCssVirtualStringTree:hover { border-color: #94A3B8; }
 
 .css-tree-edit {
   background-color: #0F172A;

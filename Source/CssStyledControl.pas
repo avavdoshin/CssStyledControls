@@ -429,6 +429,7 @@ type
 
     { Hint }
     procedure CMHintShow(var Message: TCMHintShow); message CM_HINTSHOW;
+    function CustomHintForPoint(const APoint: TPoint; out AHint: string): Boolean; virtual;
 
   public
     constructor Create(AOwner: TComponent); override;
@@ -6991,7 +6992,24 @@ end;
 procedure TCssStyledControl.CMHintShow(var Message: TCMHintShow);
 var
   Src: TCssStyledControl;
+  P: TPoint;
+  CustomHint: string;
 begin
+  P := ScreenToClient(Mouse.CursorPos);
+
+  if CustomHintForPoint(P, CustomHint) and (CustomHint <> '') then
+  begin
+    Src := GetHintOwner;
+    if Src = nil then
+      Src := Self;
+
+    Message.HintInfo^.HintStr := CustomHint;
+    Message.HintInfo^.HintWindowClass := TCssStyledHintWindow;
+    Message.HintInfo^.HintData := Src;
+    Message.Result := 0;
+    Exit;
+  end;
+
   Src := GetHintOwner;
 
   if (Src = nil) or
@@ -7005,6 +7023,12 @@ begin
   Message.HintInfo^.HintWindowClass := TCssStyledHintWindow;
   Message.HintInfo^.HintData := Src;
   Message.Result := 0;
+end;
+
+function TCssStyledControl.CustomHintForPoint(const APoint : TPoint; out AHint : string) : Boolean;
+begin
+  AHint := '';
+  Result := False;
 end;
 
 { ============================================================ }
