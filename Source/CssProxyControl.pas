@@ -67,7 +67,7 @@ type
 implementation
 
 uses
-  StrUtils;
+  StrUtils, CssFontUtils;
 
 procedure TProxyHiddenControl.StyleChanged;
 begin
@@ -343,14 +343,7 @@ begin
         begin
           if Font <> nil then
           begin
-            P := Pos(',', Value);
-            if P > 0 then
-              Value := Trim(Copy(Value, 1, P - 1));
-            if (Length(Value) >= 2) and
-               ((Value[1] = '''') or (Value[1] = '"')) and
-               (Value[Length(Value)] = Value[1]) then
-              Value := Copy(Value, 2, Length(Value) - 2);
-            Font.Name := Value;
+            Font.Name := ResolveFontFamily(Value);
           end;
         end
         else if aName = 'font-size' then

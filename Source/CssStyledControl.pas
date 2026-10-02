@@ -566,7 +566,7 @@ procedure BuildCheckMarkCoverage(
 implementation
 
 uses
-  StrUtils, IntfGraphics, FPImage, Math;
+  StrUtils, IntfGraphics, FPImage, Math, CssFontUtils;
 
 procedure BuildCheckMarkCoverage(
   var ACoverage: array of Byte;
@@ -5476,23 +5476,8 @@ end;
 procedure TCssStyledControl.ParseFontFamily(const AValue: string);
 var
   S: string;
-  P: Integer;
 begin
-  S := Trim(AValue);
-
-  P := Pos(',', S);
-  if P > 0 then
-    S := Trim(Copy(S, 1, P - 1));
-
-  if (Length(S) >= 2) and
-     ((S[1] = '''') or (S[1] = '"')) and
-     (S[Length(S)] = S[1]) then
-  begin
-    S := Copy(S, 2, Length(S) - 2);
-  end;
-
-  S := Trim(S);
-
+  S := ResolveFontFamily(AValue);
   if S <> '' then
   begin
     FFontFamily := S;
