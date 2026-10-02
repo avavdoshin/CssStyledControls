@@ -1250,15 +1250,18 @@ begin
     Size := ARect.Bottom - ARect.Top;
     if Size > ARect.Right - ARect.Left then
       Size := ARect.Right - ARect.Left;
-    Dec(Size, 6);
+    Dec(Size, 8);
     if Size < 2 then Size := 2;
+    { DrawAntiAliasedCircle composites its rectangular bitmap using the track
+      color outside the circle. A 4px inset keeps those corners clear of the
+      AA outline at the rounded ends, while centering the thumb in each end. }
     if AState = cbChecked then
-      Radius := ARect.Right - ARect.Left - Size - 3
+      Radius := ARect.Right - ARect.Left - Size - 4
     else if AState = cbGrayed then
       Radius := (ARect.Right - ARect.Left - Size) div 2
     else
-      Radius := 3;
-    if Radius < 3 then Radius := 3;
+      Radius := 4;
+    if Radius < 4 then Radius := 4;
     DrawAntiAliasedCircle(ACanvas,
       Rect(ARect.Left + Radius, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2),
            ARect.Left + Radius + Size, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2) + Size),

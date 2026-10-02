@@ -858,13 +858,14 @@ begin
     BoxHeight := Box.Bottom - Box.Top;
     if BoxHeight > Box.Right - Box.Left then
       BoxHeight := Box.Right - Box.Left;
-    Dec(BoxHeight, 6);
+    Dec(BoxHeight, 8);
     if BoxHeight < 2 then BoxHeight := 2;
+    { Keep the circular thumb's opaque bitmap corners clear of the track rim. }
     if FChecked then
-      Radius := Box.Right - Box.Left - BoxHeight - 3
+      Radius := Box.Right - Box.Left - BoxHeight - 4
     else
-      Radius := 3;
-    if Radius < 3 then Radius := 3;
+      Radius := 4;
+    if Radius < 4 then Radius := 4;
     DrawAntiAliasedCircle(Canvas,
       Rect(Box.Left + Radius, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
            Box.Left + Radius + BoxHeight, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
