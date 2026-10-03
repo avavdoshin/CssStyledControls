@@ -38,6 +38,7 @@ type
 
     // Caption
     procedure SetCaption(const AValue: TCaption); override;
+    function  ShouldPaintCaption: Boolean; override;
 
     procedure CreateWnd; override;
     procedure Resize; override;
@@ -403,6 +404,11 @@ begin
     FPageControl.SyncTabs;
     FPageControl.Invalidate;
   end;
+end;
+
+function TCssTabSheet.ShouldPaintCaption : Boolean;
+begin
+  Result := False;
 end;
 
 procedure TCssTabSheet.CreateWnd;
