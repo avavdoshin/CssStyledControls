@@ -8505,8 +8505,9 @@ begin
         begin
           TotalHeight := TotalHeight + 3;
 
-{          if (AvailableWidth > 0) and (AvailableWidth > MaxWidth) then
-            MaxWidth := AvailableWidth;}
+          S.cx := 0;
+          S.cy := 0;
+
           if MaxWidth < 1 then
             MaxWidth := 1;
         end;
