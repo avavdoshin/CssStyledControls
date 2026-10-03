@@ -1,3 +1,7 @@
 Packages/backup/
 Packages/lib/
 Source/backup/
+*.exe
+*.lps
+Demo/backup/
+Demo/lib/
