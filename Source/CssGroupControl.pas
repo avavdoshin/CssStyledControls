@@ -5,7 +5,7 @@ unit CssGroupControl;
 interface
 
 uses
-  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
+  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf,
   CssStyledControl, CssGroupCaptionControl;
 
 type
@@ -13,8 +13,13 @@ type
   private
     FPropagatingEnabled: Boolean;
     FDisabledByParent: TList;
+    FShowFocusWhenChildFocused: Boolean;
+    FShowFocusWhenChildFocusedSet: Boolean;
+    FHasFocusedChild: Boolean;
     procedure PropagateEnabledToChildren;
     function  FControlsContain(AControl: TControl): Boolean;
+    function  HasFocusedChild: Boolean;
+    procedure UpdateFocusedChildState;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -33,6 +38,13 @@ type
     // State changes
     procedure EnabledChanged; override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+
+    // Style declaration
+    procedure ApplyDeclaration(const AName, AValue: string); override;
+
+    // Focus tracking
+    procedure ChildFocusChanged(AChildFocused: Boolean); override;
+    function  GetEffectiveHoverState: Boolean; override;
 
     procedure SetCaption(const AValue: TCaption); override;
   public
@@ -90,6 +102,10 @@ begin
 
   FPropagatingEnabled := False;
   FDisabledByParent := TList.Create;
+
+  FShowFocusWhenChildFocused := False;
+  FShowFocusWhenChildFocusedSet := False;
+  FHasFocusedChild := False;
 end;
 
 destructor TCssGroupBox.Destroy;
@@ -106,6 +122,8 @@ begin
 
   if AutoSize then
     AdjustSize;
+
+  UpdateFocusedChildState;
 end;
 
 procedure TCssGroupBox.InitTextProps;
@@ -250,6 +268,14 @@ begin
     GetCaptionDrawArea(DrawRect);
     DrawCaptionToCanvas(Canvas, DrawRect, Caption);
   end;
+
+  if FShowFocusWhenChildFocused and
+     ShowFocusRect and
+     FHasFocusedChild and
+     Enabled then
+  begin
+    DrawFocusRect(Canvas, ClientRect);
+  end;
 end;
 
 procedure TCssGroupBox.Resize;
@@ -377,6 +403,37 @@ begin
   end;
 end;
 
+procedure TCssGroupBox.ApplyDeclaration(const AName, AValue: string);
+var
+  S: string;
+begin
+  if AName = 'focus-within' then
+  begin
+    S := LowerCase(Trim(AValue));
+
+    FShowFocusWhenChildFocused := (S = 'true') or (S = '1') or (S = 'yes');
+    FShowFocusWhenChildFocusedSet := True;
+
+    Invalidate;
+    Exit;
+  end;
+
+  inherited ApplyDeclaration(AName, AValue);
+end;
+
+procedure TCssGroupBox.ChildFocusChanged(AChildFocused : Boolean);
+begin
+  UpdateFocusedChildState;
+end;
+
+function TCssGroupBox.GetEffectiveHoverState: Boolean;
+begin
+  if FShowFocusWhenChildFocused and FHasFocusedChild then
+    Exit(False);
+
+  Result := inherited GetEffectiveHoverState;
+end;
+
 procedure TCssGroupBox.SetCaption(const AValue : TCaption);
 begin
   if Caption = AValue then
@@ -442,6 +499,49 @@ begin
       Exit(True);
 
   Result := False;
+end;
+
+function TCssGroupBox.HasFocusedChild: Boolean;
+var
+  H: HWND;
+  FocusedCtl: TWinControl;
+  C: TControl;
+begin
+  Result := False;
+
+  H := GetFocus;
+  if H = 0 then
+    Exit;
+
+  FocusedCtl := FindControl(H);
+  if FocusedCtl = nil then
+    Exit;
+
+  C := FocusedCtl;
+  while C <> nil do
+  begin
+    if C = Self then
+      Exit(True);
+    C := C.Parent;
+  end;
+end;
+
+procedure TCssGroupBox.UpdateFocusedChildState;
+var
+  NewState: Boolean;
+begin
+  NewState := HasFocusedChild;
+
+  if NewState <> FHasFocusedChild then
+  begin
+    FHasFocusedChild := NewState;
+
+    if FShowFocusWhenChildFocused then
+    begin
+      RefreshStylesByState;
+      Invalidate;
+    end;
+  end;
 end;
 
 end.
