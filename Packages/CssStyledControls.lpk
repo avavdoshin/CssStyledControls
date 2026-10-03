@@ -97,6 +97,10 @@
         <Filename Value="..\Source\CssProxyControl.pas"/>
         <UnitName Value="CssProxyControl"/>
       </Item>
+      <Item>
+        <Filename Value="..\Source\CssFormDarkTitle.pas"/>
+        <UnitName Value="CssFormDarkTitle"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

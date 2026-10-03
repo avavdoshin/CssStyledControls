@@ -29,6 +29,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [Tooltips with CSS and HTML](#tooltips-with-css-and-html)
 - [Style Provider API](#style-provider-api)
 - [Proxy Styling for Standard LCL Controls](#proxy-styling-for-standard-lcl-controls)
+- [Native Form Title Bar (Windows)](#native-form-title-bar-windows)
 - [Design-Time Support](#design-time-support)
 - [Example Theme](#example-theme)
 - [License](#license)
@@ -933,6 +934,169 @@ Then in CSS:
 ```
 
 Whenever the active variant changes, `TCssProxy` re-applies its rules. The application of styles is deferred via `Application.QueueAsyncCall` to avoid doing layout work while the provider is still updating.
+
+---
+
+## Native Form Title Bar (Windows)
+
+`CssFormDarkTitle.pas` (shipped with the library) can drive the native
+Windows 10/11 title bar of a `TForm` so that it follows the active CSS
+variant. On Linux and macOS every method is a safe no-op, so the unit
+compiles and links without any Windows-specific dependencies on those
+platforms, and calling it unconditionally is fine.
+
+### Quick Start
+
+The simplest way is to turn on automatic attachment once, after the
+main form has been created:
+
+```pascal
+uses
+  ..., CssFormDarkTitle;
+
+// In the .lpr file:
+Application.Initialize;
+Application.CreateForm(TForm1, Form1);
+
+// Every form that becomes visible from now on — including forms
+// created later — will follow the active CSS variant.
+TCssFormDarkTitle.EnableAutoAttach(Form1.CssStyleProvider1);
+
+Application.Run;
+```
+
+After that, switching the theme in code —
+
+```pascal
+CssStyleProvider1.DefaultStyleName := 'dark';
+```
+
+— automatically repaints the native title bar of every attached form.
+
+### Attaching a Single Form
+
+If you only want a specific form to follow the theme, use `AttachForm`:
+
+```pascal
+TCssFormDarkTitle.AttachForm(Form1, CssStyleProvider1);
+```
+
+`AttachForm` is idempotent: calling it twice on the same form is safe.
+
+### Attaching Every Existing Form
+
+If you prefer explicit control over which forms are attached — and you
+do not want new forms to be picked up automatically — use
+`AttachAllForms`:
+
+```pascal
+Application.CreateForm(TForm1, Form1);
+Application.CreateForm(TForm2, Form2);
+Application.CreateForm(TForm3, Form3);
+
+TCssFormDarkTitle.AttachAllForms(Form1.CssStyleProvider1);
+```
+
+Companion methods:
+
+```pascal
+TCssFormDarkTitle.RefreshAllForms;
+TCssFormDarkTitle.DetachAllForms;
+```
+
+`AttachAllForms` does not subscribe to newly created forms. If a form
+is created after this call, attach it explicitly with `AttachForm`,
+or switch to `EnableAutoAttach` instead.
+
+### Automatic Attachment
+
+`EnableAutoAttach` installs a handler on `Screen.AddHandlerFormVisibleChanged`,
+so **every form in the application** is attached the first time it
+becomes visible:
+
+```pascal
+TCssFormDarkTitle.EnableAutoAttach(CssStyleProvider1);
+```
+
+Notes:
+
+- Forms that already exist are attached immediately.
+- Forms created later are attached when they are first shown.
+- Calling `EnableAutoAttach` again replaces the previous provider.
+- `DisableAutoAttach` stops the automatic behavior; forms that are
+  already attached remain attached. Call `DetachAllForms` afterwards
+  if you also want to detach them.
+- `IsAutoAttachEnabled` returns `True` while automatic attachment is
+  active.
+
+### Custom Variant Names
+
+By default, any variant whose name contains `dark` (case-insensitive)
+is treated as a dark theme. If your variants are named differently,
+pass an explicit list:
+
+```pascal
+TCssFormDarkTitle.AttachForm(Form1, CssStyleProvider1, ['night', 'black']);
+TCssFormDarkTitle.AttachAllForms(CssStyleProvider1, ['night', 'black']);
+TCssFormDarkTitle.EnableAutoAttach(CssStyleProvider1, ['night', 'black']);
+```
+
+### Applying the System Preference
+
+To match the current OS preference at startup (dark or light title bar
+based on the user's Windows settings):
+
+```pascal
+TCssFormDarkTitle.ApplySystemTheme(Form1);
+```
+
+### Manual Control
+
+If you prefer full manual control:
+
+```pascal
+TCssFormDarkTitle.SetDarkTitle(Form1, True);   // force dark
+TCssFormDarkTitle.SetDarkTitle(Form1, False);  // force light
+TCssFormDarkTitle.RefreshForm(Form1);          // re-evaluate
+TCssFormDarkTitle.DetachForm(Form1);           // stop following
+```
+
+`TCssFormDarkTitle.IsSupported` returns `True` on Windows 10 build
+17763 (1809) and newer; on older Windows and on non-Windows platforms
+it returns `False` and all other calls become no-ops.
+
+### How It Works
+
+The unit uses the same approach as Double Commander, Notepad++, and
+Delphi's VCL:
+
+- undocumented `uxtheme.dll` ordinals (`AllowDarkModeForWindow`,
+  `SetPreferredAppMode`, `ShouldAppsUseDarkMode`,
+  `RefreshImmersiveColorPolicyState`) are resolved via `GetProcAddress`;
+- `DwmSetWindowAttribute` with `DWMWA_USE_IMMERSIVE_DARK_MODE`
+  (attribute `19` on Windows 10 builds before 19041, `20` afterwards)
+  toggles the dark title bar per window;
+- `SetWindowTheme` with the `DarkMode_Explorer` class is applied first,
+  because many Windows 10 20H1+ builds ignore the DWM attribute
+  otherwise;
+- `WM_NCACTIVATE` is sent twice to force DWM to repaint the non-client
+  area on Windows 10 22H2, where the attribute is applied silently but
+  the caption is not redrawn.
+
+The per-form hook subscribes to `TCssStyleProvider.OnChange` (chaining
+any handler that was already there) and also re-applies the DWM
+attribute in the form's `OnShow`, because Windows may reset it the
+first time the window is shown.
+
+### Notes
+
+- Requires Windows 10 build 17763 (1809) or newer.
+- On Windows 7/8, on Linux, and on macOS the whole unit compiles to a
+  no-op; you can call `AttachForm`, `AttachAllForms`, and
+  `EnableAutoAttach` unconditionally.
+- Passing `pamAllowDark` (the default) leaves each window individually
+  controllable; `pamForceDark` also works but overrides per-window
+  control on some Windows 10 builds.
 
 ---
 

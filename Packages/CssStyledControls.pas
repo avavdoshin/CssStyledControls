@@ -13,7 +13,7 @@ uses
   CssMemoControl, CssMenuControl, CssPanelControl, CssRadioControl, 
   CssScrollControl, CssSplitterControl, CssTabbedControl, 
   CssVirtualTreeControl, CssUtils, CssGroupCaptionControl, CssStyledControl, 
-  CssProxyControl, LazarusPackageIntf;
+  CssProxyControl, CssFormDarkTitle, LazarusPackageIntf;
 
 implementation
 

@@ -1,6 +1,6 @@
 program CssStyledControlsDemo;
 
-{$mode unleashed}
+{$mode objfpc}
 
 uses
   {$IFDEF UNIX}
@@ -10,7 +10,9 @@ uses
   athreads,
   {$ENDIF}
   Interfaces,
-  Forms, Unit1;
+  Forms,
+  CssFormDarkTitle,
+  Unit1;
 
 {$R *.res}
 
@@ -22,6 +24,9 @@ begin
   {$POP}
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
+
+  TCssFormDarkTitle.EnableAutoAttach(Form1.CssStyleProvider1);
+
   Application.Run;
 end.
 
