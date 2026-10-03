@@ -3518,6 +3518,8 @@ begin
 
   TabStop := True;
 
+  DoubleBuffered := True;
+
   FMouseInControl := False;
   FMousePressed := False;
   FFocused := False;
@@ -7725,16 +7727,19 @@ var
 
       W := ACanvas.TextWidth(ATextPart);
 
-      if Style.Link then
+      if not MeasureOnly then
       begin
-        AddLinkArea(
-          Style.LinkId,
-          Style.Href,
-          Rect(X, Y + Offset, X + W, Y + Offset + H)
-        );
-      end;
+        if Style.Link then
+        begin
+          AddLinkArea(
+            Style.LinkId,
+            Style.Href,
+            Rect(X, Y + Offset, X + W, Y + Offset + H)
+          );
+        end;
 
-      DrawTextWithShadow(ATextPart, X, Y + Offset);
+        DrawTextWithShadow(ATextPart, X, Y + Offset);
+      end;
 
       X := X + W;
     end;
@@ -7891,8 +7896,6 @@ begin
 
       FirstBlock := False;
 
-      if Y > ARect.Bottom then
-        Break;
     end;
   finally
     BaseFont.Free;
@@ -9026,6 +9029,8 @@ begin
 end;
 
 procedure TCssStyleProvider.DoChange;
+const
+  WM_SETREDRAW = $000B;
 var
   I: Integer;
 begin
@@ -9034,8 +9039,19 @@ begin
 
   InvalidateRoundedRectCache;
 
-  for I := FControls.Count - 1 downto 0 do
-    TCssStyledControl(FControls[I]).ProviderStyleChanged;
+  for I := 0 to FControls.Count - 1 do
+    TCssStyledControl(FControls[I]).Perform(WM_SETREDRAW, 0, 0);
+
+  try
+    for I := FControls.Count - 1 downto 0 do
+      TCssStyledControl(FControls[I]).ProviderStyleChanged;
+  finally
+    for I := 0 to FControls.Count - 1 do
+    begin
+      TCssStyledControl(FControls[I]).Perform(WM_SETREDRAW, 1, 0);
+      TCssStyledControl(FControls[I]).Invalidate;
+    end;
+  end;
 
   if Assigned(FOnChange) then
     FOnChange(Self);

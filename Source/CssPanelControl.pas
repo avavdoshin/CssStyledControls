@@ -38,6 +38,12 @@ type
 
     // Layout
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
+    procedure AdjustClientRect(var ARect: TRect); override;
+
+    // Caption helpers
+    function GetCaptionHeight(AvailableWidth: Integer): Integer;
+    function ShouldPaintCaption: Boolean; override;
+    procedure SetCaption(const AValue: TCaption); override;
 
     function GetDefaultCaption: string; override;
   public
@@ -204,7 +210,7 @@ end;
 procedure TCssPanel.InitTextProps;
 begin
   SetTextAlign(ctaCenter);
-  SetVAlign(cvaMiddle);
+  SetVAlign(cvaTop);
   SetWordWrap(True);
 end;
 
@@ -223,6 +229,8 @@ begin
 
   if AutoSize then
     AdjustSize;
+
+  Realign;
 
   Invalidate;
 end;
@@ -251,8 +259,36 @@ begin
 end;
 
 procedure TCssPanel.Paint;
+var
+  B: Integer;
+  P: TRect;
+  CaptionR: TRect;
+  CapH: Integer;
 begin
+  // Фон и рамка — во всей площади контрола (ClientRect),
+  // включая полосу, зарезервированную под подпись.
+  // inherited Paint не будет рисовать подпись: ShouldPaintCaption = False.
   inherited Paint;
+
+  if Caption <> '' then
+  begin
+    B := GetCssBorderWidth;
+    P := GetCssPadding;
+
+    CaptionR := ClientRect;
+    CaptionR.Left := CaptionR.Left + B + P.Left;
+    CaptionR.Top := CaptionR.Top + B + P.Top;
+    CaptionR.Right := CaptionR.Right - B - P.Right;
+
+    CapH := GetCaptionHeight(CaptionR.Width);
+    CaptionR.Bottom := CaptionR.Top + CapH;
+
+    if (CaptionR.Right > CaptionR.Left) and
+       (CaptionR.Bottom > CaptionR.Top) then
+    begin
+      DrawCaptionToCanvas(Canvas, CaptionR, Caption);
+    end;
+  end;
 
   if FShowFocusWhenChildFocused and
      ShowFocusRect and
@@ -291,7 +327,7 @@ end;
 
 procedure TCssPanel.AlignControls(AControl: TControl; var Rect: TRect);
 var
-  B: Integer;
+  B, CapH: Integer;
   P: TRect;
 begin
   B := GetCssBorderWidth;
@@ -322,6 +358,58 @@ begin
       FPropagatingEnabled := False;
     end;
   end;
+end;
+
+procedure TCssPanel.AdjustClientRect(var ARect: TRect);
+var
+  CapH: Integer;
+begin
+  inherited AdjustClientRect(ARect);
+
+  CapH := GetCaptionHeight(ARect.Width);
+  if CapH > 0 then
+    ARect.Top := ARect.Top + CapH;
+end;
+
+function TCssPanel.GetCaptionHeight(AvailableWidth: Integer): Integer;
+var
+  S: TSize;
+begin
+  Result := 0;
+
+  if Caption = '' then
+    Exit;
+
+  if (not HandleAllocated) or (AvailableWidth <= 0) then
+    Exit(0);
+
+  AssignCssFontToFont(Canvas.Font);
+
+  if HtmlMode then
+  begin
+    S := MeasureHtmlTextSize(Caption, AvailableWidth);
+    Result := S.cy;
+  end
+  else
+    Result := Canvas.TextHeight('Ag');
+
+    Inc(Result, 2);
+end;
+
+function TCssPanel.ShouldPaintCaption : Boolean;
+begin
+  Result := False;
+end;
+
+procedure TCssPanel.SetCaption(const AValue : TCaption);
+begin
+  if Caption = AValue then
+    Exit;
+
+  inherited SetCaption(AValue);
+
+  if not (csLoading in ComponentState) then
+    Realign;
 end;
 
 function TCssPanel.GetDefaultCaption : string;
