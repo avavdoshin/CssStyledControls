@@ -23,6 +23,7 @@ type
     procedure InitTextProps; override;
     procedure StyleChanged; override;
     procedure HtmlModeChanged; override;
+    function MatchPseudo(const APseudo: string): Boolean; override;
 
     // Caption
     procedure SetCaption(const AValue: TCaption); override;
@@ -129,6 +130,12 @@ begin
     Exit;
 
   FDefault := AValue;
+
+  if not (csLoading in ComponentState) then
+  begin
+    RefreshStylesByState;
+    Invalidate;
+  end;
 end;
 
 procedure TCssButton.SetCancel(AValue: Boolean);
@@ -137,6 +144,12 @@ begin
     Exit;
 
   FCancel := AValue;
+
+  if not (csLoading in ComponentState) then
+  begin
+    RefreshStylesByState;
+    Invalidate;
+  end;
 end;
 
 procedure TCssButton.Loaded;
@@ -170,6 +183,21 @@ begin
     AdjustSize;
 
   Invalidate;
+end;
+
+function TCssButton.MatchPseudo(const APseudo: string): Boolean;
+var
+  P: string;
+begin
+  P := LowerCase(APseudo);
+
+  if P = 'default' then
+    Exit(FDefault);
+
+  if P = 'cancel' then
+    Exit(FCancel);
+
+  Result := inherited MatchPseudo(APseudo);
 end;
 
 procedure TCssButton.SetCaption(const AValue: TCaption);

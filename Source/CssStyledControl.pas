@@ -265,7 +265,6 @@ type
     procedure SetFocusColor(AValue: TColor);
 
     { State }
-    function MatchPseudo(const APseudo: string): Boolean;
     function TryEvaluateSelector(const ASelector: string; out SpecA, SpecB, SpecC: Integer): Boolean;
 
     { Links }
@@ -381,6 +380,7 @@ type
 
     { Style }
     procedure RefreshStylesByState;
+    function MatchPseudo(const APseudo: string): Boolean; virtual;
 
     { Parsing }
     function ParseColor(const AValue: string; out AColor: TColor): Boolean;

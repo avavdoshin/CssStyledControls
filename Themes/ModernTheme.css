@@ -30,9 +30,9 @@ a:hover  { color: #1D4ED8; }
 a:active { color: #1E40AF; }
 
 TCssButton {
-  background-color: #2563EB;
-  color: #FFFFFF;
-  border: 1px solid #2563EB;
+  background-color: #F1F5F9;
+  color: #1E293B;
+  border: 1px solid #CBD5E1;
   border-radius: 6px;
   padding: 2px 8px;
   text-align: center;
@@ -40,14 +40,40 @@ TCssButton {
   font-weight: 500;
   cursor: pointer;
 }
-TCssButton:hover  { background-color: #1D4ED8; border-color: #1D4ED8; }
-TCssButton:active { background-color: #1E40AF; border-color: #1E40AF; }
+TCssButton:hover  { background-color: #E2E8F0; border-color: #94A3B8; }
+TCssButton:active { background-color: #CBD5E1; border-color: #94A3B8; }
 TCssButton:focus  { border-color: #93C5FD; }
 TCssButton:disabled {
+  background-color: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #CBD5E1;
+  cursor: default;
+}
+TCssButton:cancel {
+  background-color: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+TCssButton:cancel:hover  { background-color: #FEE2E2; border-color: #F87171; }
+TCssButton:cancel:active { background-color: #FECACA; border-color: #EF4444; }
+TCssButton:cancel:focus  { border-color: #FCA5A5; }
+TCssButton:cancel:disabled {
+  background-color: #FEF2F2;
+  border-color: #FEE2E2;
+  color: #FECACA;
+}
+TCssButton:default {
+  background-color: #2563EB;
+  color: #FFFFFF;
+  border: 1px solid #2563EB;
+}
+TCssButton:default:hover  { background-color: #1D4ED8; border-color: #1D4ED8; }
+TCssButton:default:active { background-color: #1E40AF; border-color: #1E40AF; }
+TCssButton:default:focus  { border-color: #93C5FD; }
+TCssButton:default:disabled {
   background-color: #F1F5F9;
   border-color: #E2E8F0;
   color: #94A3B8;
-  cursor: default;
 }
 
 TCssCheckBox {
@@ -590,9 +616,9 @@ a:hover  { color: #93C5FD; }
 a:active { color: #3B82F6; }
 
 TCssButton {
-  background-color: #3B82F6;
-  color: #FFFFFF;
-  border: 1px solid #3B82F6;
+  background-color: #334155;
+  color: #E2E8F0;
+  border: 1px solid #475569;
   border-radius: 6px;
   padding: 2px 8px;
   text-align: center;
@@ -600,14 +626,40 @@ TCssButton {
   font-weight: 500;
   cursor: pointer;
 }
-TCssButton:hover  { background-color: #60A5FA; border-color: #60A5FA; }
-TCssButton:active { background-color: #2563EB; border-color: #2563EB; }
+TCssButton:hover  { background-color: #475569; border-color: #64748B; }
+TCssButton:active { background-color: #64748B; border-color: #94A3B8; }
 TCssButton:focus  { border-color: #93C5FD; }
 TCssButton:disabled {
+  background-color: #1E293B;
+  border-color: #334155;
+  color: #475569;
+  cursor: default;
+}
+TCssButton:cancel {
+  background-color: #450A0A;
+  color: #FCA5A5;
+  border: 1px solid #7F1D1D;
+}
+TCssButton:cancel:hover  { background-color: #7F1D1D; border-color: #B91C1C; }
+TCssButton:cancel:active { background-color: #991B1B; border-color: #DC2626; }
+TCssButton:cancel:focus  { border-color: #FCA5A5; }
+TCssButton:cancel:disabled {
+  background-color: #1E293B;
+  border-color: #334155;
+  color: #7F1D1D;
+}
+TCssButton:default {
+  background-color: #3B82F6;
+  color: #FFFFFF;
+  border: 1px solid #3B82F6;
+}
+TCssButton:default:hover  { background-color: #60A5FA; border-color: #60A5FA; }
+TCssButton:default:active { background-color: #2563EB; border-color: #2563EB; }
+TCssButton:default:focus  { border-color: #93C5FD; }
+TCssButton:default:disabled {
   background-color: #334155;
   border-color: #334155;
   color: #64748B;
-  cursor: default;
 }
 
 TCssCheckBox {
