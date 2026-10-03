@@ -231,8 +231,6 @@ begin
   FDragging := False;
   FDragStartPixel := 0;
   FDragStartPos := 0;
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 destructor TCssScrollBar.Destroy;

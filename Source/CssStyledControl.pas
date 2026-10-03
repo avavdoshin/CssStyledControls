@@ -287,6 +287,7 @@ type
     function ApplyOpacity(AColor: TColor): TColor;
 
     procedure NotifyUpperSiblingsRepaint(AOldBounds: PRect = nil);
+    function  IsCaptionStored: Boolean;
   protected
     { AA rounded rect }
     procedure DrawRoundedRectAA(
@@ -431,6 +432,9 @@ type
     procedure CMHintShow(var Message: TCMHintShow); message CM_HINTSHOW;
     function CustomHintForPoint(const APoint: TPoint; out AHint: string): Boolean; virtual;
 
+    function GetDefaultCaption: string; virtual;
+    procedure SetName(const NewName: TComponentName); override;
+
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -511,7 +515,7 @@ type
   published
     property Align;
     property Anchors;
-    property Caption: TCaption read FCaption write SetCaption;
+    property Caption: TCaption read FCaption write SetCaption stored IsCaptionStored;
     property Color;
     property Constraints;
     property CssTag: string read FCssTag write SetCssTag;
@@ -3499,7 +3503,6 @@ begin
   inherited Create(AOwner);
 
   FCssTag := 'control';
-  FCaption := 'CssControl';
 
   FMonospaceFontName := 'Courier New';
 
@@ -4706,6 +4709,11 @@ begin
       Sibling.Invalidate;
     end;
   end;
+end;
+
+function TCssStyledControl.IsCaptionStored : Boolean;
+begin
+  Result := FCaption <> '';
 end;
 
 function TCssStyledControl.GetShowPrefix: Boolean;
@@ -7029,6 +7037,29 @@ function TCssStyledControl.CustomHintForPoint(const APoint : TPoint; out AHint :
 begin
   AHint := '';
   Result := False;
+end;
+
+function TCssStyledControl.GetDefaultCaption : string;
+begin
+  Result := '';
+end;
+
+procedure TCssStyledControl.SetName(const NewName: TComponentName);
+var
+  WasEmpty: Boolean;
+begin
+  WasEmpty := (Name = '');
+
+  if WasEmpty and
+     (NewName <> '') and
+     (csDesigning in ComponentState) and
+     (not (csLoading in ComponentState)) and
+     (FCaption = '') then
+  begin
+    FCaption := GetDefaultCaption;
+  end;
+
+  inherited SetName(NewName);
 end;
 
 { ============================================================ }

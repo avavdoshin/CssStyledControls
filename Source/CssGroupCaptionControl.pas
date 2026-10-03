@@ -38,6 +38,7 @@ type
     // Initialization and style
     procedure HtmlModeChanged; override;
     procedure StyleChanged; override;
+
   public
     constructor Create(AOwner: TComponent); override;
   published

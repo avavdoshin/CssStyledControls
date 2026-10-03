@@ -253,8 +253,6 @@ begin
   FScrollBarCssClass := 'combobox-scrollbar';
   FScrollBarCssStyle := '';
 
-  TCssStyledControl(Self).Caption := '';
-
   // The internal edit control must be created immediately.
   UpdateEdit;
 end;

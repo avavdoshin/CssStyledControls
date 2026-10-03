@@ -340,8 +340,6 @@ begin
 
   Width := 200;
   Height := 150;
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 destructor TCssTabSheet.Destroy;
@@ -639,8 +637,6 @@ begin
   FScrollButtonSize := 0;
   FFirstVisibleTab := 0;
   FHoverScrollButton := -1;
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 destructor TCssTabControl.Destroy;

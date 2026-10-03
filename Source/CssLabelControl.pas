@@ -35,6 +35,8 @@ type
 
     // Component notification
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -174,8 +176,6 @@ begin
 
   TabStop := False;
 
-  Caption := 'Label';
-
   Width := 75;
   Height := 20;
 
@@ -281,6 +281,11 @@ begin
 
   if (Operation = opRemove) and (AComponent = FFocusControl) then
     FFocusControl := nil;
+end;
+
+function TCssLabel.GetDefaultCaption : string;
+begin
+  Result := 'CssLabel';
 end;
 
 procedure TCssLabel.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);

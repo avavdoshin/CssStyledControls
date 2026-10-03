@@ -38,6 +38,8 @@ type
 
     // Layout
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
+
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
     function IsFocusWithin: Boolean;
@@ -88,8 +90,6 @@ begin
   inherited Create(AOwner);
 
   ControlStyle := ControlStyle + [csAcceptsControls];
-
-  Caption := 'CssPanel';
 
   Width := 185;
   Height := 41;
@@ -322,6 +322,11 @@ begin
       FPropagatingEnabled := False;
     end;
   end;
+end;
+
+function TCssPanel.GetDefaultCaption : string;
+begin
+  Result := 'CssPanel';
 end;
 
 end.

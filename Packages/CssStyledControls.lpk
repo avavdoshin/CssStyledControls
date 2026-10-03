@@ -14,7 +14,7 @@
       </SearchPaths>
     </CompilerOptions>
     <Description Value="CSS-styled visual controls Runtime packages"/>
-    <Version Minor="1"/>
+    <Version Minor="2"/>
     <Files>
       <Item>
         <Filename Value="CssStyledControlsReg.pas"/>

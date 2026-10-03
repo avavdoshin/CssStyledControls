@@ -38,6 +38,7 @@ type
     // Focus
     procedure DoExit; override;
 
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -110,8 +111,6 @@ end;
 constructor TCssButton.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-
-  Caption := 'Button';
 
   Width := 75;
   Height := 25;
@@ -270,6 +269,11 @@ begin
   SetMousePressedState(False);
 
   inherited DoExit;
+end;
+
+function TCssButton.GetDefaultCaption : string;
+begin
+  Result := 'CssButton';
 end;
 
 procedure TCssButton.Click;

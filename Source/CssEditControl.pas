@@ -404,8 +404,6 @@ begin
   FCaretTimer.Interval := 500;
   FCaretTimer.OnTimer := @CaretTimerTick;
 
-  TCssStyledControl(Self).Caption := '';
-
   HtmlMode := False;
 end;
 

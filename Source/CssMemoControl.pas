@@ -306,8 +306,6 @@ begin
   FCaretTimer.OnTimer := @CaretTimerTick;
   FCaretTimer.Enabled := False;
 
-  TCssStyledControl(Self).Caption := '';
-
   // Set sizes only after all internal objects are created.
   Width := 200;
   Height := 120;

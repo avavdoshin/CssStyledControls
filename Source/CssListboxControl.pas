@@ -238,8 +238,6 @@ begin
   FScrollBar.CssClass := FScrollBarCssClass;
   FScrollBar.OnChange := @ScrollBarChanged;
   FAlwaysReserveScrollBar := True;
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 destructor TCssListBox.Destroy;

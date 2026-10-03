@@ -97,6 +97,8 @@ type
     // Mouse
     procedure MouseEnter; override;
     procedure MouseLeave; override;
+
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -223,6 +225,8 @@ type
 
     // Navigation
     procedure NavigateStandalone(AKey: Word);
+
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -443,7 +447,6 @@ begin
   Width := 120;
   Height := 20;
 
-  Caption := 'RadioButton';
   FChecked := False;
 
   FToggleStyle := False;
@@ -454,8 +457,6 @@ begin
   FClicked := False;
   FSpacePressed := False;
   ShowFocusRect := False;
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 procedure TCssRadioButton.Loaded;
@@ -1162,6 +1163,11 @@ begin
   end;
 end;
 
+function TCssRadioButton.GetDefaultCaption : string;
+begin
+  Result := 'CssRadioButton';
+end;
+
 { TCssRadioGroup }
 
 constructor TCssRadioGroup.Create(AOwner: TComponent);
@@ -1186,10 +1192,6 @@ begin
 
   FRadioCssClass := 'radio';
   FRadioCssStyle := '';
-
-  Caption := 'RadioGroup';
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 destructor TCssRadioGroup.Destroy;
@@ -1315,6 +1317,11 @@ begin
   finally
     FInMouseStateChange := False;
   end;
+end;
+
+function TCssRadioGroup.GetDefaultCaption : string;
+begin
+  Result := 'CssRadioGroup';
 end;
 
 procedure TCssRadioGroup.KeyDown(var Key: Word; Shift: TShiftState);

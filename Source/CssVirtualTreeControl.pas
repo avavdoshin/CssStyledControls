@@ -1200,7 +1200,6 @@ begin
   OnStartDrag := @InternalStartDrag;
   OnEndDrag := @InternalEndDrag;
 
-  Caption := '';
   Width := 320;
   Height := 220;
   TabStop := True;

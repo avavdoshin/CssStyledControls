@@ -95,6 +95,8 @@ type
 
     // Navigation
     procedure NavigateStandalone(AKey: Word);
+
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
 
@@ -230,6 +232,8 @@ type
     // Mouse
     procedure MouseEnter; override;
     procedure MouseLeave; override;
+
+    function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -455,7 +459,6 @@ begin
   Width := 120;
   Height := 20;
 
-  Caption := 'CheckBox';
   FState := cbUnchecked;
   FAllowGrayed := False;
   FToggleStyle := False;
@@ -470,8 +473,6 @@ begin
   ShowFocusRect := False;
 
   AutoSize := True;
-
-  TCssStyledControl(Self).Caption := '';
 end;
 
 function TCssCheckBox.ShouldPaintCaption: Boolean;
@@ -826,6 +827,11 @@ begin
   finally
     List.Free;
   end;
+end;
+
+function TCssCheckBox.GetDefaultCaption : string;
+begin
+  Result := 'CssCheckBox';
 end;
 
 procedure TCssCheckBox.ResetStyle;
@@ -1328,8 +1334,6 @@ begin
   FCheckBoxCssClass := 'checkbox';
   FCheckBoxCssStyle := '';
 
-  Caption := 'CheckGroup';
-
   TCssStyledControl(Self).Caption := '';
 
   FFocusIndex := -1;
@@ -1414,6 +1418,11 @@ begin
   finally
     FInMouseStateChange := False;
   end;
+end;
+
+function TCssCheckGroup.GetDefaultCaption : string;
+begin
+  Result := 'CssCheckGroup';
 end;
 
 procedure TCssCheckGroup.SetShowFocusRect(AValue: Boolean);

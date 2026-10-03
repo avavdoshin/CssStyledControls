@@ -404,6 +404,8 @@ TCssPanel:hover { border-color: #94A3B8; }
 TCssPanel.panel-container        { padding: 4px; focus-within: false;}
 TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}
 TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}
+TCssPanel.panel-container-square { padding: 4px; focus-within: false; border-radius: 0px}
+TCssPanel.panel-container-square:hover { border-color: #E2E8F0; }
 
 TCssMainMenu {
   background-color: #F8FAFC;
@@ -961,6 +963,8 @@ TCssPanel:hover { border-color: #64748B; }
 TCssPanel.panel-container        { padding: 4px; focus-within: false;}
 TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}
 TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}
+TCssPanel.panel-container-square { padding: 4px; focus-within: false; border-radius: 0px}
+TCssPanel.panel-container-square:hover { border-color: #334155; }
 
 TCssMainMenu {
   background-color: #0F172A;
