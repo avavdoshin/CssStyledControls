@@ -62,7 +62,7 @@ Light and dark variants of the same form, switched at runtime by a single toggle
 
 | Light | Dark |
 | :---: | :---: |
-| ![CssStyledControls demo — light](Screenshots/CssStyledControlsDemo_light.png) | ![CssStyledControls demo — dark](Screenshots/CssStyledControlsDemo_dark.png) |
+| ![CssStyledControls demo — light](Screenshots/CommonControls_light.png) | ![CssStyledControls demo — dark](Screenshots/CommonControls_dark.png) |
 
 Both screenshots come from the included demo project (see [Demo Project](#demo-project)): the same controls, the same form, the same CSS — only the active `@variant` changes.
 ---
