@@ -18,12 +18,15 @@ type
     CssCheckBox1 : TCssCheckBox;
     CssGroupBox1 : TCssGroupBox;
     CssLabel1 : TCssLabel;
+    CssLabel2 : TCssLabel;
     CssPageControl1 : TCssPageControl;
     CssPanel1 : TCssPanel;
+    CssPanel2 : TCssPanel;
     CssProxy1 : TCssProxy;
     CssStyleProvider1 : TCssStyleProvider;
     CssTabSheet1 : TCssTabSheet;
     procedure CssCheckBox1Click(Sender : TObject);
+    procedure CssLabel2LinkClick(Sender : TObject; const AHref, AText: UnicodeString);
   private
 
   public
@@ -43,6 +46,11 @@ begin
     CssStyleProvider1.DefaultStyleName := 'Dark'
   else
     CssStyleProvider1.DefaultStyleName := 'Light';
+end;
+
+procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref, AText : Unicodestring);
+begin
+  MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText, mtInformation, [mbOk], '');
 end;
 
 end.
