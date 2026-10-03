@@ -12,7 +12,7 @@ type
   TCssVAlign = (cvaTop, cvaMiddle, cvaBottom);
   TCssBorderStyle = (cbsNone, cbsSolid, cbsDotted, cbsDashed);
 
-  TCssLinkClickEvent = procedure(Sender: TObject; const AHref, AText: string) of object;
+  TCssLinkClickEvent = procedure(Sender: TObject; const AHref, AText: UnicodeString) of object;
 
   TCssLinkStyle = record
     Color: TColor;
