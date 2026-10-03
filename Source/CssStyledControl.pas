@@ -226,6 +226,8 @@ type
     FBorderRadiusTL, FBorderRadiusTR, FBorderRadiusBR, FBorderRadiusBL: Integer;
     FBackgroundGradient: TCssGradient;
     FBoxShadow: TCssBoxShadow;
+    FExternalCornerBitmap: TBitmap;
+    FExternalCornerOrigin: TPoint;
 
     { CSS parsing helpers }
     procedure ParseTextShadow(const AValue: string);
@@ -512,6 +514,7 @@ type
     procedure UpdateEnabledVisualState;
 
     procedure SetExternalHoverState(AHover: Boolean);
+    procedure SetExternalCornerSource(ABitmap: TBitmap; const AOrigin: TPoint);
   published
     property Align;
     property Anchors;
@@ -571,7 +574,7 @@ procedure BuildCheckMarkCoverage(
 implementation
 
 uses
-  StrUtils, IntfGraphics, FPImage, Math, CssFontUtils;
+  StrUtils, IntfGraphics, FPImage, Math, LCLIntf, CssFontUtils;
 
 procedure BuildCheckMarkCoverage(
   var ACoverage: array of Byte;
@@ -5858,7 +5861,22 @@ var
   I, MyIndex: Integer;
   Sibling: TControl;
   R: TColor;
+  ScreenPt, LocalPt: TPoint;
 begin
+  if Assigned(FExternalCornerBitmap) then
+  begin
+    ScreenPt := ClientToScreen(AClientPoint);
+    LocalPt := Point(
+      ScreenPt.X - FExternalCornerOrigin.X,
+      ScreenPt.Y - FExternalCornerOrigin.Y
+    );
+
+    if (LocalPt.X >= 0) and (LocalPt.Y >= 0) and
+       (LocalPt.X < FExternalCornerBitmap.Width) and
+       (LocalPt.Y < FExternalCornerBitmap.Height) then
+      Exit(FExternalCornerBitmap.Canvas.Pixels[LocalPt.X, LocalPt.Y]);
+  end;
+
   PtInParent := Point(AClientPoint.X + Left, AClientPoint.Y + Top);
   C := Self;
 
@@ -6973,6 +6991,9 @@ var
   R, TextR: TRect;
   BW: Integer;
   Pad: TRect;
+  ScreenDC: HDC;
+  Bmp: TBitmap;
+  Origin: TPoint;
 begin
   if FRenderer = nil then
   begin
@@ -6982,19 +7003,47 @@ begin
 
   R := ClientRect;
 
-  FRenderer.DrawStyledBackground(Canvas, R);
+  Bmp := nil;
+  ScreenDC := LCLIntf.GetDC(0);
+  if ScreenDC <> 0 then
+  begin
+    try
+      Origin := ClientToScreen(Point(0, 0));
 
-  BW := FRenderer.GetStyledBorderWidth;
-  Pad := FRenderer.GetStyledPadding;
+      Bmp := TBitmap.Create;
+      Bmp.PixelFormat := pf24bit;
+      Bmp.Width := ClientWidth;
+      Bmp.Height := ClientHeight;
 
-  TextR := R;
-  TextR.Left := TextR.Left + BW + Pad.Left;
-  TextR.Top := TextR.Top + BW + Pad.Top;
-  TextR.Right := TextR.Right - BW - Pad.Right;
-  TextR.Bottom := TextR.Bottom - BW - Pad.Bottom;
+      LCLIntf.BitBlt(
+        Bmp.Canvas.Handle, 0, 0, Bmp.Width, Bmp.Height,
+        ScreenDC, Origin.X, Origin.Y, SRCCOPY
+      );
 
-  if (TextR.Right > TextR.Left) and (TextR.Bottom > TextR.Top) then
-    FRenderer.DrawCaptionToCanvas(Canvas, TextR, FHintText);
+      FRenderer.SetExternalCornerSource(Bmp, Origin);
+    finally
+      LCLIntf.ReleaseDC(0, ScreenDC);
+    end;
+  end;
+
+  try
+    FRenderer.DrawStyledBackground(Canvas, R);
+
+    BW := FRenderer.GetStyledBorderWidth;
+    Pad := FRenderer.GetStyledPadding;
+
+    TextR := R;
+    TextR.Left := TextR.Left + BW + Pad.Left;
+    TextR.Top := TextR.Top + BW + Pad.Top;
+    TextR.Right := TextR.Right - BW - Pad.Right;
+    TextR.Bottom := TextR.Bottom - BW - Pad.Bottom;
+
+    if (TextR.Right > TextR.Left) and (TextR.Bottom > TextR.Top) then
+      FRenderer.DrawCaptionToCanvas(Canvas, TextR, FHintText);
+  finally
+    FRenderer.SetExternalCornerSource(nil, Point(0, 0));
+    Bmp.Free;
+  end;
 end;
 
 procedure TCssStyledControl.CMHintShow(var Message: TCMHintShow);
@@ -8456,8 +8505,10 @@ begin
         begin
           TotalHeight := TotalHeight + 3;
 
-          if (AvailableWidth > 0) and (AvailableWidth > MaxWidth) then
-            MaxWidth := AvailableWidth;
+{          if (AvailableWidth > 0) and (AvailableWidth > MaxWidth) then
+            MaxWidth := AvailableWidth;}
+          if MaxWidth < 1 then
+            MaxWidth := 1;
         end;
 
         hbPre, hbXmp:
@@ -8549,6 +8600,12 @@ begin
     RefreshStylesByState;
     Invalidate;
   end;
+end;
+
+procedure TCssStyledControl.SetExternalCornerSource(ABitmap : TBitmap; const AOrigin : TPoint);
+begin
+  FExternalCornerBitmap := ABitmap;
+  FExternalCornerOrigin := AOrigin;
 end;
 
 { ============================================================ }
