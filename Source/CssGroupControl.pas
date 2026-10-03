@@ -11,7 +11,10 @@ uses
 type
   TCssGroupBox = class(TCssGroupCaptionControl)
   private
+    FPropagatingEnabled: Boolean;
+    FDisabledByParent: TList;
     procedure PropagateEnabledToChildren;
+    function  FControlsContain(AControl: TControl): Boolean;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -25,12 +28,16 @@ type
     // Sizing and layout
     procedure Resize; override;
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
+    procedure AdjustClientRect(var ARect: TRect); override;
 
     // State changes
     procedure EnabledChanged; override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+
+    procedure SetCaption(const AValue: TCaption); override;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
     // Sizing and layout
     procedure AdjustSize; override;
@@ -80,6 +87,15 @@ begin
 
   Width := 185;
   Height := 105;
+
+  FPropagatingEnabled := False;
+  FDisabledByParent := TList.Create;
+end;
+
+destructor TCssGroupBox.Destroy;
+begin
+  FreeAndNil(FDisabledByParent);
+  inherited Destroy;
 end;
 
 procedure TCssGroupBox.Loaded;
@@ -131,13 +147,13 @@ var
   BorderColor: TColor;
   LBorderWidth: Integer;
   BG: TColor;
-  CaptionRect: TRect;
+  CaptionRect, DrawRect: TRect;
   CaptionW: Integer;
   TopBorderY: Integer;
 begin
   inherited Paint;
 
-  R := ClientRect;
+  R := Rect(0, 0, Width, Height);
 
   B := GetCssBorderWidth;
   Radius := GetCssBorderRadius;
@@ -222,16 +238,17 @@ begin
   // Draw the caption.
   if Caption <> '' then
   begin
-    GetCaptionDrawRect(CaptionRect, CaptionW);
-
     if CaptionMode = gcmOnBorder then
     begin
+      GetCaptionDrawRect(CaptionRect, CaptionW);
+
       Canvas.Brush.Style := bsSolid;
       Canvas.Brush.Color := GetCaptionBackground;
       Canvas.FillRect(CaptionRect);
     end;
 
-    DrawCaptionToCanvas(Canvas, CaptionRect, Caption);
+    GetCaptionDrawArea(DrawRect);
+    DrawCaptionToCanvas(Canvas, DrawRect, Caption);
   end;
 end;
 
@@ -316,14 +333,12 @@ procedure TCssGroupBox.AlignControls(AControl: TControl; var Rect: TRect);
 var
   B: Integer;
   P: TRect;
-  TopOffset: Integer;
 begin
   B := GetCssBorderWidth;
   P := GetCssPadding;
-  TopOffset := GetTopOffset;
 
   Rect.Left := Rect.Left + B + P.Left;
-  Rect.Top := Rect.Top + TopOffset + P.Top;
+  Rect.Top := Rect.Top + P.Top;
   Rect.Right := Rect.Right - B - P.Right;
   Rect.Bottom := Rect.Bottom - B - P.Bottom;
 
@@ -334,6 +349,12 @@ begin
     Rect.Bottom := Rect.Top;
 
   inherited AlignControls(AControl, Rect);
+end;
+
+procedure TCssGroupBox.AdjustClientRect(var ARect : TRect);
+begin
+  inherited AdjustClientRect(ARect);
+  ARect.Top := ARect.Top + GetTopOffset;
 end;
 
 procedure TCssGroupBox.EnabledChanged;
@@ -347,20 +368,80 @@ end;
 procedure TCssGroupBox.Notification(AComponent: TComponent; Operation: TOperation);
 begin
   inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and
+     (AComponent is TControl) and
+     Assigned(FDisabledByParent) then
+  begin
+    FDisabledByParent.Remove(AComponent);
+  end;
+end;
+
+procedure TCssGroupBox.SetCaption(const AValue : TCaption);
+begin
+  if Caption = AValue then
+    Exit;
+
+  inherited SetCaption(AValue);
+  Realign;
 end;
 
 procedure TCssGroupBox.PropagateEnabledToChildren;
 var
-  I: Integer;
+  I, Idx: Integer;
+  Child: TControl;
 begin
   if csLoading in ComponentState then
     Exit;
 
-  for I := 0 to ControlCount - 1 do
-  begin
-    if Controls[I] is TControl then
-      Controls[I].Enabled := Enabled;
+  if FPropagatingEnabled then
+    Exit;
+
+  FPropagatingEnabled := True;
+  try
+    if not Enabled then
+    begin
+      for I := 0 to ControlCount - 1 do
+      begin
+        Child := Controls[I];
+
+        if not Child.Enabled then
+          Continue;
+
+        if FDisabledByParent.IndexOf(Child) < 0 then
+          FDisabledByParent.Add(Child);
+
+        Child.Enabled := False;
+      end;
+    end
+    else
+    begin
+      for I := FDisabledByParent.Count - 1 downto 0 do
+      begin
+        Child := TControl(FDisabledByParent[I]);
+        Idx := FDisabledByParent.IndexOf(Child);
+
+        if Idx >= 0 then
+          FDisabledByParent.Delete(Idx);
+
+        if FControlsContain(Child) then
+          Child.Enabled := True;
+      end;
+    end;
+  finally
+    FPropagatingEnabled := False;
   end;
+end;
+
+function TCssGroupBox.FControlsContain(AControl: TControl): Boolean;
+var
+  I: Integer;
+begin
+  for I := 0 to ControlCount - 1 do
+    if Controls[I] = AControl then
+      Exit(True);
+
+  Result := False;
 end;
 
 end.

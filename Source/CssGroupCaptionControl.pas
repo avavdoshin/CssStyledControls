@@ -25,10 +25,13 @@ type
     procedure SetCaption(const AValue: TCaption); override;
 
     // Geometry helpers
-    function GetCaptionHeight(AvailableWidth: Integer): Integer;
-    function GetCaptionBackground: TColor;
-    function GetTopOffset: Integer;
+    function  GetCaptionHeight(AvailableWidth: Integer): Integer;
+    function  GetCaptionBackground: TColor;
+    function  GetTopOffset: Integer;
     procedure GetCaptionDrawRect(out ARect: TRect; out ACaptionW: Integer);
+    procedure GetCaptionDrawArea(out ARect: TRect);
+    function  GetEffectiveCaptionAlign: TCssTextAlign;
+
     function GetBorderTopOffset: Integer; override;
     procedure InitTextProps; override;
 
@@ -210,7 +213,7 @@ begin
   if CaptionW < 10 then
     CaptionW := 10;
 
-  LAlign := GetCssTextAlign;
+  LAlign := GetEffectiveCaptionAlign;
 
   if FCaptionMode = gcmInside then
     CaptionY := B + P.Top
@@ -245,6 +248,67 @@ begin
     ARect.Bottom := ClientHeight;
 
   ACaptionW := CaptionW;
+end;
+
+function TCssGroupCaptionControl.GetEffectiveCaptionAlign: TCssTextAlign;
+var
+  L: string;
+begin
+  if HtmlMode then
+  begin
+    L := LowerCase(FGroupCaption);
+    L := StringReplace(L, ' ', '', [rfReplaceAll]);
+    L := StringReplace(L, #9, '', [rfReplaceAll]);
+    L := StringReplace(L, #10, '', [rfReplaceAll]);
+    L := StringReplace(L, #13, '', [rfReplaceAll]);
+
+    if (Pos('align="center"', L) > 0) or
+       (Pos('align=''center''', L) > 0) or
+       (Pos('text-align:center', L) > 0) then
+      Exit(ctaCenter);
+
+    if (Pos('align="right"', L) > 0) or
+       (Pos('align=''right''', L) > 0) or
+       (Pos('text-align:right', L) > 0) then
+      Exit(ctaRight);
+  end;
+
+  Result := GetCssTextAlign;
+end;
+
+procedure TCssGroupCaptionControl.GetCaptionDrawArea(out ARect: TRect);
+var
+  ContentR: TRect;
+  CapH: Integer;
+begin
+  ARect := Rect(0, 0, 0, 0);
+
+  if FGroupCaption = '' then
+    Exit;
+
+  ContentR := GetContentRect;
+
+  CapH := GetCaptionHeight(ContentR.Width);
+  if CapH <= 0 then
+    Exit;
+
+  if FCaptionMode = gcmInside then
+    ARect := Rect(
+      ContentR.Left,
+      ContentR.Top,
+      ContentR.Right,
+      ContentR.Top + CapH
+    )
+  else
+    ARect := Rect(
+      ContentR.Left,
+      0,
+      ContentR.Right,
+      CapH
+    );
+
+  if ARect.Right < ARect.Left then ARect.Right := ARect.Left;
+  if ARect.Bottom < ARect.Top then ARect.Bottom := ARect.Top;
 end;
 
 function TCssGroupCaptionControl.GetBorderTopOffset: Integer;
