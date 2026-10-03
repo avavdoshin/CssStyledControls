@@ -44,6 +44,7 @@ type
     procedure Resize; override;
     procedure Loaded; override;
     procedure StyleChanged; override;
+    procedure HtmlModeChanged; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
@@ -113,6 +114,7 @@ type
     FTabPadding: Integer;
     FTabPaddingSet: Boolean;
     FTabAutoSize: Boolean;
+    FTabMaxWidth: Integer;
 
     // Cursors
     FTabCursor: TCursor;      // Cursor over tabs
@@ -150,6 +152,7 @@ type
     procedure SetTabPosition(AValue: TCssTabPosition);
     procedure SetTabHeight(AValue: Integer);
     procedure SetTabWidth(AValue: Integer);
+    procedure SetTabMaxWidth(AValue: Integer);
 
     // Geometry
     function GetInnerRect: TRect;
@@ -215,6 +218,11 @@ type
     // Change notification
     procedure DoChange; virtual;
 
+    // Whether tab Index should be rendered as HTML.
+    // Base TCssTabControl uses its own HtmlMode for all tabs;
+    // TCssPageControl overrides this to consult per-page HtmlMode.
+    function TabUsesHtml(Index: Integer): Boolean; virtual;
+
     // Geometry
     function GetContentRect: TRect; override;
   public
@@ -233,6 +241,7 @@ type
     property TabSpacing: Integer read FTabSpacing write SetTabSpacing;
     property TabPadding: Integer read FTabPadding write FTabPadding default 8;
     property TabAutoSize: Boolean read FTabAutoSize write FTabAutoSize default True;
+    property TabMaxWidth: Integer read FTabMaxWidth write SetTabMaxWidth default 0;
 
     // Events
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
@@ -257,6 +266,7 @@ type
     FPages: TList;
     FActivePageIndex: Integer;
     FTabToPage: array of Integer;
+    FTabUseHtml: array of Boolean;
 
     // Events
     FOnPageChange: TNotifyEvent;
@@ -282,6 +292,7 @@ type
     procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
     procedure StyleChanged; override;
     procedure TabPositionChanged; override;
+    function  TabUsesHtml(Index: Integer): Boolean; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -433,6 +444,17 @@ procedure TCssTabSheet.StyleChanged;
 begin
   inherited StyleChanged;
   UpdateShape;
+end;
+
+procedure TCssTabSheet.HtmlModeChanged;
+begin
+  inherited HtmlModeChanged;
+
+  if Assigned(FPageControl) then
+  begin
+    FPageControl.SyncTabs;
+    FPageControl.Invalidate;
+  end;
 end;
 
 procedure TCssTabSheet.SetTabVisible(AValue: Boolean);
@@ -635,6 +657,7 @@ begin
   FTabSpacing := 0;
   FTabPadding := 8;
   FTabAutoSize := True;
+  FTabMaxWidth := 0;
 
   FTabCursor := crHandPoint;   // default: hand, since tabs are clickable
   FContentCursor := crDefault;
@@ -778,10 +801,27 @@ begin
   Invalidate;
 end;
 
+procedure TCssTabControl.SetTabMaxWidth(AValue: Integer);
+begin
+  if AValue < 0 then
+    AValue := 0;
+
+  if FTabMaxWidth = AValue then
+    Exit;
+
+  FTabMaxWidth := AValue;
+  Invalidate;
+end;
+
 procedure TCssTabControl.DoChange;
 begin
   if Assigned(FOnChange) then
     FOnChange(Self);
+end;
+
+function TCssTabControl.TabUsesHtml(Index : Integer) : Boolean;
+begin
+  Result := HtmlMode;
 end;
 
 function TCssTabControl.GetInnerRect: TRect;
@@ -957,9 +997,9 @@ begin
 
   if (Index >= 0) and (Index < FTabs.Count) then
   begin
-    if HtmlMode then
+    if TabUsesHtml(Index) then
     begin
-      S := MeasureHtmlTextSize(FTabs[Index], 0);
+      S := MeasureHtmlTextSize(FTabs[Index], FTabMaxWidth);
       TextW := S.cx;
     end
     else
@@ -1669,8 +1709,14 @@ begin
 
         Canvas.Font.Color := FG;
 
-        if HtmlMode then
-          DrawHtmlText(TabR, FTabs[I])
+        if TabUsesHtml(I) then
+        begin
+          DrawHtmlTextWithAlign(
+            Canvas, TabR, FTabs[I],
+            ctaCenter, cvaMiddle,
+            FG
+          );
+        end
         else
         begin
           TS := Default(TTextStyle);
@@ -1892,6 +1938,13 @@ begin
       FTabSpacing := Px;
       FTabSpacingSet := True;
     end;
+    Exit;
+  end;
+
+  if AName = 'tab-max-width' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+      SetTabMaxWidth(Px);
     Exit;
   end;
 
@@ -2249,6 +2302,7 @@ begin
   SavedPage := FActivePageIndex;
 
   SetLength(FTabToPage, 0);
+  SetLength(FTabUseHtml, 0);
   FTabs.Clear;
 
   for I := 0 to FPages.Count - 1 do
@@ -2259,6 +2313,9 @@ begin
 
       SetLength(FTabToPage, Length(FTabToPage) + 1);
       FTabToPage[High(FTabToPage)] := I;
+
+      SetLength(FTabUseHtml, Length(FTabUseHtml) + 1);
+      FTabUseHtml[High(FTabUseHtml)] := TCssTabSheet(FPages[I]).HtmlMode;
     end;
   end;
 
@@ -2371,6 +2428,14 @@ begin
   end;
 
   LayoutSheets;
+end;
+
+function TCssPageControl.TabUsesHtml(Index: Integer): Boolean;
+begin
+  if (Index >= 0) and (Index < Length(FTabUseHtml)) then
+    Result := FTabUseHtml[Index]
+  else
+    Result := HtmlMode;
 end;
 
 initialization
