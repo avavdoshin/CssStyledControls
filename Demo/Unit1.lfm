@@ -209,6 +209,30 @@ object Form1: TForm1
           Cancel = True
           AutoSize = True
         end
+        object CssButton5: TCssButton
+          AnchorSideLeft.Control = CssButton4
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssButton1
+          AnchorSideRight.Control = CssGroupBox1
+          AnchorSideRight.Side = asrBottom
+          Cursor = crHandPoint
+          Left = 446
+          Height = 22
+          Hint = '<b><u>Cancel</u></b> current operation'
+          Top = 41
+          Width = 157
+          BorderSpacing.Left = 10
+          Caption = 'Button with pop-up menu'
+          CssTag = 'control'
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          ShowHint = True
+          MonospaceFontName = 'Courier New'
+          ParentShowHint = False
+          TabOrder = 4
+          TabStop = True
+          AutoSize = True
+        end
       end
       object CssPanel2: TCssPanel
         AnchorSideLeft.Control = CssTabSheet1
@@ -255,6 +279,28 @@ object Form1: TForm1
           AutoSize = True
           ShowAccelChar = True
           Transparent = False
+        end
+        object CssPopupMenu1: TCssPopupMenu
+          Left = 391
+          Height = 24
+          Top = 21
+          Width = 100
+          CssTag = 'control'
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          MonospaceFontName = 'Courier New'
+          TabOrder = 1
+          TabStop = True
+          PopupControl = CssButton5
+          AutoPopup = True
+          object MenuItem1: TCssMenuItem
+            Caption = '<b>Menu item 1</b>'
+            OnClick = MenuItem1Click
+          end
+          object MenuItem2: TCssMenuItem
+            Caption = '<i>Menu item 2</i>'
+            OnClick = MenuItem2Click
+          end
         end
       end
     end
