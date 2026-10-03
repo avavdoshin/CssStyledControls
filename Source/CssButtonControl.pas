@@ -320,7 +320,6 @@ var
   P: TRect;
   B: Integer;
   NewWidth, NewHeight: Integer;
-  TextToMeasure: string;
 begin
   if (csDestroying in ComponentState) or
      (csLoading in ComponentState) then
@@ -340,12 +339,10 @@ begin
 
   AssignCssFontToFont(Canvas.Font);
 
-  TextToMeasure := Caption;
-
   if HtmlMode then
-    TextToMeasure := HtmlToPlainText(TextToMeasure);
-
-  S := MeasureTextSize(Canvas, TextToMeasure);
+    S := MeasureHtmlTextSize(Canvas, Caption, 0)
+  else
+    S := MeasureTextSize(Canvas, Caption);
 
   B := GetCssBorderWidth;
   P := GetCssPadding;

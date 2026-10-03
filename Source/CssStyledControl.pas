@@ -518,6 +518,7 @@ type
   published
     property Align;
     property Anchors;
+    property BorderSpacing;
     property Caption: TCaption read FCaption write SetCaption stored IsCaptionStored;
     property Color;
     property Constraints;
