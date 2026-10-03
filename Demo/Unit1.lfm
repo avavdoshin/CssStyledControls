@@ -82,7 +82,7 @@ object Form1: TForm1
     TabOrder = 1
     TabStop = True
     Tabs.Strings = (
-      'Buttons, Panels, Groups, Labels'
+      '<b>Common</b> controls'
     )
     TabIndex = 0
     TabSpacing = 2
@@ -96,8 +96,9 @@ object Form1: TForm1
       Height = 638
       Top = 29
       Width = 875
-      Caption = 'Buttons, Panels, Groups, Labels'
+      Caption = '<b>Common</b> controls'
       CssTag = 'control'
+      HtmlMode = True
       StyleProvider = CssStyleProvider1
       MonospaceFontName = 'Courier New'
       TabOrder = 0
