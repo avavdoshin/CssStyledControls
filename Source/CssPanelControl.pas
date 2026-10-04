@@ -327,7 +327,7 @@ end;
 
 procedure TCssPanel.AlignControls(AControl: TControl; var Rect: TRect);
 var
-  B, CapH: Integer;
+  B: Integer;
   P: TRect;
 begin
   B := GetCssBorderWidth;

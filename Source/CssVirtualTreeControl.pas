@@ -2753,15 +2753,6 @@ var
   IsHover: Boolean;
   IsDropTarget: Boolean;
   IsDisabled: Boolean;
-  S: string;
-  TextColor: TColor;
-  ContentR: TRect;
-  TS: TTextStyle;
-  HAlign: TCssTextAlign;
-  VAlign: TCssVAlign;
-  TextW, TextH: Integer;
-  X, Y: Integer;
-  ContentW, RowH: Integer;
 begin
   if Node = nil then
     Exit;

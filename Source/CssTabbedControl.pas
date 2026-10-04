@@ -194,13 +194,14 @@ type
     function  HasFocusedChild: Boolean;
     procedure UpdateFocusedChildState;
 
-    // Hover
-    function  GetEffectiveHoverState: Boolean; override;
   protected
     // Focus
     procedure ChildFocusChanged(AChildFocused: Boolean); override;
     procedure TabPositionChanged; virtual;
     procedure Loaded; override;
+
+    // Hover
+    function  GetEffectiveHoverState: Boolean; override;
 
     // Painting
     procedure Paint; override;

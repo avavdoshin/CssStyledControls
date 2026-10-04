@@ -286,7 +286,7 @@ type
 implementation
 
 uses
-  Math, IntfGraphics, FPImage;
+  IntfGraphics, FPImage;
 
 function MeasurePlainText(ACanvas: TCanvas; const AText: string): TSize;
 var
@@ -339,11 +339,6 @@ type
     destructor Destroy; override;
     procedure Clear;
     function GetMask(AW, AH: Integer; ALineWidth: Double): TCssCheckMarkMaskEntry;
-  end;
-
-  PRGBQuadItem = ^TRGBQuadItem;
-  TRGBQuadItem = packed record
-    B, G, R, A: Byte;
   end;
 
 const

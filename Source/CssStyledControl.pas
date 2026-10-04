@@ -1148,18 +1148,17 @@ end;
 procedure EnsureStopPositions(var Stops: array of TCssGradientStop);
 var
   I, J, Count, First, Last: Integer;
-  AllSet, AnySet: Boolean;
+  AnySet: Boolean;
 begin
   Count := Length(Stops);
   if Count = 0 then Exit;
 
-  AllSet := True;
   AnySet := False;
 
   for I := 0 to Count - 1 do
   begin
-    if Stops[I].Position < 0 then AllSet := False
-    else AnySet := True;
+    if Stops[I].Position >= 0 then
+       AnySet := True;
   end;
 
   if not AnySet then
@@ -4886,7 +4885,7 @@ end;
 procedure TCssStyledControl.ApplyDeclaration(const AName, AValue: string);
 var
   LColor: TColor;
-  Px, P: Integer;
+  Px: Integer;
   S: string;
   Weight: Integer;
   O: Double;
@@ -5069,7 +5068,6 @@ begin
     ParseBackgroundGradient(AValue)
   else if AName = 'background' then
   begin
-    // Если задан градиент — парсим как градиент, иначе как цвет.
     if (Pos('linear-gradient(', LowerCase(AValue)) = 1) or
        (Pos('radial-gradient(', LowerCase(AValue)) = 1) then
       ParseBackgroundGradient(AValue)
@@ -5698,7 +5696,6 @@ var
   Stop: TCssGradientStop;
   Col: TColor;
   PosPct: Double;
-  Found: Boolean;
 begin
   FBackgroundGradient.Kind := cgkNone;
   SetLength(FBackgroundGradient.Stops, 0);
