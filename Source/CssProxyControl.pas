@@ -67,7 +67,7 @@ type
 implementation
 
 uses
-  StrUtils, CssFontUtils;
+  StrUtils, CssFontUtils, CssUtils;
 
 procedure TProxyHiddenControl.StyleChanged;
 begin
@@ -393,50 +393,8 @@ begin
 end;
 
 function TCssProxy.ParseColor(const AValue: string; out AColor: TColor): Boolean;
-var
-  S, Hex: string;
-  R, G, B: Integer;
 begin
-  Result := False;
-  S := Trim(LowerCase(AValue));
-  if S = '' then Exit;
-
-  if S[1] = '#' then
-  begin
-    Hex := Copy(S, 2, MaxInt);
-    if Length(Hex) = 3 then
-    begin
-      if TryStrToInt('$' + Hex[1] + Hex[1], R) and
-         TryStrToInt('$' + Hex[2] + Hex[2], G) and
-         TryStrToInt('$' + Hex[3] + Hex[3], B) then
-      begin
-        AColor := RGBToColor(R, G, B);
-        Result := True;
-      end;
-    end
-    else if Length(Hex) >= 6 then
-    begin
-      if TryStrToInt('$' + Copy(Hex, 1, 2), R) and
-         TryStrToInt('$' + Copy(Hex, 3, 2), G) and
-         TryStrToInt('$' + Copy(Hex, 5, 2), B) then
-      begin
-        AColor := RGBToColor(R, G, B);
-        Result := True;
-      end;
-    end;
-  end
-  else
-  begin
-    if S = 'transparent' then begin AColor := clNone; Result := True; end
-    else if S = 'black' then begin AColor := clBlack; Result := True; end
-    else if S = 'white' then begin AColor := clWhite; Result := True; end
-    else if S = 'red' then begin AColor := clRed; Result := True; end
-    else if S = 'green' then begin AColor := clGreen; Result := True; end
-    else if S = 'blue' then begin AColor := clBlue; Result := True; end
-    else if S = 'yellow' then begin AColor := clYellow; Result := True; end
-    else if (S = 'gray') or (S = 'grey') then begin AColor := clGray; Result := True; end
-    else if S = 'silver' then begin AColor := clSilver; Result := True; end;
-  end;
+  Result := CssParseColor(AValue, AColor);
 end;
 
 function TCssProxy.ParseFontSize(const AValue: string; out ASize: Integer): Boolean;

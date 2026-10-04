@@ -575,7 +575,7 @@ procedure BuildCheckMarkCoverage(
 implementation
 
 uses
-  StrUtils, IntfGraphics, FPImage, Math, LCLIntf, CssFontUtils;
+  StrUtils, IntfGraphics, FPImage, Math, LCLIntf, CssFontUtils, CssUtils;
 
 procedure BuildCheckMarkCoverage(
   var ACoverage: array of Byte;
@@ -4893,11 +4893,7 @@ begin
   if AValue = '' then
     Exit;
 
-  if AName = 'background' then
-  begin
-    ParseBackground(AValue);
-  end
-  else if AName = 'background-color' then
+  if AName = 'background-color' then
   begin
     if ParseColor(AValue, LColor) then
     begin
@@ -6032,121 +6028,8 @@ begin
 end;
 
 function TCssStyledControl.ParseColor(const AValue: string; out AColor: TColor): Boolean;
-var
-  S, Hex, Nums, Token: string;
-  P, I, Comp: Integer;
-  R, G, B: Integer;
-  Vals: array[0..2] of Integer;
 begin
-  Result := False;
-
-  S := LowerCase(Trim(AValue));
-
-  if S = '' then
-    Exit;
-
-  if S = 'transparent' then
-  begin
-    AColor := clNone;
-    Exit(True);
-  end;
-
-  if S[1] = '#' then
-  begin
-    Hex := Copy(S, 2, MaxInt);
-
-    if (Length(Hex) = 3) or (Length(Hex) = 4) then
-    begin
-      if not TryStrToInt('$' + Hex[1] + Hex[1], R) then Exit;
-      if not TryStrToInt('$' + Hex[2] + Hex[2], G) then Exit;
-      if not TryStrToInt('$' + Hex[3] + Hex[3], B) then Exit;
-    end
-    else if Length(Hex) >= 6 then
-    begin
-      if not TryStrToInt('$' + Copy(Hex, 1, 2), R) then Exit;
-      if not TryStrToInt('$' + Copy(Hex, 3, 2), G) then Exit;
-      if not TryStrToInt('$' + Copy(Hex, 5, 2), B) then Exit;
-    end
-    else
-      Exit;
-
-    AColor := RGBToColor(R, G, B);
-    Exit(True);
-  end;
-
-  if (Pos('rgb(', S) = 1) or (Pos('rgba(', S) = 1) then
-  begin
-    P := Pos('(', S);
-    if P = 0 then
-      Exit;
-
-    Nums := Copy(S, P + 1, MaxInt);
-
-    P := Pos(')', Nums);
-    if P = 0 then
-      Exit;
-
-    Nums := Copy(Nums, 1, P - 1);
-
-    Comp := 0;
-    Token := '';
-
-    for I := 1 to Length(Nums) + 1 do
-    begin
-      if (I > Length(Nums)) or (Nums[I] = ',') then
-      begin
-        Token := Trim(Token);
-
-        if Comp < 3 then
-        begin
-          if EndsText('%', Token) then
-          begin
-            Token := Copy(Token, 1, Length(Token) - 1);
-
-            if not TryParseNumberPrefix(Token, Vals[Comp]) then
-              Exit;
-
-            if Vals[Comp] < 0 then
-              Vals[Comp] := 0;
-
-            if Vals[Comp] > 100 then
-              Vals[Comp] := 100;
-
-            Vals[Comp] := Round(Vals[Comp] * 255 / 100);
-          end
-          else
-          begin
-            if not TryParseNumberPrefix(Token, Vals[Comp]) then
-              Exit;
-          end;
-        end;
-
-        Inc(Comp);
-        Token := '';
-      end
-      else
-      begin
-        Token := Token + Nums[I];
-      end;
-    end;
-
-    if Comp < 3 then
-      Exit;
-
-    for I := 0 to 2 do
-    begin
-      if Vals[I] < 0 then
-        Vals[I] := 0;
-
-      if Vals[I] > 255 then
-        Vals[I] := 255;
-    end;
-
-    AColor := RGBToColor(Vals[0], Vals[1], Vals[2]);
-    Exit(True);
-  end;
-
-  Result := TryNamedColor(S, AColor);
+  Result := CssParseColor(AValue, AColor);
 end;
 
 function TCssStyledControl.TryNamedColor(const AName: string; out AColor: TColor): Boolean;
@@ -6192,48 +6075,8 @@ begin
 end;
 
 function TCssStyledControl.ParseLengthPx(const AValue: string; out APx: Integer): Boolean;
-var
-  S: string;
-  Num: Integer;
 begin
-  Result := False;
-  APx := 0;
-
-  S := LowerCase(Trim(AValue));
-
-  if S = '' then
-    Exit;
-
-  if S = '0' then
-    Exit(True);
-
-  if S = 'thin' then
-  begin
-    APx := 1;
-    Exit(True);
-  end;
-
-  if S = 'medium' then
-  begin
-    APx := 2;
-    Exit(True);
-  end;
-
-  if S = 'thick' then
-  begin
-    APx := 4;
-    Exit(True);
-  end;
-
-  if TryParseNumberPrefix(S, Num) then
-  begin
-    if EndsText('pt', S) then
-      APx := Round(Num * 96 / 72)
-    else
-      APx := Num;
-
-    Result := True;
-  end;
+  Result := CssParseLengthPx(AValue, APx);
 end;
 
 function TCssStyledControl.ParseCssColor(const AValue: string; out AColor: TColor): Boolean;
