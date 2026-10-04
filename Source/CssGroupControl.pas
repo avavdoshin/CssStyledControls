@@ -167,15 +167,19 @@ var
   BG: TColor;
   CaptionRect, DrawRect: TRect;
   CaptionW: Integer;
-  TopBorderY: Integer;
+  Radii: TCssCornerRadii;
 begin
-  inherited Paint;
+  // NOTE: we deliberately do NOT call inherited Paint here. TCssStyledControl.Paint
+  // would draw the background and the border in an AA pass, and then the code
+  // below would draw them again with Canvas.RoundRect / Canvas.Rectangle,
+  // immediately destroying the anti-aliasing. Instead we do the whole drawing
+  // here, using the AA path for the box.
 
   R := Rect(0, 0, Width, Height);
 
   B := GetCssBorderWidth;
   Radius := GetCssBorderRadius;
-  BorderColor := GetCssBorderColor;
+  BorderColor := GetEffectiveBorderColor;
   LBorderWidth := B;
 
   BG := GetCssBackgroundColor;
@@ -186,71 +190,46 @@ begin
   if BG = clDefault then
     BG := clBtnFace;
 
-  // Background
-  if BG <> clNone then
-  begin
-    Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := BG;
-  end
-  else
-  begin
-    Canvas.Brush.Style := bsClear;
-  end;
-
-  // Border
-  if LBorderWidth > 0 then
-  begin
-    Canvas.Pen.Style := psSolid;
-    Canvas.Pen.Width := LBorderWidth;
-    Canvas.Pen.Color := BorderColor;
-  end
-  else
-  begin
-    Canvas.Pen.Style := psClear;
-    Canvas.Pen.Width := 1;
-  end;
+  Radii.TL := Radius;
+  Radii.TR := Radius;
+  Radii.BR := Radius;
+  Radii.BL := Radius;
 
   BorderR := R;
 
   if LBorderWidth > 1 then
     InflateRect(BorderR, -(LBorderWidth div 2), -(LBorderWidth div 2));
 
-  if CaptionMode = gcmOnBorder then
+  // Draw the whole box (background + border) in one anti-aliased pass.
+  DrawAntiAliasedRoundedBox(
+    Canvas,
+    BorderR,
+    Radii,
+    BG,
+    BorderColor,
+    LBorderWidth,
+    cbsSolid,
+    GetParentBackgroundColor
+  );
+
+  // In OnBorder mode the caption sits on the top border line, so erase the
+  // background behind the caption to "break" the top line.
+  if (CaptionMode = gcmOnBorder) and (Caption <> '') then
   begin
-    // In OnBorder mode the top line is drawn with a gap for the caption.
     GetCaptionDrawRect(CaptionRect, CaptionW);
 
-    // First fill the entire group background.
-    if Radius > 0 then
-      Canvas.RoundRect(BorderR.Left, BorderR.Top, BorderR.Right, BorderR.Bottom, Radius, Radius)
-    else
-      Canvas.Rectangle(BorderR.Left, BorderR.Top, BorderR.Right, BorderR.Bottom);
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := GetCaptionBackground;
+    Canvas.Pen.Style := psClear;
 
-    // Now erase the background in the caption area to "break" the top line.
-    if Caption <> '' then
-    begin
-      TopBorderY := BorderR.Top;
-
-      Canvas.Brush.Style := bsSolid;
-      Canvas.Brush.Color := GetCaptionBackground;
-      Canvas.Pen.Style := psClear;
-
-      Canvas.FillRect(
-        Rect(
-          CaptionRect.Left,
-          TopBorderY,
-          CaptionRect.Right,
-          TopBorderY + LBorderWidth + 1
-        )
-      );
-    end;
-  end
-  else
-  begin
-    if Radius > 0 then
-      Canvas.RoundRect(BorderR.Left, BorderR.Top, BorderR.Right, BorderR.Bottom, Radius, Radius)
-    else
-      Canvas.Rectangle(BorderR.Left, BorderR.Top, BorderR.Right, BorderR.Bottom);
+    Canvas.FillRect(
+      Rect(
+        CaptionRect.Left,
+        BorderR.Top,
+        CaptionRect.Right,
+        BorderR.Top + LBorderWidth + 1
+      )
+    );
   end;
 
   // Draw the caption.
@@ -269,6 +248,7 @@ begin
     DrawCaptionToCanvas(Canvas, DrawRect, Caption);
   end;
 
+  // Focus ring for focus-within.
   if FShowFocusWhenChildFocused and
      ShowFocusRect and
      FHasFocusedChild and
