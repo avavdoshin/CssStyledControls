@@ -101,6 +101,10 @@
         <Filename Value="..\Source\CssFormDarkTitle.pas"/>
         <UnitName Value="CssFormDarkTitle"/>
       </Item>
+      <Item>
+        <Filename Value="..\Source\CssBitBtnControl.pas"/>
+        <UnitName Value="CssBitBtnControl"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

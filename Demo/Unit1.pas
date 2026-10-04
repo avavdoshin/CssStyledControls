@@ -8,10 +8,14 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, CssStyledControl,
   CssPanelControl, CssCheckboxControl, CssRadioControl, CssProxyControl,
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
-  CssMenuControl;
+  CssMenuControl, CssBitBtnControl;
 
 type
   TForm1 = class(TForm)
+    CssBitBtn1 : TCssBitBtn;
+    CssBitBtn2 : TCssBitBtn;
+    CssBitBtn3 : TCssBitBtn;
+    CssBitBtn4 : TCssBitBtn;
     CssButton1 : TCssButton;
     CssButton2 : TCssButton;
     CssButton3 : TCssButton;

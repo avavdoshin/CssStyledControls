@@ -11,7 +11,7 @@ implementation
 uses
   Classes, LResources, CssStyledControl, CssButtonControl, CssCheckboxControl, CssComboControl, CssEditControl, CssGroupControl, CssLabelControl,
   CssListboxControl, CssMemoControl, CssMenuControl, CssPanelControl, CssRadioControl, CssScrollControl, CssSplitterControl, CssTabbedControl,
-  CssVirtualTreeControl, CssProxyControl;
+  CssVirtualTreeControl, CssProxyControl, CssBitBtnControl;
 
 procedure Register;
 begin
@@ -21,7 +21,7 @@ begin
     TCssEdit, TCssGroupBox, TCssLabel, TCssListBox,
     TCssMemo, TCssMainMenu, TCssPopupMenu, TCssPanel,
     TCssRadioButton, TCssRadioGroup, TCssScrollBar, TCssSplitter,
-    TCssVirtualStringTree, TCssPageControl, TCssTabControl, TCssTabSheet
+    TCssVirtualStringTree, TCssPageControl, TCssTabControl, TCssTabSheet, TCssBitBtn
   ]);
 end;
 

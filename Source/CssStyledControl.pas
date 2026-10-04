@@ -404,6 +404,13 @@ type
     procedure DrawHtmlText(ACanvas: TCanvas; const ARect: TRect; const AText: string; ADefaultTextColor: TColor); overload;
     procedure DrawStyledText(const ARect: TRect; const AText: string);
 
+    procedure DrawStyledTextWithAlign(
+      ACanvas: TCanvas;
+      const ARect: TRect;
+      const AText: string;
+      AAlign: TCssTextAlign;
+      AVAlign: TCssVAlign);
+
     procedure DrawHtmlTextWithAlign(
       ACanvas: TCanvas;
       const ARect: TRect;
@@ -4283,6 +4290,7 @@ var
   I: Integer;
   TypeOK: Boolean;
   DummyHover: Boolean;
+  TempClass: TClass;
 begin
   Result := False;
 
@@ -4324,9 +4332,23 @@ begin
       begin
         TypeOK :=
           SameText(TypeName, FCssTag) or
-          SameText(TypeName, ClassName) or
           SameText(TypeName, 'control') or
           SameText(TypeName, 'TCssStyledControl');
+
+        // Walk the class hierarchy so that a rule written for an ancestor
+        // class (e.g. TCssButton) also matches descendant controls
+        // (e.g. TCssBitBtn).
+        if not TypeOK then
+        begin
+          TempClass := ClassType;
+          while (TempClass <> nil) and (not TypeOK) do
+          begin
+            if SameText(TypeName, TempClass.ClassName) then
+              TypeOK := True
+            else
+              TempClass := TempClass.ClassParent;
+          end;
+        end;
       end;
     end;
 
@@ -7017,6 +7039,35 @@ end;
 procedure TCssStyledControl.DrawStyledText(const ARect: TRect; const AText: string);
 begin
   DrawStyledTextToCanvas(Canvas, ARect, AText);
+end;
+
+procedure TCssStyledControl.DrawStyledTextWithAlign(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  const AText: string;
+  AAlign: TCssTextAlign;
+  AVAlign: TCssVAlign);
+var
+  OldAlign: TCssTextAlign;
+  OldVAlign: TCssVAlign;
+begin
+  if AText = '' then
+    Exit;
+
+  // Direct field assignment (no property setter). Using the public
+  // SetTextAlign / SetVAlign here would call Invalidate, and calling
+  // Invalidate from inside Paint produces an infinite repaint loop.
+  OldAlign := FTextAlign;
+  OldVAlign := FVAlign;
+
+  FTextAlign := AAlign;
+  FVAlign := AVAlign;
+  try
+    DrawStyledTextToCanvas(ACanvas, ARect, AText);
+  finally
+    FTextAlign := OldAlign;
+    FVAlign := OldVAlign;
+  end;
 end;
 
 procedure TCssStyledControl.DrawStyledTextToCanvas(

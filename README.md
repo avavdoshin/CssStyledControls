@@ -95,7 +95,7 @@ Both screenshots come from the included demo project (see [Demo Project](#demo-p
 
 5. The component palette gets a new tab `CSSStyledControls`:
 
-   `TCssStyleProvider`, `TCssProxy`, `TCssButton`, `TCssCheckBox`, `TCssCheckGroup`, `TCssComboBox`, `TCssEdit`, `TCssGroupBox`, `TCssLabel`, `TCssListBox`, `TCssMemo`, `TCssMainMenu`, `TCssPopupMenu`, `TCssPanel`, `TCssRadioButton`, `TCssRadioGroup`, `TCssScrollBar`, `TCssSplitter`, `TCssVirtualStringTree`, `TCssPageControl`, `TCssTabControl`, `TCssTabSheet`.
+   `TCssStyleProvider`, `TCssProxy`, `TCssButton`, `TCssBitBtn`, `TCssCheckBox`, `TCssCheckGroup`, `TCssComboBox`, `TCssEdit`, `TCssGroupBox`, `TCssLabel`, `TCssListBox`, `TCssMemo`, `TCssMainMenu`, `TCssPopupMenu`, `TCssPanel`, `TCssRadioButton`, `TCssRadioGroup`, `TCssScrollBar`, `TCssSplitter`, `TCssVirtualStringTree`, `TCssPageControl`, `TCssTabControl`, `TCssTabSheet`.
 
    `TCssMenuItem` is not shown on the palette: it is created and edited only through the visual menu designer.
 
@@ -153,6 +153,20 @@ Both screenshots come from the included demo project (see [Demo Project](#demo-p
    CssStyleProvider1.DefaultStyleName := 'dark';
    ```
 
+6. (Optional) For a button with an icon, use `TCssBitBtn`:
+
+   ```pascal
+   CssBitBtn1.Kind := bkOK;                          // built-in "OK" icon + label
+   CssBitBtn1.Layout := ...                          // set through CSS instead
+   ```
+
+   ```css
+   TCssBitBtn {
+     glyph-layout: left;
+     glyph-spacing: 6px;
+     glyph-margin: auto;
+   }
+   ```
 ---
 
 ## Demo Project
@@ -171,6 +185,11 @@ What the demo shows:
 
 - A single form with a `TCssPageControl` (`Common controls` tab).
 - A `TCssGroupBox` containing several `TCssButton`s (enabled, disabled, default, cancel, and one with a `TCssPopupMenu`).
+- Four `TCssBitBtn` controls next to those buttons, showing every way to configure a glyph:
+  - `Kind = bkCancel` with a custom caption (`UseKindCaption = False`) — a **built-in vector icon** paired with a user-supplied label.
+  - the same `Kind = bkCancel`, but `Enabled = False` — the same glyph is rendered in its **muted disabled variant**, in tone with the disabled caption.
+  - a **custom bitmap glyph** (`Glyph` loaded from a small PNG) — an arbitrary image drawn alongside the caption.
+  - the same custom bitmap glyph with `Enabled = False` — the bitmap is automatically desaturated and re-tinted to match the disabled text color.
 - A `TCssPanel` with a `TCssLabel` whose `Caption` is HTML demonstrating every supported tag: headings, bold / italic / underline / strike / code / kbd / samp / tt / sup / sub / `<q>`, alignment via both `align="…"` and `style="text-align:…"`, ordered and unordered lists, inline colors, legacy `<font color>`, spans, and clickable `<a>` links.
 - A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that switches the whole application between the **light** and **dark** variants by setting `CssStyleProvider1.DefaultStyleName`.
 - A `TCssProxy` that applies the same theme to the plain `TForm`.
@@ -202,6 +221,7 @@ end;
 | `TCssStyleProvider`       | Non-visual component that holds CSS text and pushes it to controls.          |
 | `TCssProxy`               | Non-visual component that applies the active CSS variant to plain LCL controls (`TForm`, `TButton`, `TEdit`, `TLabel`, `TPanel`). |
 | `TCssButton`              | Push button with `Default`, `Cancel`, `ModalResult`, and `:default` / `:cancel` pseudo-classes. |
+| `TCssBitBtn`              | Button with a glyph (icon) next to the caption. Supports standard `TBitBtn.Kind` icons, custom bitmaps (`Glyph` + `NumGlyphs`), `TImageList`, HiDPI-aware rendering, and CSS-driven icon layout. |
 | `TCssCheckBox`            | Tri-state check box with an optional Windows 11-style **switch** appearance. |
 | `TCssCheckGroup`          | Group of check boxes laid out in columns, with per-item state.               |
 | `TCssRadioButton`         | Radio button with an optional Windows 11-style **switch** appearance.        |
@@ -427,6 +447,114 @@ Additional Pascal properties: `Default`, `Cancel`, `ModalResult`.
 TCssButton:default { background-color: #2563EB; color: #FFFFFF; }
 TCssButton:cancel  { background-color: #FEF2F2; color: #B91C1C; }
 ```
+
+### TCssBitBtn — Button with Glyph
+
+`TCssBitBtn` is a descendant of `TCssButton` that adds a bitmap glyph next to the caption, in the spirit of the classic `TBitBtn`. Because it inherits from `TCssButton`, every `TCssButton` rule in your CSS still applies — the bit button only adds three extra `glyph-*` properties and the ability to source an icon.
+
+#### Glyph Source Priority
+
+The control can draw a glyph from three sources, in this order (highest priority first):
+
+1. **`Kind` ≠ `bkCustom`** — a built-in vector icon, plus a standard caption.
+2. **`Images` + `ImageIndex`** — an image from a `TImageList`.
+3. **`Glyph`** — a user-supplied `TBitmap`, optionally split into 1–4 states via `NumGlyphs`.
+
+When no glyph is available, `TCssBitBtn` behaves exactly like a plain `TCssButton`.
+
+#### Pascal Properties
+
+| Property           | Type               | Default      | Notes                                                                 |
+| ------------------ | ------------------ | ------------ | --------------------------------------------------------------------- |
+| `Kind`             | `TCssBitBtnKind`   | `bkCustom`   | One of: `bkCustom`, `bkOK`, `bkCancel`, `bkHelp`, `bkYes`, `bkNo`, `bkClose`, `bkAbort`, `bkRetry`, `bkIgnore`, `bkAll`. |
+| `Glyph`            | `TBitmap`          | empty        | User bitmap. Assigning a non-empty bitmap resets `Kind` to `bkCustom`. |
+| `NumGlyphs`        | `Integer`          | `1`          | 1–4: how many sub-images the `Glyph` bitmap is split into, stacked vertically. |
+| `Images`           | `TCustomImageList` | `nil`        | Source of the glyph when `Kind = bkCustom` and `Glyph` is empty.       |
+| `ImageIndex`       | `Integer`          | `-1`         | Index inside `Images`. `-1` disables the image source.                 |
+| `Transparent`      | `Boolean`          | `True`       | Whether `Glyph` uses transparency.                                     |
+| `GlyphScaled`      | `Boolean`          | `False`      | If `True`, `Glyph` and `Images` are stretched by the current DPI factor. The `Kind` icons are always DPI-scaled. |
+| `UseKindCaption`   | `Boolean`          | `True`       | If `True`, changing `Kind` overwrites `Caption` with the standard label. If `False`, your own caption is preserved. Automatically set to `False` the first time you assign a caption that does not match the current `Kind`'s default. |
+| `GlyphLayout`      | `TCssButtonLayout` | `blGlyphLeft` | Read-only. Reflects the effective value parsed from CSS.             |
+| `GlyphSpacing`     | `Integer`          | —            | Read-only. Effective spacing in **device pixels**.                    |
+| `GlyphMargin`      | `Integer`          | —            | Read-only. Effective margin in **device pixels**, or `-1` for "use CSS padding". |
+
+#### `NumGlyphs` and Glyph States
+
+When a user `Glyph` is assigned, `NumGlyphs` tells the control how the source bitmap is split. States are selected automatically:
+
+| `NumGlyphs` | State 0 (normal) | State 1 (disabled) | State 2 (pressed) | State 3 (focused) |
+| ----------- | ---------------- | ------------------ | ----------------- | ----------------- |
+| 1           | ✓                | —                  | —                 | —                 |
+| 2           | ✓                | ✓                  | —                 | —                 |
+| 3           | ✓                | ✓                  | ✓                 | —                 |
+| 4           | ✓                | ✓                  | ✓                 | ✓                 |
+
+For `Kind` icons and for `Images`, `NumGlyphs` is ignored: those sources supply a single glyph per state, and the disabled variant is generated internally (see below).
+
+#### Disabled State
+
+When `Enabled = False`:
+
+- If the glyph source is `Kind`, the control regenerates the vector icon in a **muted palette**: the icon is fully desaturated, its contrast is compressed toward mid-gray, and the result is blended with the effective `:disabled` text color taken from CSS. The disabled icon therefore visually matches the disabled caption in both light and dark themes, without extra configuration.
+- If the source is a user `Glyph` with `NumGlyphs ≥ 2`, state 1 is used **as is** — the user already provided a dedicated disabled bitmap, no automatic desaturation is applied.
+- If the source is `Glyph` with `NumGlyphs = 1` or an `Images` glyph, the bitmap is desaturated on the fly and cached. The same muted tint as above is applied.
+
+Both enabled and disabled variants are cached, so switching `Enabled` back and forth is free.
+
+#### CSS Properties
+
+Three additional declarations control the icon's presentation. All three are DPI-aware.
+
+| Property        | Values                                    | Notes                                                                                 |
+| --------------- | ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| `glyph-layout`  | `left` \| `right` \| `top` \| `bottom`    | Position of the icon relative to the caption. Default: `left`.                        |
+| `glyph-spacing` | any CSS length (`4px`, `0.3em`, `thin`)   | Gap between the icon and the caption. Scaled by the DPI factor. Default: `4px`.       |
+| `glyph-margin`  | CSS length, or `auto` / `none`            | Offset of the icon+caption group from the content edge. `auto` uses the CSS `padding`. |
+
+`glyph-margin: auto` is a special keyword: the control picks the smallest side of the current CSS `padding` as the margin. This keeps the button visually consistent when only `padding` is set on `TCssButton`.
+
+Because `TCssBitBtn` inherits from `TCssButton`, every `TCssButton` rule applies to it as well. The three `glyph-*` properties are simply added on top, and can be overridden per theme.
+
+#### Example
+
+```css
+TCssBitBtn {
+  glyph-layout:  left;
+  glyph-spacing: 6px;
+  glyph-margin:  auto;
+}
+
+/* Right-aligned glyphs for toolbar-style buttons. */
+TCssBitBtn.toolbar {
+  glyph-layout:  top;
+  glyph-spacing: 2px;
+  text-align:    center;
+}
+```
+
+```pascal
+// Custom bitmap with 4 states (normal / disabled / pressed / down).
+CssBitBtn1.Glyph.LoadFromFile('icon_states.png');
+CssBitBtn1.NumGlyphs    := 4;
+CssBitBtn1.GlyphScaled  := True;
+
+// Built-in icon with a custom caption.
+CssBitBtn2.Kind            := bkOK;
+CssBitBtn2.Caption         := 'Save';
+CssBitBtn2.UseKindCaption  := False;
+
+// Glyph from an image list.
+CssBitBtn3.Images     := ImageList1;
+CssBitBtn3.ImageIndex := 3;
+```
+
+#### Notes and Caveats
+
+- Assigning a non-empty `Glyph` (via the Object Inspector or in code) resets `Kind` to `bkCustom`, mirroring `TBitBtn`.
+- Setting a custom `Caption` when `UseKindCaption = True` automatically flips it to `False` — the current `Kind`'s label will no longer overwrite yours. Set `UseKindCaption := True` again to restore the standard label.
+- The `Kind` glyphs are drawn with the anti-aliased primitives of the base engine, so their edges are smooth at every DPI. They never use the system font, so no font substitution or missing-glyph issues occur.
+- All glyph bitmaps are cached per state and per DPI factor. `ChangeScale` regenerates them automatically when the form moves to a monitor with a different scale.
+- In the designer, changing `Kind` repaints the control immediately, without waiting for the next focus event.
 
 ### TCssCheckBox
 
