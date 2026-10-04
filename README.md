@@ -1,5 +1,6 @@
 # CssStyledControls
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![High DPI](https://img.shields.io/badge/High%20DPI-aware-blue)](#high-dpi-support)
 
 A set of visual controls for **Lazarus / Free Pascal (LCL)** that are fully stylable with **CSS** and support **HTML formatting** for their text content.
 
@@ -29,6 +30,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [Tooltips with CSS and HTML](#tooltips-with-css-and-html)
 - [Style Provider API](#style-provider-api)
 - [Proxy Styling for Standard LCL Controls](#proxy-styling-for-standard-lcl-controls)
+- [High DPI Support](#high-dpi-support)
 - [Native Form Title Bar (Windows)](#native-form-title-bar-windows)
 - [Design-Time Support](#design-time-support)
 - [Example Theme](#example-theme)
@@ -934,6 +936,90 @@ Then in CSS:
 ```
 
 Whenever the active variant changes, `TCssProxy` re-applies its rules. The application of styles is deferred via `Application.QueueAsyncCall` to avoid doing layout work while the provider is still updating.
+
+---
+
+## High DPI Support
+
+The library is High DPI aware. All pixel values that come from CSS are
+rescaled automatically when the DPI of the monitor changes, so the same
+theme looks equally sharp at 100 %, 125 %, 150 %, 200 % and higher.
+
+### What is scaled
+
+- All length values parsed from CSS: `padding`, `border-width`,
+  `border-radius`, `box-shadow` offsets/blur/spread, `text-shadow` offsets,
+  `font-size` when given in `px`, `toggle-width` / `toggle-height`,
+  `checkbox-radius` / `radio-radius`, `grip-size` / `grip-spacing`,
+  `tab-spacing` / `tab-padding` / `tab-scroll-button-size`,
+  `item-height` / `row-height` / `header-height`,
+  `scrollbar-size` / `thumb-radius`, `indent`, etc.
+- Hard-coded UI metrics inside the controls: check mark thickness,
+  drop-down arrow size, splitter grip dots, menu separators and item
+  paddings, tab strip margins, scroll-button arrows, tree expand/collapse
+  buttons, cell text insets, placeholder insets, and so on.
+
+### What is *not* scaled
+
+- Colors, fonts by name, `font-weight`, `font-style`, `text-decoration`,
+  `text-align`, `vertical-align`, `cursor`, `opacity`, `box-shadow` color
+  and all other non-length values — they are device-independent by nature.
+- Sizes and positions of controls that are managed by LCL itself
+  (`Align`, `Anchors`, `Constraints`, `Width` / `Height` set in the
+  Object Inspector). Those are already scaled by the LCL layout engine
+  when `Application.Scaled := True` is set (the default for new projects).
+- `Font.Size` in points — LCL scales it internally; the library leaves it
+  untouched.
+
+### How it works
+
+- Each `TCssStyledControl` keeps an internal `ScaleFactor` derived from
+  `Font.PixelsPerInch` (falling back to `Screen.PixelsPerInch`, then to
+  96). At 96 DPI the factor is 1.0; at 144 DPI it is 1.5; and so on.
+- When the LCL calls `ChangeScale` on the control (which happens when the
+  form is moved to a monitor with a different DPI, or when
+  `Application.Scaled` is toggled), the control refreshes its
+  `ScaleFactor` and re-applies the effective CSS. No action is required
+  from application code.
+- The native Windows title bar managed by `TCssFormDarkTitle` also follows
+  the theme on DPI change; on Linux and macOS it is a no-op.
+
+### What you need to do in your application
+
+Nothing, as long as the project follows the standard LCL conventions:
+
+1. `Application.Scaled := True;` — this is already the case in the
+   demo project (`CssStyledControlsDemo.lpr`) and in any new Lazarus
+   project created with the default settings.
+2. Provide High DPI manifests for Windows, if you want crisp
+   non-client areas. The Lazarus IDE has a **Project → Project Options →
+   Application → Use manifest resource** option; selecting the standard
+   DPI-aware manifest is enough. The library itself does not ship a
+   manifest.
+
+If you need the current scale factor in your own code, use:
+
+```pascal
+var
+  S: Double;
+begin
+  S := CssButton1.ScaleFactor;   // 1.0 at 96 DPI, 1.5 at 144 DPI, 2.0 at 192 DPI
+end;
+```
+
+### Manual scaling helper
+
+Descendants and helper classes that live outside the `TCssStyledControl`
+hierarchy (for example, the popup window used by `TCssMainMenu` and
+`TCssPopupMenu`) can convert a design-time pixel value to device pixels
+through the menu they belong to:
+
+```pascal
+Scaled := FMenu.ScaleForDpi(8);   // 8 design-time pixels -> device pixels
+```
+
+`ScaleForDpi` is a public method on every `TCssStyledControl`; internally
+it multiplies its argument by the control's current `ScaleFactor`.
 
 ---
 

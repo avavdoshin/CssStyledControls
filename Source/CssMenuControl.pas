@@ -209,6 +209,8 @@ type
     // Navigation helpers
     function FindNextSelectable(StartIndex: Integer): Integer;
     function FindPrevSelectable(StartIndex: Integer): Integer;
+
+    function ScalePx(APx: Integer): Integer;
   protected
     // Painting
     procedure Paint; override;
@@ -768,7 +770,7 @@ begin
   if FMenuItemHeightSet then
     Result := FMenuItemHeight
   else
-    Result := 24;
+    Result := ScalePx(24);
 end;
 
 function TCssMenuBase.GetMenuTextColor: TColor;
@@ -827,11 +829,11 @@ begin
   begin
     Result := GetMenuItemHeight div 4;
 
-    if Result < 4 then
-      Result := 4;
+    if Result < ScalePx(4) then
+      Result := ScalePx(4);
 
-    if Result > 9 then
-      Result := 9;
+    if Result > ScalePx(9) then
+      Result := ScalePx(9);
   end;
 
   if Result < 1 then
@@ -843,7 +845,7 @@ begin
   if FMenuSeparatorWidthSet then
     Result := FMenuSeparatorWidth
   else
-    Result := 8;
+    Result := ScalePx(8);
 
   if Result < 1 then
     Result := 1;
@@ -1086,7 +1088,7 @@ begin
   Canvas.Font := Font;
 
   W := 0;
-  TotalH := 4;
+  TotalH := ScalePx(4);
 
   for I := 0 to FVisibleItems.Count - 1 do
   begin
@@ -1103,20 +1105,20 @@ begin
     if FMenu.HtmlMode then
     begin
       S := FMenu.MeasureHtmlTextSize(Item.Caption, 0);
-      CapW := S.cx + 60;
+      CapW := S.cx + ScalePx(60);
     end
     else
-      CapW := Canvas.TextWidth(Item.Caption) + 60;
+      CapW := Canvas.TextWidth(Item.Caption) + ScalePx(60);
 
     if Item.Shortcut <> '' then
-      CapW := CapW + Canvas.TextWidth(Item.Shortcut) + 20;
+      CapW := CapW + Canvas.TextWidth(Item.Shortcut) + ScalePx(20);
 
     if CapW > W then
       W := CapW;
   end;
 
-  if W < 120 then
-    W := 120;
+  if W < ScalePx(120) then
+    W := ScalePx(120);
 
   ClientWidth := W;
   ClientHeight := TotalH;
@@ -1171,7 +1173,7 @@ begin
     Exit;
   end;
 
-  aTop := 2;
+  aTop := ScalePx(2);
 
   for I := 0 to Index - 1 do
   begin
@@ -1192,7 +1194,7 @@ begin
   else
     H := FMenu.GetMenuItemHeight;
 
-  Result := Rect(2, aTop, ClientWidth - 2, aTop + H);
+  Result := Rect(ScalePx(2), aTop, ClientWidth - ScalePx(2), aTop + H);
 end;
 
 function TCssMenuPopupForm.ItemAtPos(X, Y: Integer): Integer;
@@ -1283,12 +1285,12 @@ var
   CheckRect: TRect;
   CheckSize: Integer;
 begin
-  CheckSize := 16;
+  CheckSize := ScalePx(16);
 
   CheckRect := Rect(
-    R.Left + 4,
+    R.Left + ScalePx(4),
     (R.Top + R.Bottom - CheckSize) div 2,
-    R.Left + 4 + CheckSize,
+    R.Left + ScalePx(4) + CheckSize,
     (R.Top + R.Bottom - CheckSize) div 2 + CheckSize
   );
 
@@ -1300,7 +1302,7 @@ var
   CX, CY: Integer;
   Bg: TColor;
 begin
-  CX := R.Right - 10;
+  CX := R.Right - ScalePx(10);
   CY := (R.Top + R.Bottom) div 2;
 
   Bg := FMenu.GetMenuBackground;
@@ -1314,9 +1316,9 @@ begin
 
   FMenu.DrawAntiAliasedTriangle(
     Canvas,
-    Point(CX - 3, CY - 4),
-    Point(CX - 3, CY + 4),
-    Point(CX + 3, CY),
+    Point(CX - ScalePx(3), CY - ScalePx(4)),
+    Point(CX - ScalePx(3), CY + ScalePx(4)),
+    Point(CX + ScalePx(3), CY),
     AColor,
     Bg
   );
@@ -1402,6 +1404,14 @@ begin
   end;
 end;
 
+function TCssMenuPopupForm.ScalePx(APx : Integer) : Integer;
+begin
+  if Assigned(FMenu) then
+    Result := FMenu.ScaleForDpi(APx)
+  else
+    Result := APx;
+end;
+
 procedure TCssMenuPopupForm.SelectFirstItem;
 begin
   FHoverIndex := FindNextSelectable(-1);
@@ -1434,8 +1444,8 @@ begin
     begin
       Canvas.Pen.Width := 1;
       Canvas.Pen.Color := FMenu.GetMenuSeparatorColor;
-      Canvas.MoveTo(R.Left + 4, R.Top + ((R.Bottom - R.Top) div 2));
-      Canvas.LineTo(R.Right - 4, R.Top + ((R.Bottom - R.Top) div 2));
+      Canvas.MoveTo(R.Left + ScalePx(4), R.Top + ((R.Bottom - R.Top) div 2));
+      Canvas.LineTo(R.Right - ScalePx(4), R.Top + ((R.Bottom - R.Top) div 2));
       Continue;
     end;
 
@@ -1466,7 +1476,7 @@ begin
       try
         FMenu.DrawHtmlText(
           Canvas,
-          Rect(R.Left + 26, R.Top, R.Right - 24, R.Bottom),
+          Rect(R.Left + ScalePx(26), R.Top, R.Right - ScalePx(24), R.Bottom),
           Item.Caption,
           FG
         );
@@ -1477,7 +1487,7 @@ begin
     else
     begin
       Canvas.TextOut(
-        R.Left + 26,
+        R.Left + ScalePx(26),
         R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Caption)) div 2),
         Item.Caption
       );
@@ -1487,7 +1497,7 @@ begin
     begin
       Canvas.Font.Color := FMenu.GetMenuShortcutColor;
       Canvas.TextOut(
-        R.Right - Canvas.TextWidth(Item.Shortcut) - 24,
+        R.Right - Canvas.TextWidth(Item.Shortcut) - ScalePx(24),
         R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Shortcut)) div 2),
         Item.Shortcut
       );
@@ -1993,7 +2003,7 @@ begin
 
   Canvas.Font := Font;
 
-  X := 4;
+  X := ScalePx(4);
 
   for I := 0 to Index - 1 do
   begin
@@ -2006,7 +2016,7 @@ begin
   Item := TCssMenuItem(FItems[Index]);
   W := GetTopItemWidth(Item);
 
-  Result := Rect(X, 2, X + W, ClientHeight - 2);
+  Result := Rect(X, ScalePx(2), X + W, ClientHeight - ScalePx(2));
 end;
 
 function TCssMainMenu.TopItemAtPos(X, Y: Integer): Integer;
@@ -2051,13 +2061,13 @@ begin
   if HtmlMode then
   begin
     S := MeasureHtmlTextSize(AItem.Caption, 0);
-    Result := S.cx + 20;
+    Result := S.cx + ScalePx(20);
   end
   else
-    Result := Canvas.TextWidth(AItem.Caption) + 20;
+    Result := Canvas.TextWidth(AItem.Caption) + ScalePx(20);
 
-  if Result < 20 then
-    Result := 20;
+  if Result < ScalePx(20) then
+    Result := ScalePx(20);
 end;
 
 procedure TCssMainMenu.CloseDropdown;
@@ -2209,14 +2219,14 @@ begin
 
     if Item.Separator then
     begin
-      if (R.Bottom - R.Top) > 8 then
+      if (R.Bottom - R.Top) > ScalePx(8) then
       begin
         SepX := R.Left + ((R.Right - R.Left) div 2);
 
         Canvas.Pen.Width := 1;
         Canvas.Pen.Color := GetMenuSeparatorColor;
-        Canvas.MoveTo(SepX, R.Top + 4);
-        Canvas.LineTo(SepX, R.Bottom - 4);
+        Canvas.MoveTo(SepX, R.Top + ScalePx(4));
+        Canvas.LineTo(SepX, R.Bottom - ScalePx(4));
       end;
 
       Continue;
@@ -2240,7 +2250,7 @@ begin
 
     if HtmlMode then
     begin
-      S := MeasureHtmlTextSize(Item.Caption, (R.Right - R.Left) - 20);
+      S := MeasureHtmlTextSize(Item.Caption, (R.Right - R.Left) - ScalePx(20));
 
       TextTop := R.Top + (((R.Bottom - R.Top) - S.cy) div 2);
 
@@ -2249,7 +2259,7 @@ begin
 
       DrawHtmlText(
         Canvas,
-        Rect(R.Left + 10, TextTop, R.Right - 10, TextTop + S.cy),
+        Rect(R.Left + ScalePx(10), TextTop, R.Right - ScalePx(10), TextTop + S.cy),
         Item.Caption,
         FG
       );
@@ -2257,7 +2267,7 @@ begin
     else
     begin
       Canvas.TextOut(
-        R.Left + 10,
+        R.Left + ScalePx(10),
         R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Caption)) div 2),
         Item.Caption
       );
@@ -2383,7 +2393,7 @@ begin
     Canvas.Brush.Style := bsClear;
     Canvas.Rectangle(0, 0, Width, Height);
     Canvas.Font.Color := clGray;
-    Canvas.TextOut(4, 4, 'PopupMenu');
+    Canvas.TextOut(ScalePx(4), ScalePx(4), 'PopupMenu');
   end;
 end;
 

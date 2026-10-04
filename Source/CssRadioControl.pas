@@ -676,15 +676,15 @@ begin
 
     Result := Canvas.TextHeight('Ag');
 
-    if Result < 13 then
-      Result := 13;
+    if Result < ScalePx(13) then
+      Result := ScalePx(13);
 
-    if Result > 25 then
-      Result := 25;
+    if Result > ScalePx(25) then
+      Result := ScalePx(25);
   end
   else
   begin
-    Result := 16;
+    Result := ScalePx(16);
   end;
 end;
 
@@ -859,14 +859,14 @@ begin
     BoxHeight := Box.Bottom - Box.Top;
     if BoxHeight > Box.Right - Box.Left then
       BoxHeight := Box.Right - Box.Left;
-    Dec(BoxHeight, 8);
-    if BoxHeight < 2 then BoxHeight := 2;
+    Dec(BoxHeight, ScalePx(8));
+    if BoxHeight < ScalePx(2) then BoxHeight := ScalePx(2);
     { Keep the circular thumb's opaque bitmap corners clear of the track rim. }
     if FChecked then
-      Radius := Box.Right - Box.Left - BoxHeight - 4
+      Radius := Box.Right - Box.Left - BoxHeight - ScalePx(4)
     else
-      Radius := 4;
-    if Radius < 4 then Radius := 4;
+      Radius := ScalePx(4);
+    if Radius < ScalePx(4) then Radius := ScalePx(4);
     DrawAntiAliasedCircle(Canvas,
       Rect(Box.Left + Radius, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
            Box.Left + Radius + BoxHeight, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
@@ -900,7 +900,7 @@ begin
   if FChecked and (not FToggleStyle) then
     DrawDot(Box, DotColor);
 
-  TextR := Rect(Box.Right + 4, R.Top, R.Right, R.Bottom);
+  TextR := Rect(Box.Right + ScalePx(4), R.Top, R.Right, R.Bottom);
 
   Canvas.Font.Color := TextColor;
 
@@ -936,7 +936,7 @@ begin
 
   BoxSize := GetBoxWidth;
   BoxHeight := GetBoxHeight;
-  Spacing := 4;
+  Spacing := ScalePx(4);
 
   if HtmlMode then
     S := MeasureHtmlTextSize(Caption, 0)
@@ -1789,14 +1789,14 @@ begin
   begin
     AssignCssFontToFont(Canvas.Font);
 
-    Result := Canvas.TextHeight('Ag') + 6;
+    Result := Canvas.TextHeight('Ag') + ScalePx(6);
 
-    if Result < 18 then
-      Result := 18;
+    if Result < ScalePx(18) then
+      Result := ScalePx(18);
   end
   else
   begin
-    Result := 20;
+    Result := ScalePx(20);
   end;
 end;
 

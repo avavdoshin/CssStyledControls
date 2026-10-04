@@ -777,34 +777,34 @@ begin
       CX := (R.Left + R.Right) div 2;
       CY := (R.Top + R.Bottom) div 2;
 
-      TotalLen := FGripCount * FGripSize + (FGripCount - 1) * FGripSpacing;
+      TotalLen := FGripCount * ScalePx(FGripSize) + (FGripCount - 1) * ScalePx(FGripSpacing);
 
       if IsVertical then
       begin
         Offset := CY - TotalLen div 2;
-        GripR.Left := CX - FGripSize div 2;
-        GripR.Right := GripR.Left + FGripSize;
+        GripR.Left := CX - ScalePx(FGripSize) div 2;
+        GripR.Right := GripR.Left + ScalePx(FGripSize);
 
         for I := 0 to FGripCount - 1 do
         begin
           GripR.Top := Offset;
-          GripR.Bottom := GripR.Top + FGripSize;
+          GripR.Bottom := GripR.Top + ScalePx(FGripSize);
           Canvas.FillRect(GripR);
-          Inc(Offset, FGripSize + FGripSpacing);
+          Inc(Offset, ScalePx(FGripSize) + ScalePx(FGripSpacing));
         end;
       end
       else
       begin
         Offset := CX - TotalLen div 2;
-        GripR.Top := CY - FGripSize div 2;
-        GripR.Bottom := GripR.Top + FGripSize;
+        GripR.Top := CY - ScalePx(FGripSize) div 2;
+        GripR.Bottom := GripR.Top + ScalePx(FGripSize);
 
         for I := 0 to FGripCount - 1 do
         begin
           GripR.Left := Offset;
-          GripR.Right := GripR.Left + FGripSize;
+          GripR.Right := GripR.Left + ScalePx(FGripSize);
           Canvas.FillRect(GripR);
-          Inc(Offset, FGripSize + FGripSpacing);
+          Inc(Offset, ScalePx(FGripSize) + ScalePx(FGripSpacing));
         end;
       end;
     end;

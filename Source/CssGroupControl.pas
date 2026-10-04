@@ -343,11 +343,11 @@ begin
     B +
     MaxBottom;
 
-  if NewWidth < 50 then
-    NewWidth := 50;
+  if NewWidth < ScalePx(50) then
+    NewWidth := ScalePx(50);
 
-  if NewHeight < 50 then
-    NewHeight := 50;
+  if NewHeight < ScalePx(50) then
+    NewHeight := ScalePx(50);
 
   if (NewWidth <> Width) or (NewHeight <> Height) then
     SetBounds(Left, Top, NewWidth, NewHeight);

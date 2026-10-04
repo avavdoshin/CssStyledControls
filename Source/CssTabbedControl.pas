@@ -876,16 +876,16 @@ begin
 
   case FTabPosition of
     ctpTop:
-      Result.Top := Result.Top + FTabHeight + 4;
+      Result.Top := Result.Top + ScalePx(FTabHeight + 4);
 
     ctpBottom:
-      Result.Bottom := Result.Bottom - FTabHeight - 4;
+      Result.Bottom := Result.Bottom - ScalePx(FTabHeight - 4);
 
     ctpLeft:
-      Result.Left := Result.Left + FTabHeight * 3 + 4;
+      Result.Left := Result.Left + ScalePx(FTabHeight * 3 + 4);
 
     ctpRight:
-      Result.Right := Result.Right - FTabHeight * 3 - 4;
+      Result.Right := Result.Right - ScalePx(FTabHeight * 3 - 4);
   end;
 end;
 
@@ -1009,10 +1009,10 @@ begin
   else
     TextW := 0;
 
-  Result := TextW + GetTabPadding * 2;
+  Result := TextW + ScalePx(GetTabPadding) * 2;
 
-  if Result < FTabWidth then
-    Result := FTabWidth;
+  if Result < ScalePx(FTabWidth) then
+    Result := ScalePx(FTabWidth);
 end;
 
 function TCssTabControl.GetScrollButtonBackground: TColor;
@@ -1128,12 +1128,12 @@ end;
 function TCssTabControl.GetScrollButtonSize: Integer;
 begin
   if FScrollButtonSize > 0 then
-    Result := FScrollButtonSize
+    Result := ScalePx(FScrollButtonSize)
   else
-    Result := FTabHeight;
+    Result := ScalePx(FTabHeight);
 
-  if Result < 10 then
-    Result := 10;
+  if Result < ScalePx(10) then
+    Result := ScalePx(10);
 end;
 
 function TCssTabControl.GetTabStripAvailableExtent: Integer;
@@ -1199,41 +1199,41 @@ begin
   R := GetInnerRect;
 
   if NeedScrollButtons then
-    BtnArea := GetScrollButtonSize * 2 + CSS_TAB_SCROLL_GAP
+    BtnArea := GetScrollButtonSize * 2 + ScalePx(CSS_TAB_SCROLL_GAP)
   else
     BtnArea := 0;
 
   case FTabPosition of
     ctpTop:
       Result := Rect(
-        R.Left + 4,
-        R.Top + 2,
-        R.Right - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea,
-        R.Top + 2 + FTabHeight
+        R.Left + ScalePx(4),
+        R.Top + ScalePx(2),
+        R.Right - ScalePx(CSS_TAB_SCROLL_EDGE_MARGIN) - ScalePx(BtnArea),
+        R.Top + ScalePx(2 + FTabHeight)
       );
 
     ctpBottom:
       Result := Rect(
-        R.Left + 4,
-        R.Bottom - 2 - FTabHeight,
-        R.Right - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea,
-        R.Bottom - 2
+        R.Left + ScalePx(4),
+        R.Bottom - ScalePx(2) - ScalePx(FTabHeight),
+        R.Right - ScalePx(CSS_TAB_SCROLL_EDGE_MARGIN) - ScalePx(BtnArea),
+        R.Bottom - ScalePx(2)
       );
 
     ctpLeft:
       Result := Rect(
-        R.Left + 2,
-        R.Top + 4,
-        R.Left + 2 + FTabHeight * 3,
-        R.Bottom - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea
+        R.Left + ScalePx(2),
+        R.Top + ScalePx(4),
+        R.Left + ScalePx(2 + FTabHeight * 3),
+        R.Bottom - ScalePx(CSS_TAB_SCROLL_EDGE_MARGIN) - ScalePx(BtnArea)
       );
 
     ctpRight:
       Result := Rect(
-        R.Right - 2 - FTabHeight * 3,
-        R.Top + 4,
-        R.Right - 2,
-        R.Bottom - CSS_TAB_SCROLL_EDGE_MARGIN - BtnArea
+        R.Right - ScalePx(2) - ScalePx(FTabHeight * 3),
+        R.Top + ScalePx(4),
+        R.Right - ScalePx(2),
+        R.Bottom - ScalePx(CSS_TAB_SCROLL_EDGE_MARGIN) - ScalePx(BtnArea)
       );
   else
     Result := R;
@@ -1259,31 +1259,31 @@ begin
     ctpTop, ctpBottom:
     begin
       X := R.Right
-           - CSS_TAB_SCROLL_EDGE_MARGIN
-           - BtnGroupW
-           + AWhich * (BtnSize + 2);
+           - ScalePx(CSS_TAB_SCROLL_EDGE_MARGIN)
+           - ScalePx(BtnGroupW)
+           + ScalePx(AWhich * (BtnSize + 2));
 
       if FTabPosition = ctpTop then
-        Y := R.Top + 2 + (FTabHeight - BtnSize) div 2
+        Y := R.Top + ScalePx(2) + (ScalePx(FTabHeight - BtnSize)) div 2
       else
-        Y := R.Bottom - 2 - FTabHeight + (FTabHeight - BtnSize) div 2;
+        Y := R.Bottom - ScalePx(2) - ScalePx(FTabHeight + (FTabHeight - BtnSize)) div 2;
 
-      Result := Rect(X, Y, X + BtnSize, Y + BtnSize);
+      Result := Rect(X, Y, X + ScalePx(BtnSize), Y + ScalePx(BtnSize));
     end;
 
     ctpLeft, ctpRight:
     begin
       Y := R.Bottom
-           - CSS_TAB_SCROLL_EDGE_MARGIN
-           - BtnGroupW
-           + AWhich * BtnSize;
+           - ScalePx(CSS_TAB_SCROLL_EDGE_MARGIN)
+           - ScalePx(BtnGroupW)
+           + ScalePx(AWhich * BtnSize);
 
       if FTabPosition = ctpLeft then
-        X := R.Left + 2 + (FTabHeight * 3 - BtnSize) div 2
+        X := R.Left + ScalePx(2) + ScalePx((FTabHeight * 3 - BtnSize)) div 2
       else
-        X := R.Right - 2 - FTabHeight * 3 + (FTabHeight * 3 - BtnSize) div 2;
+        X := R.Right - ScalePx(2) - ScalePx(FTabHeight * 3 + (FTabHeight * 3 - BtnSize)) div 2;
 
-      Result := Rect(X, Y, X + BtnSize, Y + BtnSize);
+      Result := Rect(X, Y, X + ScalePx(BtnSize), Y + ScalePx(BtnSize));
     end;
   end;
 end;
@@ -1382,8 +1382,8 @@ begin
   CY := (R.Top + R.Bottom) div 2;
   S := (R.Right - R.Left) div 4;
 
-  if S < 3 then S := 3;
-  if S > 7 then S := 7;
+  if S < ScalePx(3) then S := ScalePx(3);
+  if S > ScalePx(7) then S := ScalePx(7);
 
   BgColorForBlend := Bg;
 

@@ -393,7 +393,7 @@ begin
   else
     Result := Canvas.TextHeight('Ag');
 
-    Inc(Result, 2);
+    Inc(Result, ScalePx(2));
 end;
 
 function TCssPanel.ShouldPaintCaption : Boolean;

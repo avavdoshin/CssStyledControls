@@ -152,7 +152,7 @@ begin
   else
     Result := Canvas.TextHeight('Ag');
 
-  Result := Result + 4;
+  Result := Result + ScalePx(4);
 end;
 
 function TCssGroupCaptionControl.GetTopOffset: Integer;
@@ -208,10 +208,10 @@ begin
     S.cy := Canvas.TextHeight('Ag');
   end;
 
-  CaptionW := S.cx + 6;
+  CaptionW := S.cx + ScalePx(6);
 
-  if CaptionW < 10 then
-    CaptionW := 10;
+  if CaptionW < ScalePx(10) then
+    CaptionW := ScalePx(10);
 
   LAlign := GetEffectiveCaptionAlign;
 
@@ -233,7 +233,7 @@ begin
   if CaptionX < 0 then
     CaptionX := 0;
 
-  ARect := Rect(CaptionX - 3, CaptionY, CaptionX + CaptionW + 3, CaptionY + CapH);
+  ARect := Rect(CaptionX - ScalePx(3), CaptionY, CaptionX + CaptionW + ScalePx(3), CaptionY + CapH);
 
   if ARect.Left < 0 then
     ARect.Left := 0;

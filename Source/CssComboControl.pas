@@ -485,11 +485,11 @@ begin
 
   BW := R.Bottom - R.Top;
 
-  if BW < 12 then
-    BW := 12;
+  if BW < ScalePx(12) then
+    BW := ScalePx(12);
 
-  if BW > 22 then
-    BW := 22;
+  if BW > ScalePx(22) then
+    BW := ScalePx(22);
 
   Result := Rect(R.Right - BW, R.Top, R.Right, R.Bottom);
 end;
@@ -1150,8 +1150,8 @@ begin
 
     TextR := EditR;
 
-    TextR.Left := TextR.Left + 3;
-    TextR.Right := TextR.Right - 3;
+    TextR.Left := TextR.Left + ScalePx(3);
+    TextR.Right := TextR.Right - ScalePx(3);
 
     if HtmlMode then
       DrawHtmlText(TextR, GetDisplayText)
@@ -1187,9 +1187,9 @@ begin
   // Anti-aliased arrow (down). Background is taken from the button.
   DrawAntiAliasedTriangle(
     Canvas,
-    Point(CX - 4, CY - 2),
-    Point(CX + 4, CY - 2),
-    Point(CX,     CY + 3),
+    Point(CX - ScalePx(4), CY - ScalePx(2)),
+    Point(CX + ScalePx(4), CY - ScalePx(2)),
+    Point(CX,     CY + ScalePx(3)),
     ArrowColor,
     BG
   );

@@ -961,15 +961,12 @@ begin
 
     Result := Canvas.TextHeight('Ag');
 
-    if Result < 13 then
-      Result := 13;
-
-    if Result > 25 then
-      Result := 25;
+    if Result < ScalePx(13) then Result := ScalePx(13);
+    if Result > ScalePx(25) then Result := ScalePx(25);
   end
   else
   begin
-    Result := 16;
+    Result := ScalePx(16);
   end;
 end;
 
@@ -1037,7 +1034,7 @@ begin
 
   DrawStateToCanvas(Canvas, Box, FState);
 
-  TextR := Rect(Box.Right + 4, R.Top, R.Right, R.Bottom);
+  TextR := Rect(Box.Right + ScalePx(4), R.Top, R.Right, R.Bottom);
 
   Canvas.Font.Color := TextColor;
 
@@ -1077,7 +1074,7 @@ begin
 
   BoxSize := GetBoxWidth;
   BoxHeight := GetBoxHeight;
-  Spacing := 4;
+  Spacing := ScalePx(4);
 
   TextToMeasure := Caption;
 
@@ -1137,11 +1134,11 @@ begin
     SavedFont.Free;
   end;
 
-  if Result < 13 then
-    Result := 13;
+  if Result < ScalePx(13) then
+    Result := ScalePx(13);
 
-  if Result > 25 then
-    Result := 25;
+  if Result > ScalePx(25) then
+    Result := ScalePx(25);
 end;
 
 procedure TCssCheckBox.SetVisualState(AChecked, AHover: Boolean);
@@ -1171,12 +1168,9 @@ begin
 
   if (W <= 0) or (H <= 0) then Exit;
 
-  if W < 12 then
-    LineWidth := 1.5
-  else if W < 20 then
-    LineWidth := 2.0
-  else
-    LineWidth := 2.5;
+  if W < ScalePx(12) then LineWidth := 1.5
+  else if W < ScalePx(20) then LineWidth := 2.0 * ScaleFactor
+  else LineWidth := 2.5 * ScaleFactor;
 
   EnsureCheckMarkCache;
   Mask := GCheckMarkCache.GetMask(W, H, LineWidth);
@@ -1201,7 +1195,7 @@ begin
   if ACanvas = nil then
     Exit;
 
-  GR := Rect(R.Left + 3, R.Top + 3, R.Right - 3, R.Bottom - 3);
+  GR := Rect(R.Left + ScalePx(3), R.Top + ScalePx(3), R.Right - ScalePx(3), R.Bottom - ScalePx(3));
 
   if (GR.Right > GR.Left) and (GR.Bottom > GR.Top) then
   begin
@@ -1251,18 +1245,18 @@ begin
     Size := ARect.Bottom - ARect.Top;
     if Size > ARect.Right - ARect.Left then
       Size := ARect.Right - ARect.Left;
-    Dec(Size, 8);
-    if Size < 2 then Size := 2;
+    Dec(Size, ScalePx(8));
+    if Size < ScalePx(2) then Size := ScalePx(2);
     { DrawAntiAliasedCircle composites its rectangular bitmap using the track
       color outside the circle. A 4px inset keeps those corners clear of the
       AA outline at the rounded ends, while centering the thumb in each end. }
     if AState = cbChecked then
-      Radius := ARect.Right - ARect.Left - Size - 4
+      Radius := ARect.Right - ARect.Left - Size - ScalePx(4)
     else if AState = cbGrayed then
       Radius := (ARect.Right - ARect.Left - Size) div 2
     else
-      Radius := 4;
-    if Radius < 4 then Radius := 4;
+      Radius := ScalePx(4);
+    if Radius < ScalePx(4) then Radius := ScalePx(4);
     DrawAntiAliasedCircle(ACanvas,
       Rect(ARect.Left + Radius, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2),
            ARect.Left + Radius + Size, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2) + Size),
@@ -1697,14 +1691,14 @@ begin
   begin
     AssignCssFontToFont(Canvas.Font);
 
-    Result := Canvas.TextHeight('Ag') + 6;
+    Result := Canvas.TextHeight('Ag') + ScalePx(6);
 
-    if Result < 18 then
-      Result := 18;
+    if Result < ScalePx(18) then
+      Result := ScalePx(18);
   end
   else
   begin
-    Result := 20;
+    Result := ScalePx(20);
   end;
 end;
 

@@ -229,6 +229,8 @@ type
     FExternalCornerBitmap: TBitmap;
     FExternalCornerOrigin: TPoint;
 
+    FScaleFactor: Double;
+
     { CSS parsing helpers }
     procedure ParseTextShadow(const AValue: string);
     procedure ParseBorder(const AValue: string);
@@ -241,7 +243,6 @@ type
     procedure ParseBoxShadow(const AValue: string);
     procedure ParseBackgroundGradient(const AValue: string);
 
-    function TryNamedColor(const AName: string; out AColor: TColor): Boolean;
     function CssClassContains(const AClass: string): Boolean;
     function GetBorderPenStyle: TPenStyle;
 
@@ -289,6 +290,8 @@ type
 
     procedure NotifyUpperSiblingsRepaint(AOldBounds: PRect = nil);
     function  IsCaptionStored: Boolean;
+
+    procedure UpdateScaleFactor;
   protected
     { AA rounded rect }
     procedure DrawRoundedRectAA(
@@ -377,6 +380,9 @@ type
     { Font }
     procedure AssignCssFontToFont(AFont: TFont);
     procedure UpdateCanvasFont;
+
+    function ScalePx(APx: Integer): Integer; inline;
+    procedure ChangeScale(M, D: Integer); override;
 
     { Style }
     procedure RefreshStylesByState;
@@ -515,6 +521,14 @@ type
 
     procedure SetExternalHoverState(AHover: Boolean);
     procedure SetExternalCornerSource(ABitmap: TBitmap; const AOrigin: TPoint);
+
+    function GetScaleFactor: Double;
+
+    { Returns APx scaled to the control's current DPI scale.
+      Useful for descendants / helper classes that live outside the
+      TCssStyledControl class hierarchy but still need to scale UI metrics
+      consistently with this control. }
+    function ScaleForDpi(APx: Integer): Integer;
   published
     property Align;
     property Anchors;
@@ -538,6 +552,7 @@ type
     property ShowHint;
     property HintHtmlMode: Boolean read FHintHtmlMode write SetHintHtmlMode default True;
     property MonospaceFontName: string read FMonospaceFontName write SetMonospaceFontName;
+    property ScaleFactor: Double read GetScaleFactor;
     property Enabled;
     property Font;
     property ParentColor;
@@ -3505,6 +3520,9 @@ constructor TCssStyledControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
+  FScaleFactor := 1.0;
+  UpdateScaleFactor;
+
   FCssTag := 'control';
 
   FMonospaceFontName := 'Courier New';
@@ -3791,6 +3809,7 @@ end;
 
 procedure TCssStyledControl.Loaded;
 begin
+  UpdateScaleFactor;
   inherited Loaded;
   ReapplyStyles;
 end;
@@ -4719,6 +4738,18 @@ end;
 function TCssStyledControl.IsCaptionStored : Boolean;
 begin
   Result := FCaption <> '';
+end;
+
+procedure TCssStyledControl.UpdateScaleFactor;
+var
+  PPI: Integer;
+begin
+  PPI := Font.PixelsPerInch;
+  if PPI <= 0 then
+    PPI := Screen.PixelsPerInch;
+  if PPI <= 0 then
+    PPI := 96;
+  FScaleFactor := PPI / 96.0;
 end;
 
 function TCssStyledControl.GetShowPrefix: Boolean;
@@ -6032,61 +6063,19 @@ begin
   Result := CssParseColor(AValue, AColor);
 end;
 
-function TCssStyledControl.TryNamedColor(const AName: string; out AColor: TColor): Boolean;
-var
-  S: string;
-begin
-  Result := True;
-  S := LowerCase(AName);
-
-  if S = 'black' then AColor := RGBToColor(0, 0, 0)
-  else if S = 'white' then AColor := RGBToColor(255, 255, 255)
-  else if S = 'red' then AColor := RGBToColor(255, 0, 0)
-  else if S = 'green' then AColor := RGBToColor(0, 128, 0)
-  else if S = 'blue' then AColor := RGBToColor(0, 0, 255)
-  else if S = 'yellow' then AColor := RGBToColor(255, 255, 0)
-  else if S = 'orange' then AColor := RGBToColor(255, 165, 0)
-  else if S = 'purple' then AColor := RGBToColor(128, 0, 128)
-  else if (S = 'gray') or (S = 'grey') then AColor := RGBToColor(128, 128, 128)
-  else if S = 'silver' then AColor := RGBToColor(192, 192, 192)
-  else if S = 'maroon' then AColor := RGBToColor(128, 0, 0)
-  else if S = 'olive' then AColor := RGBToColor(128, 128, 0)
-  else if S = 'lime' then AColor := RGBToColor(0, 255, 0)
-  else if (S = 'aqua') or (S = 'cyan') then AColor := RGBToColor(0, 255, 255)
-  else if S = 'teal' then AColor := RGBToColor(0, 128, 128)
-  else if S = 'navy' then AColor := RGBToColor(0, 0, 128)
-  else if (S = 'fuchsia') or (S = 'magenta') then AColor := RGBToColor(255, 0, 255)
-  else if S = 'pink' then AColor := RGBToColor(255, 192, 203)
-  else if S = 'brown' then AColor := RGBToColor(165, 42, 42)
-  else if S = 'gold' then AColor := RGBToColor(255, 215, 0)
-  else if S = 'khaki' then AColor := RGBToColor(240, 230, 140)
-  else if S = 'beige' then AColor := RGBToColor(245, 245, 220)
-  else if S = 'ivory' then AColor := RGBToColor(255, 255, 240)
-  else if S = 'snow' then AColor := RGBToColor(255, 250, 250)
-  else if S = 'tomato' then AColor := RGBToColor(255, 99, 71)
-  else if S = 'coral' then AColor := RGBToColor(255, 127, 80)
-  else if S = 'salmon' then AColor := RGBToColor(250, 128, 114)
-  else if (S = 'darkgray') or (S = 'darkgrey') then AColor := RGBToColor(169, 169, 169)
-  else if (S = 'lightgray') or (S = 'lightgrey') then AColor := RGBToColor(211, 211, 211)
-  else if (S = 'dimgray') or (S = 'dimgrey') then AColor := RGBToColor(105, 105, 105)
-  else if S = 'whitesmoke' then AColor := RGBToColor(245, 245, 245)
-  else
-    Result := False;
-end;
-
 function TCssStyledControl.ParseLengthPx(const AValue: string; out APx: Integer): Boolean;
 begin
-  Result := CssParseLengthPx(AValue, APx);
+  Result := CssParseLengthPx(AValue, APx, FScaleFactor);
 end;
 
 function TCssStyledControl.ParseCssColor(const AValue: string; out AColor: TColor): Boolean;
 begin
-  Result := ParseColor(AValue, AColor);
+  Result := CssParseColor(AValue, AColor);
 end;
 
 function TCssStyledControl.ParseCssLengthPx(const AValue: string; out APx: Integer): Boolean;
 begin
-  Result := ParseLengthPx(AValue, APx);
+  Result := CssParseLengthPx(AValue, APx, FScaleFactor);
 end;
 
 function TCssStyledControl.ParseCssCursor(const AValue: string): TCursor;
@@ -6966,7 +6955,7 @@ begin
     AFont.Name := FFontFamily;
 
   if FHasFontPixelHeight and (FFontPixelHeight > 0) then
-    AFont.Height := -FFontPixelHeight
+    AFont.Height := -ScalePx(FFontPixelHeight)
   else if FHasFontPointSize and (FFontPointSize > 0) then
     AFont.Size := FFontPointSize;
 
@@ -6992,6 +6981,22 @@ end;
 procedure TCssStyledControl.UpdateCanvasFont;
 begin
   AssignCssFontToFont(Canvas.Font);
+end;
+
+function TCssStyledControl.ScalePx(APx : Integer) : Integer;
+begin
+  Result := Round(APx * FScaleFactor);
+end;
+
+procedure TCssStyledControl.ChangeScale(M, D: Integer);
+begin
+  inherited ChangeScale(M, D);
+
+  UpdateScaleFactor;
+
+  // DPI changed => re-parse CSS at the new scale.
+  if not (csLoading in ComponentState) then
+    ReapplyStyles;
 end;
 
 procedure TCssStyledControl.HtmlModeChanged;
@@ -8451,6 +8456,16 @@ procedure TCssStyledControl.SetExternalCornerSource(ABitmap : TBitmap; const AOr
 begin
   FExternalCornerBitmap := ABitmap;
   FExternalCornerOrigin := AOrigin;
+end;
+
+function TCssStyledControl.GetScaleFactor : Double;
+begin
+  Result := FScaleFactor;
+end;
+
+function TCssStyledControl.ScaleForDpi(APx : Integer) : Integer;
+begin
+  Result := ScalePx(APx);
 end;
 
 { ============================================================ }

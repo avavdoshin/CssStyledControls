@@ -1274,8 +1274,8 @@ begin
 
     TextR := ItemR;
 
-    TextR.Left := TextR.Left + FItemPadding + 2;
-    TextR.Right := TextR.Right - FItemPadding - 2;
+    TextR.Left := TextR.Left + ScalePx(FItemPadding + 2);
+    TextR.Right := TextR.Right - ScalePx(FItemPadding - 2);
 
     ItemText := FItems[I];
 

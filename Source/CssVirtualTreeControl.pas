@@ -2708,17 +2708,17 @@ begin
       if FSortColumns[I].Direction = csdAscending then
       begin
         Canvas.Polygon([
-          Point(CellR.Right - 12, CY + 3),
-          Point(CellR.Right - 8, CY - 3),
-          Point(CellR.Right - 4, CY + 3)
+          Point(CellR.Right - ScalePx(12), CY + ScalePx(3)),
+          Point(CellR.Right - ScalePx(8), CY - ScalePx(3)),
+          Point(CellR.Right - ScalePx(4), CY + ScalePx(3))
         ]);
       end
       else
       begin
         Canvas.Polygon([
-          Point(CellR.Right - 12, CY - 3),
-          Point(CellR.Right - 8, CY + 3),
-          Point(CellR.Right - 4, CY - 3)
+          Point(CellR.Right - ScalePx(12), CY - ScalePx(3)),
+          Point(CellR.Right - ScalePx(8), CY + ScalePx(3)),
+          Point(CellR.Right - ScalePx(4), CY - ScalePx(3))
         ]);
       end;
 
@@ -2727,8 +2727,8 @@ begin
         Canvas.Brush.Style := bsClear;
         Canvas.Font.Color := GetSortMarkerColor;
         Canvas.TextOut(
-          CellR.Right - 24,
-          HeaderR.Top + 2,
+          CellR.Right - ScalePx(24),
+          HeaderR.Top + ScalePx(2),
           IntToStr(I + 1)
         );
       end;
@@ -3082,10 +3082,10 @@ begin
       X := ContentR.Left + CssMax(0, (ContentR.Width - TextW) div 2);
 
     ctaRight:
-      X := ContentR.Right - TextW - 3;
+      X := ContentR.Right - TextW - ScalePx(3);
 
   else
-    X := ContentR.Left + 3;
+    X := ContentR.Left + ScalePx(3);
   end;
 
   // Important: do not align X by DrawR, otherwise the text will "jump"
@@ -3101,13 +3101,13 @@ begin
   begin
     case VAlign of
       cvaTop:
-        Y := DrawR.Top + 1;
+        Y := DrawR.Top + ScalePx(1);
 
       cvaMiddle:
         Y := DrawR.Top + ((DrawR.Height - TextH) div 2);
 
       cvaBottom:
-        Y := DrawR.Bottom - TextH - 1;
+        Y := DrawR.Bottom - TextH - ScalePx(1);
 
     else
       Y := DrawR.Top;
@@ -3158,10 +3158,10 @@ begin
   DrawAntiAliasedRoundedBox(
     Canvas,
     R,
-    3,
+    ScalePx(3),
     clNone,
     BtnColor,
-    1,
+    ScalePx(1),
     cbsSolid,
     GetCssBackgroundColor
   );
@@ -3170,20 +3170,20 @@ begin
   MidY := (R.Top + R.Bottom) div 2;
   BarSize := (R.Right - R.Left) div 3;
 
-  if BarSize < 2 then
-    BarSize := 2;
+  if BarSize < ScalePx(2) then
+    BarSize := ScalePx(2);
 
   Canvas.Pen.Style := psSolid;
   Canvas.Pen.Width := 1;
   Canvas.Pen.Color := BtnColor;
 
   Canvas.MoveTo(MidX - BarSize, MidY);
-  Canvas.LineTo(MidX + BarSize + 1, MidY);
+  Canvas.LineTo(MidX + BarSize + ScalePx(1), MidY);
 
   if not (cvsExpanded in Node.States) then
   begin
     Canvas.MoveTo(MidX, MidY - BarSize);
-    Canvas.LineTo(MidX, MidY + BarSize + 1);
+    Canvas.LineTo(MidX, MidY + BarSize + ScalePx(1));
   end;
 end;
 
@@ -3299,10 +3299,10 @@ begin
       TextX := R.Left + CssMax(0, (R.Width - TextW) div 2);
 
     ctaRight:
-      TextX := R.Right - TextW - 4;
+      TextX := R.Right - TextW - ScalePx(4);
 
   else
-    TextX := R.Left + 4;
+    TextX := R.Left + ScalePx(4);
   end;
 
   case FPlaceholderVAlign of
@@ -3310,10 +3310,10 @@ begin
       TextY := R.Top + CssMax(0, (R.Height - TextH) div 2);
 
     cvaBottom:
-      TextY := R.Bottom - TextH - 2;
+      TextY := R.Bottom - TextH - ScalePx(2);
 
   else
-    TextY := R.Top + 2;
+    TextY := R.Top + ScalePx(2);
   end;
 
   if TextX < R.Left then
@@ -3422,18 +3422,18 @@ begin
 
   Depth := GetNodeDepth(Node);
 
-  Size := CssMin(9, FItemHeight - 4);
-  if Size < 7 then
-    Size := 7;
+  Size := CssMin(ScalePx(9), FItemHeight - ScalePx(4));
+  if Size < ScalePx(7) then
+    Size := ScalePx(7);
 
   FirstLeft := GetColumnLeft(0);
 
-  X := FirstLeft + 2;
+  X := FirstLeft + ScalePx(2);
 
   if FShowCheckboxes then
-    Inc(X, GetCheckBoxSize + 4);
+    Inc(X, GetCheckBoxSize + ScalePx(4));
 
-  Inc(X, Depth * FIndent + 2);
+  Inc(X, Depth * FIndent + ScalePx(2));
 
   Y := RowR.Top + (FItemHeight - Size) div 2;
 
@@ -3445,32 +3445,32 @@ var
   Measured: Integer;
   MaxSize: Integer;
 begin
-  Result := 13;
+  Result := ScalePx(13);
 
   if Assigned(FCheckBoxNormal) then
   begin
-    Measured := 16;
+    Measured := ScalePx(16);
 
     if HandleAllocated then
       Measured := FCheckBoxNormal.MeasureBoxSize(Canvas);
 
-    MaxSize := FItemHeight - 4;
+    MaxSize := FItemHeight - ScalePx(4);
 
-    if MaxSize > 25 then
-      MaxSize := 25;
+    if MaxSize > ScalePx(25) then
+      MaxSize := ScalePx(25);
 
-    if MaxSize < 9 then
-      MaxSize := 9;
+    if MaxSize < ScalePx(9) then
+      MaxSize := ScalePx(9);
 
     Result := CssMin(Measured, MaxSize);
   end
   else
   begin
-    Result := CssMin(13, FItemHeight - 4);
+    Result := CssMin(ScalePx(13), FItemHeight - ScalePx(4));
   end;
 
-  if Result < 9 then
-    Result := 9;
+  if Result < ScalePx(9) then
+    Result := ScalePx(9);
 end;
 
 function TCssVirtualStringTree.GetCheckRect(
@@ -3487,7 +3487,7 @@ begin
 
   Size := GetCheckBoxSize;
 
-  X := GetColumnLeft(0) + 2;
+  X := GetColumnLeft(0) + ScalePx(2);
   Y := RowR.Top + (FItemHeight - Size) div 2;
 
   Result := Rect(X, Y, X + Size, Y + Size);
@@ -3499,22 +3499,22 @@ function TCssVirtualStringTree.GetTextStartX(
 var
   CheckR, ButtonR: TRect;
 begin
-  Result := GetColumnLeft(0) + 2;
+  Result := GetColumnLeft(0) + ScalePx(2);
 
   if FShowCheckboxes then
   begin
     CheckR := GetCheckRect(Node, RowR);
-    Result := CheckR.Right + 3;
+    Result := CheckR.Right + ScalePx(3);
   end;
 
   if cvsHasChildren in Node.States then
   begin
     ButtonR := GetButtonRect(Node, RowR);
-    Result := ButtonR.Right + 3;
+    Result := ButtonR.Right + ScalePx(3);
   end
   else
   begin
-    Result := Result + GetNodeDepth(Node) * FIndent + 3;
+    Result := Result + GetNodeDepth(Node) * FIndent + ScalePx(3);
   end;
 end;
 
@@ -6210,10 +6210,10 @@ begin
   LeadingExtra := 0;
   if (VisibleCount > 0) then
   begin
-    LeadingExtra := 6;
+    LeadingExtra := ScalePx(6);
 
     if FShowCheckboxes then
-      Inc(LeadingExtra, GetCheckBoxSize + 7);
+      Inc(LeadingExtra, GetCheckBoxSize + ScalePx(7));
 
     MaxDepth := 0;
     HasAnyBtn := False;
@@ -6235,16 +6235,16 @@ begin
     Inc(LeadingExtra, MaxDepth * FIndent);
 
     if HasAnyBtn then
-      Inc(LeadingExtra, 12);
+      Inc(LeadingExtra, ScalePx(12));
   end;
 
   for I := 0 to FColumns.Count - 1 do
   begin
-    MaxW := 16;
+    MaxW := ScalePx(16);
 
     if IncludeHeader then
     begin
-      W := Canvas.TextWidth(FColumns[I].Text) + 24;
+      W := Canvas.TextWidth(FColumns[I].Text) + ScalePx(24);
 
       if W > MaxW then
         MaxW := W;
@@ -6263,7 +6263,7 @@ begin
         Size.cy := 0;
       end;
 
-      W := Size.cx + 16;
+      W := Size.cx + ScalePx(16);
 
       if I = 0 then
         Inc(W, LeadingExtra);

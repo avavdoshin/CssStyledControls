@@ -523,10 +523,10 @@ begin
   if PageSpan > 0 then
     ThumbSize := Round(AvailableLen * PageSpan / (Range + PageSpan))
   else
-    ThumbSize := CssMin(AvailableLen, CssMax(16, AvailableLen div 5));
+    ThumbSize := CssMin(AvailableLen, CssMax(ScalePx(16), AvailableLen div 5));
 
-  if ThumbSize < 8 then
-    ThumbSize := CssMin(8, AvailableLen);
+  if ThumbSize < ScalePx(8) then
+    ThumbSize := CssMin(ScalePx(8), AvailableLen);
 
   if ThumbSize > AvailableLen then
     ThumbSize := AvailableLen;
@@ -806,7 +806,7 @@ var
   CX, CY: Integer;
   BG: TColor;
 begin
-  if (R.Right - R.Left < 5) or (R.Bottom - R.Top < 5) then Exit;
+  if (R.Right - R.Left < ScalePx(5)) or (R.Bottom - R.Top < ScalePx(5)) then Exit;
 
   if FActivePart = APart then
     BG := GetThumbActiveBackground
@@ -822,30 +822,30 @@ begin
   begin
     if APart = cspArrowMinus then
       DrawAntiAliasedTriangle(Canvas,
-        Point(CX, R.Top + 3),
-        Point(R.Left + 3, R.Bottom - 3),
-        Point(R.Right - 3, R.Bottom - 3),
+        Point(CX, R.Top + ScalePx(3)),
+        Point(R.Left + ScalePx(3), R.Bottom - ScalePx(3)),
+        Point(R.Right - ScalePx(3), R.Bottom - ScalePx(3)),
         AColor, BG)
     else if APart = cspArrowPlus then
       DrawAntiAliasedTriangle(Canvas,
-        Point(CX, R.Bottom - 3),
-        Point(R.Left + 3, R.Top + 3),
-        Point(R.Right - 3, R.Top + 3),
+        Point(CX, R.Bottom - ScalePx(3)),
+        Point(R.Left + ScalePx(3), R.Top + ScalePx(3)),
+        Point(R.Right - ScalePx(3), R.Top + ScalePx(3)),
         AColor, BG);
   end
   else
   begin
     if APart = cspArrowMinus then
       DrawAntiAliasedTriangle(Canvas,
-        Point(R.Left + 3, CY),
-        Point(R.Right - 3, R.Top + 3),
-        Point(R.Right - 3, R.Bottom - 3),
+        Point(R.Left + ScalePx(3), CY),
+        Point(R.Right - ScalePx(3), R.Top + ScalePx(3)),
+        Point(R.Right - ScalePx(3), R.Bottom - ScalePx(3)),
         AColor, BG)
     else if APart = cspArrowPlus then
       DrawAntiAliasedTriangle(Canvas,
-        Point(R.Right - 3, CY),
-        Point(R.Left + 3, R.Top + 3),
-        Point(R.Left + 3, R.Bottom - 3),
+        Point(R.Right - ScalePx(3), CY),
+        Point(R.Left + ScalePx(3), R.Top + ScalePx(3)),
+        Point(R.Left + ScalePx(3), R.Bottom - ScalePx(3)),
         AColor, BG);
   end;
 end;

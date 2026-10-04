@@ -766,10 +766,10 @@ function TCssMemo.LineHeight: Integer;
 begin
   AssignCssFontToFont(Canvas.Font);
 
-  Result := Canvas.TextHeight('Ag') + 2;
+  Result := Canvas.TextHeight('Ag') + ScalePx(2);
 
-  if Result < 4 then
-    Result := 4;
+  if Result < ScalePx(4) then
+    Result := ScalePx(4);
 end;
 
 function TCssMemo.CharWidth: Integer;
@@ -1136,8 +1136,8 @@ begin
 end;
 
 procedure TCssMemo.UpdateScrollBars;
-const
-  SBSize = 16;
+var
+  SBSize: Integer;
 var
   R: TRect;
   B: Integer;
@@ -1154,6 +1154,8 @@ var
 begin
   if not Assigned(FVScroll) or not Assigned(FHScroll) then
     Exit;
+
+  SBSize := ScalePx(16);
 
   R := ClientRect;
 
