@@ -24,6 +24,13 @@ type
     // Caption handling
     procedure SetCaption(const AValue: TCaption); override;
 
+    { TCssStyledControl would otherwise paint the base FCaption field,
+      which SetName fills with the default class name in the designer.
+      Descendants of TCssGroupCaptionControl draw their own caption
+      (with their own geometry: inside content, on the border, with
+      caption background, etc.), so the base class must not paint it. }
+    function ShouldPaintCaption: Boolean; override;
+
     // Geometry helpers
     function  GetCaptionHeight(AvailableWidth: Integer): Integer;
     function  GetCaptionBackground: TColor;
@@ -91,6 +98,11 @@ procedure TCssGroupCaptionControl.SetCaption(const AValue: TCaption);
 begin
   inherited SetCaption('');
   SetGroupCaptionText(AValue);
+end;
+
+function TCssGroupCaptionControl.ShouldPaintCaption : Boolean;
+begin
+  Result := False;
 end;
 
 procedure TCssGroupCaptionControl.SetCaptionMode(AValue: TCssGroupCaptionMode);

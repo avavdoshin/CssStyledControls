@@ -1548,7 +1548,7 @@ end;
 
 function TCssVirtualStringTree.GetImageDisplayHeight: Integer;
 var
-  MaxIcon, FontBase, NativeH: Integer;
+  MaxIcon, FontBase{, NativeH}: Integer;
 begin
   Result := 0;
 

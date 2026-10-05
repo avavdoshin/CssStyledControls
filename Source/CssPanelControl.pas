@@ -14,10 +14,47 @@ type
     FShowFocusWhenChildFocused: Boolean;
     FShowFocusWhenChildFocusedSet: Boolean;
     FHasFocusedChild: Boolean;
+
+    { Guards against recursion: assigning BorderSpacing on a child
+      triggers a Realign, which calls back into AlignControls. }
+    FSyncingCaptionSpacing: Boolean;
+
+    { Last caption height that this panel assigned to its anchored
+      children. 0 means "we have not assigned anything yet". Used to
+      tell our own values apart from user-supplied ones: a child whose
+      BorderSpacing.Top equals this value is treated as ours and may
+      be updated; any other non-zero value is respected as user data. }
+    FAppliedCaptionSpacing: Integer;
+
     procedure PropagateEnabledToChildren;
     procedure ForceDesignTimeRepaint;
-    function HasFocusedChild: Boolean;
+    function  HasFocusedChild: Boolean;
     procedure UpdateFocusedChildState;
+
+    { Height of the caption strip that must be reserved above the
+      content, in device pixels. 0 when there is no caption. }
+    function  GetCaptionContentOffset: Integer;
+
+    { True only when the child's top edge is anchored to the panel's
+      own top edge. Returns False when the child uses AnchorSide to
+      anchor its top to a sibling, or when it is anchored to another
+      edge of the panel. }
+    function  IsAnchoredToPanelTop(AControl: TControl): Boolean;
+
+    { Assigns BorderSpacing.Top to one anchored child so that it sits
+      below the caption. ACapH is the value computed once per pass by
+      AutoSpaceAllChildren.
+
+      Overwrites:
+        - a zero value, meaning the child has not been spaced yet;
+        - a value that equals FAppliedCaptionSpacing, meaning it is
+          ours from a previous pass.
+      Never overwrites anything else. }
+    procedure AutoSpaceAnchoredChild(AControl: TControl; ACapH: Integer);
+
+    { Runs AutoSpaceAnchoredChild for every child and remembers the
+      caption height used for this pass. }
+    procedure AutoSpaceAllChildren;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -46,9 +83,16 @@ type
     procedure SetCaption(const AValue: TCaption); override;
 
     function GetDefaultCaption: string; override;
+    procedure Resize; override;
+    procedure ChangeScale(M, D: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
     function IsFocusWithin: Boolean;
+
+    { Re-runs caption spacing for the current children. Can be called
+      manually after adding children from code, if the automatic pass
+      in AlignControls has not run yet. }
+    procedure RefreshChildSpacing;
   published
     // Standard properties
     property Align;
@@ -103,6 +147,8 @@ begin
   FPropagatingEnabled := False;
   FShowFocusWhenChildFocused := False;
   FHasFocusedChild := False;
+  FSyncingCaptionSpacing := False;
+  FAppliedCaptionSpacing := 0;
 end;
 
 function TCssPanel.IsFocusWithin : Boolean;
@@ -197,6 +243,110 @@ begin
   end;
 end;
 
+function TCssPanel.GetCaptionContentOffset: Integer;
+var
+  B: Integer;
+  Pad: TRect;
+begin
+  Result := 0;
+
+  if Caption = '' then
+    Exit;
+
+  if not HandleAllocated then
+    Exit;
+
+  B := GetCssBorderWidth;
+  Pad := GetCssPadding;
+
+  Result := GetCaptionHeight(
+    ClientWidth - B * 2 - Pad.Left - Pad.Right);
+
+  if Result < 0 then
+    Result := 0;
+end;
+
+function TCssPanel.IsAnchoredToPanelTop(AControl: TControl): Boolean;
+var
+  ASide: TAnchorSide;
+begin
+  Result := False;
+
+  if AControl = nil then
+    Exit;
+
+  if not (akTop in AControl.Anchors) then
+    Exit;
+
+  ASide := AControl.AnchorSide[akTop];
+
+  if ASide.Control = nil then
+    { Default: anchored to the parent's top edge. }
+    Result := ASide.Side = asrTop
+  else
+    { Explicit target: count it as "panel top" only when the target is
+      this panel and the reference side is its top edge. Anything else
+      (a sibling, or a different edge of the panel) is out of scope. }
+    Result := (ASide.Control = Self) and (ASide.Side = asrTop);
+end;
+
+procedure TCssPanel.AutoSpaceAnchoredChild(AControl: TControl; ACapH: Integer);
+var
+  Current: Integer;
+begin
+  if AControl = nil then
+    Exit;
+
+  { Aligned children get their caption offset through AdjustClientRect,
+    so BorderSpacing would shift them twice. }
+  if AControl.Align <> alNone then
+    Exit;
+
+  { Only children whose top is anchored to the panel's own top edge
+    need to move below the caption. Children anchored to a sibling
+    through AnchorSide must keep their spacing untouched. }
+  if not IsAnchoredToPanelTop(AControl) then
+    Exit;
+
+  Current := AControl.BorderSpacing.Top;
+
+  { A non-zero value that does not match our own is user data and must
+    not be overwritten. Zero means "not assigned yet" and may be
+    filled in. }
+  if (Current <> 0) and (Current <> FAppliedCaptionSpacing) then
+    Exit;
+
+  if Current = ACapH then
+    Exit;
+
+  AControl.BorderSpacing.Top := ACapH;
+end;
+
+procedure TCssPanel.AutoSpaceAllChildren;
+var
+  I, CapH: Integer;
+begin
+  if FSyncingCaptionSpacing then
+    Exit;
+
+  FSyncingCaptionSpacing := True;
+  try
+    CapH := GetCaptionContentOffset;
+
+    for I := 0 to ControlCount - 1 do
+      AutoSpaceAnchoredChild(Controls[I], CapH);
+
+    FAppliedCaptionSpacing := CapH;
+  finally
+    FSyncingCaptionSpacing := False;
+  end;
+end;
+
+procedure TCssPanel.RefreshChildSpacing;
+begin
+  AutoSpaceAllChildren;
+end;
+
 procedure TCssPanel.Loaded;
 begin
   inherited Loaded;
@@ -205,6 +355,11 @@ begin
     PropagateEnabledToChildren;
 
   UpdateFocusedChildState;
+
+  { Covers children created by code where Parent was assigned before
+    Anchors, so the AlignControls pass could not have seen the final
+    anchored state yet. }
+  AutoSpaceAllChildren;
 end;
 
 procedure TCssPanel.InitTextProps;
@@ -218,9 +373,10 @@ procedure TCssPanel.StyleChanged;
 begin
   inherited StyleChanged;
 
-  // If border/padding changed, we need to recalculate the layout
-  // of child controls with Align.
+  { Border, padding, font and other CSS-driven values may have changed,
+    so the caption height and the child layout must be recalculated. }
   Realign;
+  AutoSpaceAllChildren;
 end;
 
 procedure TCssPanel.HtmlModeChanged;
@@ -231,7 +387,7 @@ begin
     AdjustSize;
 
   Realign;
-
+  AutoSpaceAllChildren;
   Invalidate;
 end;
 
@@ -265,9 +421,6 @@ var
   CaptionR: TRect;
   CapH: Integer;
 begin
-  // Фон и рамка — во всей площади контрола (ClientRect),
-  // включая полосу, зарезервированную под подпись.
-  // inherited Paint не будет рисовать подпись: ShouldPaintCaption = False.
   inherited Paint;
 
   if Caption <> '' then
@@ -358,6 +511,12 @@ begin
       FPropagatingEnabled := False;
     end;
   end;
+
+  { AControl = nil means a full layout pass, which is what happens when
+    a child is added or removed. This is the point where newly added
+    anchored children get their caption offset. }
+  if AControl = nil then
+    AutoSpaceAllChildren;
 end;
 
 procedure TCssPanel.AdjustClientRect(var ARect: TRect);
@@ -409,12 +568,32 @@ begin
   inherited SetCaption(AValue);
 
   if not (csLoading in ComponentState) then
+  begin
     Realign;
+    AutoSpaceAllChildren;
+  end;
 end;
 
 function TCssPanel.GetDefaultCaption : string;
 begin
   Result := 'CssPanel';
+end;
+
+procedure TCssPanel.Resize;
+begin
+  inherited Resize;
+
+  { The panel width may have changed, which can re-wrap an HTML caption
+    onto more or fewer lines and change the caption height. }
+  AutoSpaceAllChildren;
+end;
+
+procedure TCssPanel.ChangeScale(M, D : Integer);
+begin
+  inherited ChangeScale(M, D);
+
+  { Font and DPI changed, so the caption height changed as well. }
+  AutoSpaceAllChildren;
 end;
 
 end.
