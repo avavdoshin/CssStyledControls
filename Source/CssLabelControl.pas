@@ -213,7 +213,7 @@ procedure TCssLabel.StyleChanged;
 begin
   inherited StyleChanged;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 end;
 

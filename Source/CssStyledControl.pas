@@ -186,6 +186,8 @@ type
     FHoveredChildrenCount: Integer;
     FExternalHoverCount: Integer;
 
+    FApplyingCss: Boolean;
+
     FBorderRadiusTL, FBorderRadiusTR, FBorderRadiusBR, FBorderRadiusBL: Integer;
     FBackgroundGradient: TCssGradient;
     FBoxShadow: TCssBoxShadow;
@@ -301,6 +303,7 @@ type
     function GetShowPrefix: Boolean; virtual;
     procedure HtmlModeChanged; virtual;
     function ShouldPaintCaption: Boolean; virtual;
+    function IsApplyingCss: Boolean;
 
     { Virtual }
     procedure SetCaption(const AValue: TCaption); virtual;
@@ -2766,9 +2769,19 @@ begin
     ApplyCss(EffectiveCss)
   else
   begin
-    ResetStyle;
-    ApplyDeclarations(FInlineStyle);
-    StyleChanged;
+    FApplyingCss := True;
+    try
+      ResetStyle;
+      ApplyDeclarations(FInlineStyle);
+      StyleChanged;
+    finally
+      FApplyingCss := False;
+    end;
+
+    if AutoSize and HandleAllocated and
+       (not (csLoading in ComponentState)) and
+       (not (csDestroying in ComponentState)) then
+      AdjustSize;
   end;
 
   if (OldBg          <> GetCssBackgroundColor) or
@@ -2868,108 +2881,117 @@ var
   end;
 
 begin
-  ResetStyle;
+  FApplyingCss := True;
+  try
+    ResetStyle;
 
-  RuleCount := 0;
-  Rules := nil;
-  FHintCss := '';
+    RuleCount := 0;
+    Rules := nil;
+    FHintCss := '';
 
-  Css := RemoveCssComments(ACss);
+    Css := RemoveCssComments(ACss);
 
-  while True do
-  begin
-    OpenPos := Pos('{', Css);
-    if OpenPos = 0 then
-      Break;
-
-    ClosePos := PosEx('}', Css, OpenPos + 1);
-    if ClosePos = 0 then
-      Break;
-
-    SelectorBlock := Trim(Copy(Css, 1, OpenPos - 1));
-    Declarations := Trim(Copy(Css, OpenPos + 1, ClosePos - OpenPos - 1));
-
-    if (SelectorBlock <> '') and (Declarations <> '') then
+    while True do
     begin
-      Selectors := TStringList.Create;
+      OpenPos := Pos('{', Css);
+      if OpenPos = 0 then
+        Break;
 
-      try
-        SplitByChar(SelectorBlock, ',', Selectors);
+      ClosePos := PosEx('}', Css, OpenPos + 1);
+      if ClosePos = 0 then
+        Break;
 
-        for I := 0 to Selectors.Count - 1 do
-        begin
-          Sel := Trim(Selectors[I]);
+      SelectorBlock := Trim(Copy(Css, 1, OpenPos - 1));
+      Declarations := Trim(Copy(Css, OpenPos + 1, ClosePos - OpenPos - 1));
 
-          LinkTarget := IsLinkSelector(Sel, LinkHover);
-          if LinkTarget then
+      if (SelectorBlock <> '') and (Declarations <> '') then
+      begin
+        Selectors := TStringList.Create;
+
+        try
+          SplitByChar(SelectorBlock, ',', Selectors);
+
+          for I := 0 to Selectors.Count - 1 do
           begin
-            AddRule(
-              Declarations,
-              0,
-              1,
-              1,
-              RuleCount,
-              2 + Ord(LinkHover)
-            );
+            Sel := Trim(Selectors[I]);
 
-            Inc(RuleCount);
-            Continue;
+            LinkTarget := IsLinkSelector(Sel, LinkHover);
+            if LinkTarget then
+            begin
+              AddRule(
+                Declarations,
+                0,
+                1,
+                1,
+                RuleCount,
+                2 + Ord(LinkHover)
+              );
+
+              Inc(RuleCount);
+              Continue;
+            end;
+
+            HintTarget := IsHintSelector(Sel, BaseSel);
+
+            if TryEvaluateSelector(BaseSel, SpecA, SpecB, SpecC) then
+            begin
+              AddRule(
+                Declarations,
+                SpecA,
+                SpecB,
+                SpecC,
+                RuleCount,
+                Ord(HintTarget)
+              );
+
+              Inc(RuleCount);
+            end;
           end;
-
-          HintTarget := IsHintSelector(Sel, BaseSel);
-
-          if TryEvaluateSelector(BaseSel, SpecA, SpecB, SpecC) then
-          begin
-            AddRule(
-              Declarations,
-              SpecA,
-              SpecB,
-              SpecC,
-              RuleCount,
-              Ord(HintTarget)
-            );
-
-            Inc(RuleCount);
-          end;
+        finally
+          Selectors.Free;
         end;
-      finally
-        Selectors.Free;
+      end;
+
+      Delete(Css, 1, ClosePos);
+    end;
+
+    SortRules;
+
+    for I := 0 to RuleCount - 1 do
+    begin
+      if Rules[I].Target = 0 then
+      begin
+        ApplyDeclarations(Rules[I].Declarations);
+      end
+      else if Rules[I].Target = 1 then
+      begin
+        if FHintCss <> '' then
+          FHintCss := FHintCss + '; ';
+
+        FHintCss := FHintCss + Rules[I].Declarations;
+      end
+      else if Rules[I].Target = 2 then
+      begin
+        ApplyLinkDeclarations(FLinkNormal, Rules[I].Declarations);
+      end
+      else if Rules[I].Target = 3 then
+      begin
+        ApplyLinkDeclarations(FLinkHover, Rules[I].Declarations);
       end;
     end;
 
-    Delete(Css, 1, ClosePos);
+    ApplyDeclarations(FInlineStyle);
+
+    StyleChanged;
+    UpdateCursor;
+  finally
+    FApplyingCss := False;
   end;
 
-  SortRules;
-
-  for I := 0 to RuleCount - 1 do
-  begin
-    if Rules[I].Target = 0 then
-    begin
-      ApplyDeclarations(Rules[I].Declarations);
-    end
-    else if Rules[I].Target = 1 then
-    begin
-      if FHintCss <> '' then
-        FHintCss := FHintCss + '; ';
-
-      FHintCss := FHintCss + Rules[I].Declarations;
-    end
-    else if Rules[I].Target = 2 then
-    begin
-      ApplyLinkDeclarations(FLinkNormal, Rules[I].Declarations);
-    end
-    else if Rules[I].Target = 3 then
-    begin
-      ApplyLinkDeclarations(FLinkHover, Rules[I].Declarations);
-    end;
-  end;
-
-  ApplyDeclarations(FInlineStyle);
-
-  StyleChanged;
-  UpdateCursor;
-//  Invalidate;
+  if AutoSize and HandleAllocated and
+     (not (csLoading in ComponentState)) and
+     (not (csDestroying in ComponentState)) then
+    AdjustSize;
 end;
 
 procedure TCssStyledControl.ResetStyle;
@@ -5754,6 +5776,11 @@ end;
 function TCssStyledControl.ShouldPaintCaption: Boolean;
 begin
   Result := True;
+end;
+
+function TCssStyledControl.IsApplyingCss : Boolean;
+begin
+  Result := FApplyingCss;
 end;
 
 { ============================================================ }

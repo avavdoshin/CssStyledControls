@@ -26,6 +26,7 @@ type
     // Appearance and layout
     FColumns: Integer;
     FItemHeight: Integer;
+    FItemSpacing: Integer;
 
     // Internal flags
     FUpdating: Boolean;
@@ -76,6 +77,10 @@ type
     procedure ItemEnter(Sender: TObject);
     procedure ItemExit(Sender: TObject);
     procedure SetGroupFocusRect(AValue: Boolean);
+
+    function GetEffectiveItemSpacing: Integer;
+    function GetEffectiveCaptionSpacing: Integer;
+    procedure SetItemSpacing(AValue: Integer);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -121,6 +126,7 @@ type
     // Items and state
     property Items: TStrings read GetItems write SetItems;
     property ItemIndex: Integer read FItemIndex write SetItemIndex default -1;
+    property ItemSpacing: Integer read FItemSpacing write SetItemSpacing default -1;
 
     // Layout
     property Columns: Integer read FColumns write SetColumns;
@@ -229,6 +235,7 @@ type
     function GetDefaultCaption: string; override;
   public
     constructor Create(AOwner: TComponent); override;
+    property ToggleStyle: Boolean read FToggleStyle;
 
     // Sizing
     procedure AdjustSize; override;
@@ -346,7 +353,7 @@ procedure TCssRadioButton.StyleChanged;
 begin
   inherited StyleChanged;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 
   Invalidate;
@@ -387,7 +394,8 @@ begin
   begin
     V := LowerCase(Trim(AValue));
     FToggleStyle := (V = 'toggle') or (V = 'switch');
-    if AutoSize then AdjustSize;
+    if AutoSize and (not IsApplyingCss) then
+      AdjustSize;
     Invalidate;
     Exit;
   end;
@@ -408,7 +416,8 @@ begin
         if FToggleHeight < 12 then FToggleHeight := 12;
         if FToggleHeight > 80 then FToggleHeight := 80;
       end;
-      if AutoSize then AdjustSize;
+      if AutoSize and (not IsApplyingCss) then
+        AdjustSize;
       Invalidate;
     end;
     Exit;
@@ -1047,6 +1056,7 @@ begin
   FChildFocused := False;
   FColumns := 1;
   FItemHeight := 0;
+  FItemSpacing := -1;
 
   FRadioCssClass := 'radio';
   FRadioCssStyle := '';
@@ -1109,7 +1119,7 @@ begin
 
   UpdateChildStyles;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 end;
 
@@ -1341,7 +1351,7 @@ begin
 
   if CaptionMode = gcmInside then
   begin
-    TopSpace := B + P.Top + CapH;
+    TopSpace := B + P.Top + CapH + GetEffectiveCaptionSpacing;
   end
   else
   begin
@@ -1350,14 +1360,18 @@ begin
     if CapH > TopBlock then
       TopBlock := CapH;
 
-    TopSpace := TopBlock + P.Top;
+    TopSpace := TopBlock + P.Top + GetEffectiveCaptionSpacing;
   end;
 
-  NewHeight :=
-    TopSpace +
-    (RowCount * ItemH) +
-    P.Bottom +
-    B;
+  if RowCount > 0 then
+    NewHeight :=
+      TopSpace +
+      (RowCount * ItemH) +
+      ((RowCount - 1) * GetEffectiveItemSpacing) +
+      P.Bottom +
+      B
+  else
+    NewHeight := TopSpace + P.Bottom + B;
 
   if NewHeight < 0 then
     NewHeight := 0;
@@ -1528,7 +1542,7 @@ var
   ContentWidth: Integer;
   ContentTop: Integer;
   TopBlock: Integer;
-  I, Row, Col, X, Y: Integer;
+  I, Row, Col, X, Y, RowStep: Integer;
   Cb: TCssRadioButton;
 begin
   if FRadioButtons.Count = 0 then
@@ -1553,7 +1567,7 @@ begin
 
   if CaptionMode = gcmInside then
   begin
-    ContentTop := ClientR.Top + B + P.Top + CapH;
+    ContentTop := ClientR.Top + B + P.Top + CapH + GetEffectiveCaptionSpacing;
   end
   else
   begin
@@ -1562,13 +1576,15 @@ begin
     if CapH > TopBlock then
       TopBlock := CapH;
 
-    ContentTop := ClientR.Top + TopBlock + P.Top;
+    ContentTop := ClientR.Top + TopBlock + P.Top + GetEffectiveCaptionSpacing;
   end;
 
   ColW := ContentWidth div ColCount;
 
   if ColW < 0 then
     ColW := 0;
+
+  RowStep := ItemH + GetEffectiveItemSpacing;
 
   for I := 0 to FRadioButtons.Count - 1 do
   begin
@@ -1581,7 +1597,7 @@ begin
     Col := I mod ColCount;
 
     X := ContentLeft + (Col * ColW);
-    Y := ContentTop + (Row * ItemH);
+    Y := ContentTop + (Row * RowStep);
 
     Cb.SetBounds(X, Y, ColW, ItemH);
   end;
@@ -1800,6 +1816,57 @@ begin
     Exit;
 
   FGroupFocusRect := AValue;
+  Invalidate;
+end;
+
+function TCssRadioGroup.GetEffectiveItemSpacing: Integer;
+var
+  I: Integer;
+  Rb: TCssRadioButton;
+begin
+  if FItemSpacing >= 0 then
+    Exit(FItemSpacing);
+
+  for I := 0 to FRadioButtons.Count - 1 do
+  begin
+    Rb := GetRadio(I);
+    if Assigned(Rb) and Rb.ToggleStyle then
+      Exit(ScalePx(4));
+  end;
+
+  Result := ScalePx(2);
+end;
+
+function TCssRadioGroup.GetEffectiveCaptionSpacing: Integer;
+var
+  I: Integer;
+  Rb: TCssRadioButton;
+begin
+  if Caption = '' then
+    Exit(0);
+
+  for I := 0 to FRadioButtons.Count - 1 do
+  begin
+    Rb := GetRadio(I);
+    if Assigned(Rb) and Rb.ToggleStyle then
+      Exit(ScalePx(4));
+  end;
+
+  Result := 0;
+end;
+
+procedure TCssRadioGroup.SetItemSpacing(AValue: Integer);
+begin
+  if FItemSpacing = AValue then
+    Exit;
+
+  FItemSpacing := AValue;
+
+  LayoutItems;
+
+  if AutoSize then
+    AdjustSize;
+
   Invalidate;
 end;
 

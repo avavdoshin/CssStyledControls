@@ -364,7 +364,7 @@ begin
 
   LayoutItems;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 
   Invalidate;

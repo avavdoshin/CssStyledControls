@@ -100,6 +100,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
 
+    property ToggleStyle: Boolean read FToggleStyle;
+
     // Sizing
     procedure AdjustSize; override;
     function MeasureBoxSize(ACanvas: TCanvas): Integer;
@@ -159,6 +161,7 @@ type
     FColumns: Integer;
     FItemHeight: Integer;
     FItemIndex: Integer;
+    FItemSpacing: Integer;
 
     // Internal flags
     FUpdating: Boolean;
@@ -210,6 +213,9 @@ type
 
     procedure ItemCheckBoxClick(Sender: TObject);
     function GetItems: TStrings;
+    function GetEffectiveCaptionSpacing: Integer;
+    function GetEffectiveItemSpacing: Integer;
+    procedure SetItemSpacing(AValue: Integer);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -264,6 +270,7 @@ type
     property AllowGrayed: Boolean read FAllowGrayed write SetAllowGrayed;
     property Columns: Integer read FColumns write SetColumns;
     property ItemHeight: Integer read FItemHeight write SetItemHeight;
+    property ItemSpacing: Integer read FItemSpacing write SetItemSpacing default -1;
     property CheckBoxCssClass: string read FCheckBoxCssClass write SetCheckBoxCssClass;
     property CheckBoxCssStyle: string read FCheckBoxCssStyle write SetCheckBoxCssStyle;
     property GroupFocusRect: Boolean read FGroupFocusRect write SetGroupFocusRect default True;
@@ -523,7 +530,8 @@ begin
   begin
     V := LowerCase(Trim(AValue));
     FToggleStyle := (V = 'toggle') or (V = 'switch');
-    if AutoSize then AdjustSize;
+    if AutoSize and (not IsApplyingCss) then
+      AdjustSize;
     Invalidate;
     Exit;
   end;
@@ -544,7 +552,8 @@ begin
         if FToggleHeight < 12 then FToggleHeight := 12;
         if FToggleHeight > 80 then FToggleHeight := 80;
       end;
-      if AutoSize then AdjustSize;
+      if AutoSize and (not IsApplyingCss) then
+        AdjustSize;
       Invalidate;
     end;
     Exit;
@@ -617,7 +626,7 @@ procedure TCssCheckBox.StyleChanged;
 begin
   inherited StyleChanged;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 
   Invalidate;
@@ -1189,6 +1198,7 @@ begin
   FAllowGrayed := False;
   FColumns := 1;
   FItemHeight := 0;
+  FItemSpacing := -1;
   FItemIndex := -1;
 
   FCheckBoxCssClass := 'checkbox';
@@ -1587,7 +1597,7 @@ var
   ContentWidth: Integer;
   ContentTop: Integer;
   TopBlock: Integer;
-  I, Row, Col, X, Y: Integer;
+  I, Row, Col, X, Y, RowStep: Integer;
   Cb: TCssCheckBox;
 begin
   if FCheckBoxes.Count = 0 then
@@ -1612,7 +1622,7 @@ begin
 
   if CaptionMode = gcmInside then
   begin
-    ContentTop := ClientR.Top + B + P.Top + CapH;
+    ContentTop := ClientR.Top + B + P.Top + CapH + GetEffectiveCaptionSpacing;
   end
   else
   begin
@@ -1621,13 +1631,15 @@ begin
     if CapH > TopBlock then
       TopBlock := CapH;
 
-    ContentTop := ClientR.Top + TopBlock + P.Top;
+    ContentTop := ClientR.Top + TopBlock + P.Top + GetEffectiveCaptionSpacing;
   end;
 
   ColW := ContentWidth div ColCount;
 
   if ColW < 0 then
     ColW := 0;
+
+  RowStep := ItemH + GetEffectiveItemSpacing;
 
   for I := 0 to FCheckBoxes.Count - 1 do
   begin
@@ -1640,7 +1652,7 @@ begin
     Col := I mod ColCount;
 
     X := ContentLeft + (Col * ColW);
-    Y := ContentTop + (Row * ItemH);
+    Y := ContentTop + (Row * RowStep);
 
     Cb.SetBounds(X, Y, ColW, ItemH);
   end;
@@ -1848,6 +1860,57 @@ begin
   Result := FItems;
 end;
 
+function TCssCheckGroup.GetEffectiveCaptionSpacing: Integer;
+var
+  I: Integer;
+  Cb: TCssCheckBox;
+begin
+  if Caption = '' then
+    Exit(0);
+
+  for I := 0 to FCheckBoxes.Count - 1 do
+  begin
+    Cb := GetCheckBox(I);
+    if Assigned(Cb) and Cb.ToggleStyle then
+      Exit(ScalePx(4));
+  end;
+
+  Result := 0;
+end;
+
+function TCssCheckGroup.GetEffectiveItemSpacing: Integer;
+var
+  I: Integer;
+  Cb: TCssCheckBox;
+begin
+  if FItemSpacing >= 0 then
+    Exit(FItemSpacing);
+
+  for I := 0 to FCheckBoxes.Count - 1 do
+  begin
+    Cb := GetCheckBox(I);
+    if Assigned(Cb) and Cb.ToggleStyle then
+      Exit(ScalePx(4));
+  end;
+
+  Result := ScalePx(2);
+end;
+
+procedure TCssCheckGroup.SetItemSpacing(AValue: Integer);
+begin
+  if FItemSpacing = AValue then
+    Exit;
+
+  FItemSpacing := AValue;
+
+  LayoutItems;
+
+  if AutoSize then
+    AdjustSize;
+
+  Invalidate;
+end;
+
 procedure TCssCheckGroup.Clear;
 begin
   Items.Clear;
@@ -1898,7 +1961,7 @@ begin
 
   UpdateChildStyles;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 end;
 
@@ -2062,7 +2125,7 @@ begin
 
   if CaptionMode = gcmInside then
   begin
-    TopSpace := B + P.Top + CapH;
+    TopSpace := B + P.Top + CapH + GetEffectiveCaptionSpacing;
   end
   else
   begin
@@ -2071,14 +2134,18 @@ begin
     if CapH > TopBlock then
       TopBlock := CapH;
 
-    TopSpace := TopBlock + P.Top;
+    TopSpace := TopBlock + P.Top + GetEffectiveCaptionSpacing;
   end;
 
-  NewHeight :=
-    TopSpace +
-    (RowCount * ItemH) +
-    P.Bottom +
-    B;
+  if RowCount > 0 then
+    NewHeight :=
+      TopSpace +
+      (RowCount * ItemH) +
+      ((RowCount - 1) * GetEffectiveItemSpacing) +
+      P.Bottom +
+      B
+  else
+    NewHeight := TopSpace + P.Bottom + B;
 
   if NewHeight < 0 then
     NewHeight := 0;

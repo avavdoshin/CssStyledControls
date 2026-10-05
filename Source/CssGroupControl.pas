@@ -139,7 +139,7 @@ begin
 
   Realign;
 
-  if AutoSize then
+  if AutoSize and (not IsApplyingCss) then
     AdjustSize;
 
   Invalidate;
