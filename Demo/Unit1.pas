@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, CssStyledControl,
   CssPanelControl, CssCheckboxControl, CssRadioControl, CssProxyControl,
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
-  CssMenuControl, CssBitBtnControl;
+  CssMenuControl, CssBitBtnControl, CssSvgImgList;
 
 type
   TForm1 = class(TForm)
@@ -31,6 +31,7 @@ type
     CssPopupMenu1 : TCssPopupMenu;
     CssProxy1 : TCssProxy;
     CssStyleProvider1 : TCssStyleProvider;
+    CssSvgImgList1 : TCssSvgImgList;
     CssTabSheet1 : TCssTabSheet;
     MenuItem1 : TCssMenuItem;
     MenuItem2 : TCssMenuItem;

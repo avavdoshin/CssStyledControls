@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, Forms,
   ImgList, LCLType,
-  CssStyledControl, CssButtonControl, CssAntiAlias;
+  CssStyledControl, CssButtonControl, CssAntiAlias, CssSvgImgList;
 
 type
   TCssButtonLayout = (blGlyphLeft, blGlyphRight, blGlyphTop, blGlyphBottom);
@@ -51,7 +51,11 @@ type
     FKind: TCssBitBtnKind;
 
     FImages: TCustomImageList;
+    FSvgImages: TCssSvgImgList;
     FImageIndex: Integer;
+    FImageIndexDisabled: Integer;
+    FImageIndexPressed: Integer;
+    FImageIndexFocused: Integer;
 
     FTransparent: Boolean;
     FGlyphScaled: Boolean;
@@ -73,7 +77,11 @@ type
     procedure SetNumGlyphs(AValue: Integer);
     procedure SetKind(AValue: TCssBitBtnKind);
     procedure SetImages(AValue: TCustomImageList);
+    procedure SetSvgImages(AValue: TCssSvgImgList);
     procedure SetImageIndex(AValue: Integer);
+    procedure SetImageIndexDisabled(AValue: Integer);
+    procedure SetImageIndexPressed(AValue: Integer);
+    procedure SetImageIndexFocused(AValue: Integer);
     procedure SetTransparent(AValue: Boolean);
     procedure SetGlyphScaled(AValue: Boolean);
 
@@ -104,7 +112,12 @@ type
     procedure SetUseKindCaption(AValue: Boolean);
 
     procedure MakeDisabledBitmap(ABitmap: TBitmap; ATransparentColor, ATextColor: TColor);
+    procedure MakeDisabledBitmapAlpha(ABitmap: TBitmap; ATextColor: TColor);
     function  GetScaledGlyphForState(AState: Integer; ADisabled: Boolean): TBitmap;
+
+    function  ImageIndexForState(AState: Integer): Integer;
+    function  HasAnyValidImageIndex: Boolean;
+    procedure DrawBitmapWithAlpha(ACanvas: TCanvas; AX, AY: Integer; ABmp: TBitmap);
   protected
     procedure SetCaption(const AValue: TCaption); override;
     procedure Loaded; override;
@@ -130,8 +143,19 @@ type
     property Glyph: TBitmap read FGlyph write SetGlyph;
     property NumGlyphs: Integer read FNumGlyphs write SetNumGlyphs default 1;
     property Kind: TCssBitBtnKind read FKind write SetKind default bkCustom;
+
     property Images: TCustomImageList read FImages write SetImages;
-    property ImageIndex: Integer read FImageIndex write SetImageIndex default -1;
+    property SvgImages: TCssSvgImgList read FSvgImages write SetSvgImages;
+
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
+    property ImageIndexDisabled: Integer
+      read FImageIndexDisabled write SetImageIndexDisabled default -1;
+    property ImageIndexPressed: Integer
+      read FImageIndexPressed write SetImageIndexPressed default -1;
+    property ImageIndexFocused: Integer
+      read FImageIndexFocused write SetImageIndexFocused default -1;
+
     property Transparent: Boolean read FTransparent write SetTransparent default True;
     property GlyphScaled: Boolean read FGlyphScaled write SetGlyphScaled default False;
     property UseKindCaption: Boolean read FUseKindCaption write SetUseKindCaption default True;
@@ -159,7 +183,7 @@ type
 implementation
 
 uses
-  Math;
+  Math, IntfGraphics, FPImage;
 
 // ============================================================================
 //  TCssBitBtn
@@ -185,7 +209,11 @@ begin
 
   FNumGlyphs := 1;
   FKind := bkCustom;
+  FSvgImages := nil;
   FImageIndex := -1;
+  FImageIndexDisabled := -1;
+  FImageIndexPressed := -1;
+  FImageIndexFocused := -1;
   FTransparent := True;
   FGlyphScaled := False;
 
@@ -213,6 +241,9 @@ begin
   FreeAndNil(FKindGlyph);
   FreeAndNil(FKindGlyphDisabled);
 
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
   if FImages <> nil then
     FImages.RemoveFreeNotification(Self);
 
@@ -223,12 +254,22 @@ procedure TCssBitBtn.Notification(AComponent: TComponent; Operation: TOperation)
 begin
   inherited Notification(AComponent, Operation);
 
-  if (Operation = opRemove) and (AComponent = FImages) then
+  if Operation = opRemove then
   begin
-    FImages := nil;
-    InvalidateScaledGlyphs;
-    if AutoSize then AdjustSize;
-    Invalidate;
+    if AComponent = FImages then
+    begin
+      FImages := nil;
+      InvalidateScaledGlyphs;
+      if AutoSize then AdjustSize;
+      Invalidate;
+    end
+    else if AComponent = FSvgImages then
+    begin
+      FSvgImages := nil;
+      InvalidateScaledGlyphs;
+      if AutoSize then AdjustSize;
+      Invalidate;
+    end;
   end;
 end;
 
@@ -420,11 +461,58 @@ begin
   Invalidate;
 end;
 
+procedure TCssBitBtn.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  InvalidateScaledGlyphs;
+  if AutoSize then AdjustSize;
+  Invalidate;
+end;
+
 procedure TCssBitBtn.SetImageIndex(AValue: Integer);
 begin
   if AValue < -1 then AValue := -1;
   if FImageIndex = AValue then Exit;
   FImageIndex := AValue;
+  InvalidateScaledGlyphs;
+  if AutoSize then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssBitBtn.SetImageIndexDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexDisabled = AValue then Exit;
+  FImageIndexDisabled := AValue;
+  InvalidateScaledGlyphs;
+  if AutoSize then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssBitBtn.SetImageIndexPressed(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexPressed = AValue then Exit;
+  FImageIndexPressed := AValue;
+  InvalidateScaledGlyphs;
+  if AutoSize then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssBitBtn.SetImageIndexFocused(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexFocused = AValue then Exit;
+  FImageIndexFocused := AValue;
   InvalidateScaledGlyphs;
   if AutoSize then AdjustSize;
   Invalidate;
@@ -522,15 +610,25 @@ end;
 
 function TCssBitBtn.HasGlyph: Boolean;
 begin
-  if UsesKindGlyph then Exit(True);
-  if (FImages <> nil) and (FImageIndex >= 0) then Exit(True);
+  if UsesKindGlyph then
+    Exit(True);
+
+  // Image-list sources take priority over the raw Glyph bitmap.
+  // Either SvgImages or Images can provide the bitmap; the actual
+  // choice is made in GetScaledGlyphForState.
+  if ((FSvgImages <> nil) or (FImages <> nil)) and HasAnyValidImageIndex then
+    Exit(True);
+
   Result := (FGlyph <> nil) and (not FGlyph.Empty);
 end;
 
 function TCssBitBtn.GetSourceGlyphCount: Integer;
 begin
-  if UsesKindGlyph then Exit(1);
-  if (FImages <> nil) and (FImageIndex >= 0) then Exit(1);
+  if UsesKindGlyph then
+    Exit(1);
+
+  if ((FSvgImages <> nil) or (FImages <> nil)) and HasAnyValidImageIndex then
+    Exit(1);
 
   if FNumGlyphs < 1 then Result := 1
   else if FNumGlyphs > 4 then Result := 4
@@ -541,6 +639,7 @@ function TCssBitBtn.GetDisplayGlyphSize: TSize;
 var
   Src: TSize;
   F: Double;
+  Idx: Integer;
 begin
   Result.cx := 0;
   Result.cy := 0;
@@ -552,7 +651,15 @@ begin
     Exit;
   end;
 
-  if (FImages <> nil) and (FImageIndex >= 0) then
+  Idx := ImageIndexForState(GetGlyphStateIndex);
+
+  if (FSvgImages <> nil) and (Idx >= 0) then
+  begin
+    // SvgImages already accounts for its own Scaled property.
+    Src.cx := FSvgImages.GetEffectiveWidth;
+    Src.cy := FSvgImages.GetEffectiveHeight;
+  end
+  else if (FImages <> nil) and (Idx >= 0) then
   begin
     Src.cx := FImages.Width;
     Src.cy := FImages.Height;
@@ -981,6 +1088,77 @@ begin
     end;
 end;
 
+{ Alpha-aware desaturation, modifies ABitmap in place.
+
+  Only pixels with alpha > 0 are touched, and the alpha channel itself is
+  preserved. This is the SVG-safe counterpart of MakeDisabledBitmap: for
+  SvgImages the shape is stored as pf32bit with real per-pixel alpha, so
+  copying to pf24bit (as MakeDisabledBitmap requires) would turn the
+  transparent background into opaque black and produce a visible square. }
+procedure TCssBitBtn.MakeDisabledBitmapAlpha(ABitmap: TBitmap;
+  ATextColor: TColor);
+const
+  CONTRAST_KEEP = 70;
+  TEXT_BLEND    = 60;
+var
+  Img: TLazIntfImage;
+  X, Y: Integer;
+  Pix: TFPColor;
+  A, R, G, B, Gray, Compressed: Integer;
+  TR, TG, TB_: Integer;
+begin
+  if ABitmap = nil then Exit;
+  if ABitmap.Empty then Exit;
+
+  TR  :=  ATextColor         and $FF;
+  TG  := (ATextColor shr  8) and $FF;
+  TB_ := (ATextColor shr 16) and $FF;
+
+  Img := ABitmap.CreateIntfImage;
+  if Img = nil then Exit;
+  try
+    for Y := 0 to Img.Height - 1 do
+      for X := 0 to Img.Width - 1 do
+      begin
+        Pix := Img.Colors[X, Y];
+        A := Pix.Alpha shr 8;
+        if A = 0 then
+          Continue;  // leave fully transparent pixels alone
+
+        R := Pix.Red   shr 8;
+        G := Pix.Green shr 8;
+        B := Pix.Blue  shr 8;
+
+        // 1. Full desaturation (luma weighted).
+        Gray := (R * 30 + G * 59 + B * 11) div 100;
+
+        // 2. Contrast compression around mid-gray.
+        Compressed := 128 + ((Gray - 128) * CONTRAST_KEEP) div 100;
+        if Compressed < 0   then Compressed := 0;
+        if Compressed > 255 then Compressed := 255;
+
+        // 3. Blend the compressed gray with the disabled text color.
+        R := (Compressed * (100 - TEXT_BLEND) + TR  * TEXT_BLEND) div 100;
+        G := (Compressed * (100 - TEXT_BLEND) + TG  * TEXT_BLEND) div 100;
+        B := (Compressed * (100 - TEXT_BLEND) + TB_ * TEXT_BLEND) div 100;
+
+        if R < 0 then R := 0 else if R > 255 then R := 255;
+        if G < 0 then G := 0 else if G > 255 then G := 255;
+        if B < 0 then B := 0 else if B > 255 then B := 255;
+
+        Pix.Red   := R * 257;
+        Pix.Green := G * 257;
+        Pix.Blue  := B * 257;
+        // Alpha is preserved as-is.
+        Img.Colors[X, Y] := Pix;
+      end;
+
+    ABitmap.LoadFromIntfImage(Img);
+  finally
+    Img.Free;
+  end;
+end;
+
 function TCssBitBtn.GetScaledGlyphForState(AState: Integer;
   ADisabled: Boolean): TBitmap;
 var
@@ -988,11 +1166,13 @@ var
   SrcRect: TRect;
   SrcSize, DstSize: TSize;
   Bmp: TBitmap;
-  Count, SubH, CacheIndex: Integer;
+  Count, SubH, CacheIndex, ImgIdx, RW, RH: Integer;
   TempSrc, TempDisabled: TBitmap;
   TransColor: TColor;
   HasTransparency: Boolean;
   NeedsDesat: Boolean;
+  UseSvgList: Boolean;
+  SrcIntf: TLazIntfImage;
 begin
   if (AState < 0) or (AState > 3) then AState := 0;
 
@@ -1007,6 +1187,9 @@ begin
   HasTransparency := False;
   TransColor := clFuchsia;
   NeedsDesat := False;
+  UseSvgList := False;
+
+  ImgIdx := ImageIndexForState(AState);
 
   if UsesKindGlyph then
   begin
@@ -1021,7 +1204,38 @@ begin
     HasTransparency := True;
     TransColor := clFuchsia;
   end
-  else if (FImages <> nil) and (FImageIndex >= 0) then
+  else if (FSvgImages <> nil) and
+          (ImgIdx >= 0) and (ImgIdx < FSvgImages.Count) then
+  begin
+    // Highest priority among the raster sources.
+    UseSvgList := True;
+
+    RW := FSvgImages.GetEffectiveWidth;
+    RH := FSvgImages.GetEffectiveHeight;
+
+    if FGlyphScaled then
+    begin
+      RW := Round(RW * ScaleFactor);
+      RH := Round(RH * ScaleFactor);
+    end;
+
+    if (RW < 1) or (RH < 1) then
+      Exit(nil);
+
+    // CssSvgImgList returns a pf32bit bitmap with a real alpha channel,
+    // so no chroma-key is needed.
+    TempSrc := FSvgImages.GetBitmap(ImgIdx, RW, RH, GetEffectiveTextColor);
+
+    SrcBitmap := TempSrc;
+    SrcRect := Rect(0, 0, SrcBitmap.Width, SrcBitmap.Height);
+    HasTransparency := False;
+    TransColor := clNone;
+
+    // Only desaturate if we fell back to the normal image for :disabled.
+    NeedsDesat := ADisabled and (FImageIndexDisabled < 0);
+  end
+  else if (FImages <> nil) and
+          (ImgIdx >= 0) and (ImgIdx < FImages.Count) then
   begin
     TempSrc := TBitmap.Create;
     TempSrc.PixelFormat := pf24bit;
@@ -1031,13 +1245,14 @@ begin
     TempSrc.Canvas.Brush.Color := clFuchsia;
     TempSrc.Canvas.FillRect(0, 0, TempSrc.Width, TempSrc.Height);
 
-    FImages.GetBitmap(FImageIndex, TempSrc);
+    FImages.GetBitmap(ImgIdx, TempSrc);
 
     SrcBitmap := TempSrc;
     SrcRect := Rect(0, 0, SrcBitmap.Width, SrcBitmap.Height);
     HasTransparency := True;
     TransColor := clFuchsia;
-    NeedsDesat := ADisabled;    // no per-state disabled variant for Images
+
+    NeedsDesat := ADisabled and (FImageIndexDisabled < 0);
   end
   else if (FGlyph <> nil) and (not FGlyph.Empty) then
   begin
@@ -1048,7 +1263,8 @@ begin
 
     if AState >= Count then AState := 0;
 
-    SrcRect := Rect(0, AState * SubH, SrcBitmap.Width, AState * SubH + SubH);
+    SrcRect := Rect(0, AState * SubH,
+                    SrcBitmap.Width, AState * SubH + SubH);
 
     if SrcBitmap.Transparent then
     begin
@@ -1064,40 +1280,64 @@ begin
     Exit(nil);
 
   try
-    // Extract the sub-rect and desaturate it if needed.
     if NeedsDesat then
     begin
-      TempDisabled := TBitmap.Create;
-      TempDisabled.PixelFormat := pf24bit;
-      TempDisabled.SetSize(SrcRect.Right - SrcRect.Left,
-                           SrcRect.Bottom - SrcRect.Top);
-
-      TempDisabled.Canvas.Brush.Style := bsSolid;
-      TempDisabled.Canvas.Brush.Color := TransColor;
-      TempDisabled.Canvas.FillRect(0, 0, TempDisabled.Width, TempDisabled.Height);
-
-      TempDisabled.Canvas.CopyRect(
-        Rect(0, 0, TempDisabled.Width, TempDisabled.Height),
-        SrcBitmap.Canvas,
-        SrcRect);
-
-      if HasTransparency then
+      if UseSvgList then
       begin
-        TempDisabled.Transparent := True;
-        TempDisabled.TransparentMode := tmFixed;
-        TempDisabled.TransparentColor := TransColor;
+        { Alpha-aware desaturation for SvgImages.
+
+          The source is a pf32bit bitmap with a real alpha channel;
+          converting it to pf24bit first (as the branch below does)
+          would turn the transparent background into opaque black and
+          then tint it with the disabled text color - producing a
+          visible square behind the icon. Instead, we desaturate the
+          RGB channels in place and keep the alpha channel intact.
+
+          UseSvgList stays True so the alpha-aware blit path is still
+          used for drawing. }
+        MakeDisabledBitmapAlpha(TempSrc, GetEffectiveTextColor);
+        NeedsDesat := False;
+      end
+      else
+      begin
+        TempDisabled := TBitmap.Create;
+        TempDisabled.PixelFormat := pf24bit;
+        TempDisabled.SetSize(SrcRect.Right - SrcRect.Left,
+                             SrcRect.Bottom - SrcRect.Top);
+
+        TempDisabled.Canvas.Brush.Style := bsSolid;
+        TempDisabled.Canvas.Brush.Color := TransColor;
+        TempDisabled.Canvas.FillRect(0, 0, TempDisabled.Width,
+                                          TempDisabled.Height);
+
+        TempDisabled.Canvas.CopyRect(
+          Rect(0, 0, TempDisabled.Width, TempDisabled.Height),
+          SrcBitmap.Canvas,
+          SrcRect);
+
+        if HasTransparency then
+        begin
+          TempDisabled.Transparent := True;
+          TempDisabled.TransparentMode := tmFixed;
+          TempDisabled.TransparentColor := TransColor;
+        end;
+
+        MakeDisabledBitmap(TempDisabled, TransColor, GetEffectiveTextColor);
+
+        SrcBitmap := TempDisabled;
+        SrcRect := Rect(0, 0, TempDisabled.Width, TempDisabled.Height);
+
+        UseSvgList := False;
+        HasTransparency := TransColor <> clNone;
       end;
-
-      MakeDisabledBitmap(TempDisabled, TransColor, GetEffectiveTextColor);
-
-      SrcBitmap := TempDisabled;
-      SrcRect := Rect(0, 0, TempDisabled.Width, TempDisabled.Height);
     end;
 
-    SrcSize.cx := SrcRect.Right - SrcRect.Left;
+    SrcSize.cx := SrcRect.Right  - SrcRect.Left;
     SrcSize.cy := SrcRect.Bottom - SrcRect.Top;
 
-    if UsesKindGlyph then
+    // SvgImages already returned a properly sized bitmap, and Kind glyphs
+    // are pre-scaled in RegenerateKindGlyph.
+    if UsesKindGlyph or UseSvgList then
       DstSize := SrcSize
     else if FGlyphScaled then
     begin
@@ -1117,28 +1357,142 @@ begin
       FScaledGlyphs[CacheIndex] := Bmp;
     end;
 
-    Bmp.PixelFormat := SrcBitmap.PixelFormat;
-    Bmp.SetSize(DstSize.cx, DstSize.cy);
-
-    Bmp.Canvas.CopyRect(
-      Rect(0, 0, DstSize.cx, DstSize.cy),
-      SrcBitmap.Canvas,
-      SrcRect);
-
-    if HasTransparency then
+    if UseSvgList then
     begin
-      Bmp.Transparent := True;
-      Bmp.TransparentMode := tmFixed;
-      Bmp.TransparentColor := TransColor;
+      { SvgImages returns a pf32bit bitmap with a real alpha channel.
+
+        Canvas.CopyRect would lose the per-pixel alpha on some widgetsets,
+        so we copy the whole RGBA image through IntfImage instead. The
+        actual alpha blending during painting is done later in
+        DrawGlyphAndCaption via DrawBitmapWithAlpha, because older LCL
+        versions do not have TBitmap.AlphaFormat.
+
+        SrcRect is already (0,0,W,H) for this branch, so no cropping is
+        needed. }
+      Bmp.PixelFormat := pf32bit;
+      Bmp.SetSize(SrcBitmap.Width, SrcBitmap.Height);
+
+      SrcIntf := SrcBitmap.CreateIntfImage;
+      try
+        Bmp.LoadFromIntfImage(SrcIntf);
+      finally
+        SrcIntf.Free;
+      end;
+
+      Bmp.Transparent := False;
     end
     else
-      Bmp.Transparent := False;
+    begin
+      Bmp.PixelFormat := SrcBitmap.PixelFormat;
+      Bmp.SetSize(DstSize.cx, DstSize.cy);
+
+      Bmp.Canvas.CopyRect(
+        Rect(0, 0, DstSize.cx, DstSize.cy),
+        SrcBitmap.Canvas,
+        SrcRect);
+
+      if HasTransparency then
+      begin
+        Bmp.Transparent := True;
+        Bmp.TransparentMode := tmFixed;
+        Bmp.TransparentColor := TransColor;
+      end
+      else
+        Bmp.Transparent := False;
+    end;
 
     FScaledGlyphValid[CacheIndex] := True;
     Result := Bmp;
   finally
     if TempSrc <> nil then TempSrc.Free;
     if TempDisabled <> nil then TempDisabled.Free;
+  end;
+end;
+
+function TCssBitBtn.ImageIndexForState(AState: Integer): Integer;
+begin
+  case AState of
+    1: if FImageIndexDisabled >= 0 then Exit(FImageIndexDisabled);
+    2: if FImageIndexPressed  >= 0 then Exit(FImageIndexPressed);
+    3: if FImageIndexFocused  >= 0 then Exit(FImageIndexFocused);
+  end;
+  Result := FImageIndex;
+end;
+
+function TCssBitBtn.HasAnyValidImageIndex: Boolean;
+begin
+  Result :=
+    (FImageIndex >= 0) or
+    (FImageIndexDisabled >= 0) or
+    (FImageIndexPressed >= 0) or
+    (FImageIndexFocused >= 0);
+end;
+
+{ Draws ABmp onto ACanvas honouring per-pixel alpha.
+
+  Implemented with manual pixel compositing, because:
+    - TBitmap.AlphaFormat does not exist in older LCL versions;
+    - TLazIntfImage.AlphaBlend has a different signature in older LCL;
+    - colTransparent may also be missing.
+
+  For 32x32 button glyphs the per-pixel loop is fast enough. }
+procedure TCssBitBtn.DrawBitmapWithAlpha(ACanvas: TCanvas;
+  AX, AY: Integer; ABmp: TBitmap);
+var
+  Img: TLazIntfImage;
+  X, Y, DX, DY: Integer;
+  Pix: TFPColor;
+  A: Integer;
+  DstColor: TColor;
+  SR, SG, SB: Integer;
+  DR, DG, DB: Integer;
+  R, G, B: Integer;
+begin
+  if (ABmp = nil) or ABmp.Empty then Exit;
+
+  Img := ABmp.CreateIntfImage;
+  if Img = nil then Exit;
+
+  try
+    for Y := 0 to Img.Height - 1 do
+    begin
+      DY := AY + Y;
+      if (DY < 0) or (DY >= ACanvas.Height) then Continue;
+
+      for X := 0 to Img.Width - 1 do
+      begin
+        DX := AX + X;
+        if (DX < 0) or (DX >= ACanvas.Width) then Continue;
+
+        Pix := Img.Colors[X, Y];
+        A := Pix.Alpha shr 8;
+        if A = 0 then Continue;
+
+        SR := Pix.Red   shr 8;
+        SG := Pix.Green shr 8;
+        SB := Pix.Blue  shr 8;
+
+        if A = 255 then
+        begin
+          ACanvas.Pixels[DX, DY] := RGBToColor(SR, SG, SB);
+        end
+        else
+        begin
+          DstColor := ColorToRGB(ACanvas.Pixels[DX, DY]);
+          DR :=  DstColor         and $FF;
+          DG := (DstColor shr  8) and $FF;
+          DB := (DstColor shr 16) and $FF;
+
+          R := (SR * A + DR * (255 - A)) div 255;
+          G := (SG * A + DG * (255 - A)) div 255;
+          B := (SB * A + DB * (255 - A)) div 255;
+
+          ACanvas.Pixels[DX, DY] := RGBToColor(R, G, B);
+        end;
+      end;
+    end;
+  finally
+    Img.Free;
   end;
 end;
 
@@ -1271,7 +1625,12 @@ begin
     Exit;
   end;
 
-  ACanvas.Draw(GlyphX, GlyphY, GlyphBmp);
+  if (FSvgImages <> nil) and
+     (GlyphBmp <> nil) and
+     (GlyphBmp.PixelFormat = pf32bit) then
+    DrawBitmapWithAlpha(ACanvas, GlyphX, GlyphY, GlyphBmp)
+  else
+    ACanvas.Draw(GlyphX, GlyphY, GlyphBmp);
 
   if HasCap then
     DrawCaptionAt(ACanvas,

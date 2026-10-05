@@ -34,6 +34,11 @@
         <Filename Value="CssVirtualTreeColumnsEditor.pas"/>
         <UnitName Value="CssVirtualTreeColumnsEditor"/>
       </Item>
+      <Item>
+        <Filename Value="CssSvgImgListDesign.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="CssSvgImgListDesign"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

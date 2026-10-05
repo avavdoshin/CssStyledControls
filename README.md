@@ -24,6 +24,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [CSS Overview](#css-overview)
 - [General CSS Properties](#general-css-properties)
 - [Per-Control CSS Properties](#per-control-css-properties)
+- [SVG Image Lists (TCssSvgImgList)](#svg-image-lists-tcsssvgimglist)
 - [Themes (Light and Dark)](#themes-light-and-dark)
 - [HTML Formatting](#html-formatting)
 - [Link Handling](#link-handling)
@@ -185,11 +186,12 @@ What the demo shows:
 
 - A single form with a `TCssPageControl` (`Common controls` tab).
 - A `TCssGroupBox` containing several `TCssButton`s (enabled, disabled, default, cancel, and one with a `TCssPopupMenu`).
-- Four `TCssBitBtn` controls next to those buttons, showing every way to configure a glyph:
+- Four `TCssBitBtn` controls next to those buttons, covering every glyph source the control supports:
   - `Kind = bkCancel` with a custom caption (`UseKindCaption = False`) — a **built-in vector icon** paired with a user-supplied label.
   - the same `Kind = bkCancel`, but `Enabled = False` — the same glyph is rendered in its **muted disabled variant**, in tone with the disabled caption.
-  - a **custom bitmap glyph** (`Glyph` loaded from a small PNG) — an arbitrary image drawn alongside the caption.
-  - the same custom bitmap glyph with `Enabled = False` — the bitmap is automatically desaturated and re-tinted to match the disabled text color.
+  - a **custom SVG glyph** (`SvgImages = CssSvgImgList1`, `ImageIndex = 0`) — a 32×32 vector icon rasterised at the current DPI and drawn next to an HTML caption (`Custom <b>SVG</b>`, `HtmlMode = True`).
+  - the same SVG glyph with `Enabled = False` — the rasteriser desaturates the RGBA image in place (transparent pixels stay transparent, anti-aliased edges are preserved) and re-tints it to match the disabled text color, so no box appears behind the icon.
+- A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources for the two custom-glyph buttons. It is configured at `32 × 32` design-time size with `Scaled = True`, so the icon is always rendered at the current DPI, and ships with one 48×48 checkmark icon whose circle is drawn from a `linearGradient`.
 - A `TCssPanel` with a `TCssLabel` whose `Caption` is HTML demonstrating every supported tag: headings, bold / italic / underline / strike / code / kbd / samp / tt / sup / sub / `<q>`, alignment via both `align="…"` and `style="text-align:…"`, ordered and unordered lists, inline colors, legacy `<font color>`, spans, and clickable `<a>` links.
 - A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that switches the whole application between the **light** and **dark** variants by setting `CssStyleProvider1.DefaultStyleName`.
 - A `TCssProxy` that applies the same theme to the plain `TForm`.
@@ -219,9 +221,10 @@ end;
 | ------------------------- | ---------------------------------------------------------------------------- |
 | `TCssStyledControl`       | Base class of all CSS-styled controls. Contains the CSS engine, the HTML parser, and the AA renderer. |
 | `TCssStyleProvider`       | Non-visual component that holds CSS text and pushes it to controls.          |
+| `TCssSvgImgList`          | Non-visual component that stores images in native SVG format and renders them on demand, with HiDPI and anti-aliasing. A drop-in replacement for `TImageList` when vector icons are preferred. |
 | `TCssProxy`               | Non-visual component that applies the active CSS variant to plain LCL controls (`TForm`, `TButton`, `TEdit`, `TLabel`, `TPanel`). |
 | `TCssButton`              | Push button with `Default`, `Cancel`, `ModalResult`, and `:default` / `:cancel` pseudo-classes. |
-| `TCssBitBtn`              | Button with a glyph (icon) next to the caption. Supports standard `TBitBtn.Kind` icons, custom bitmaps (`Glyph` + `NumGlyphs`), `TImageList`, HiDPI-aware rendering, and CSS-driven icon layout. |
+| `TCssBitBtn`              | Button with a glyph (icon) next to the caption. Supports standard `TBitBtn.Kind` icons, custom bitmaps (`Glyph` + `NumGlyphs`), `TImageList`, `TCssSvgImgList`, HiDPI-aware rendering, per-state image indexes, and CSS-driven icon layout. |
 | `TCssCheckBox`            | Tri-state check box with an optional Windows 11-style **switch** appearance. |
 | `TCssCheckGroup`          | Group of check boxes laid out in columns, with per-item state.               |
 | `TCssRadioButton`         | Radio button with an optional Windows 11-style **switch** appearance.        |
@@ -454,29 +457,49 @@ TCssButton:cancel  { background-color: #FEF2F2; color: #B91C1C; }
 
 #### Glyph Source Priority
 
-The control can draw a glyph from three sources, in this order (highest priority first):
+The control can draw a glyph from four sources, in this order (highest priority first):
 
 1. **`Kind` ≠ `bkCustom`** — a built-in vector icon, plus a standard caption.
-2. **`Images` + `ImageIndex`** — an image from a `TImageList`.
-3. **`Glyph`** — a user-supplied `TBitmap`, optionally split into 1–4 states via `NumGlyphs`.
+2. **`SvgImages` + `ImageIndex`** — an image from a `TCssSvgImgList`. The SVG is rasterised on demand, at the current DPI, with anti-aliasing, and tinted with the effective text color from CSS.
+3. **`Images` + `ImageIndex`** — an image from a `TImageList`.
+4. **`Glyph`** — a user-supplied `TBitmap`, optionally split into 1–4 states via `NumGlyphs`.
 
-When no glyph is available, `TCssBitBtn` behaves exactly like a plain `TCssButton`.
+As soon as a source yields a valid image index, the next sources in the list are ignored. When no glyph is available at all, `TCssBitBtn` behaves exactly like a plain `TCssButton`.
 
 #### Pascal Properties
 
-| Property           | Type               | Default      | Notes                                                                 |
-| ------------------ | ------------------ | ------------ | --------------------------------------------------------------------- |
-| `Kind`             | `TCssBitBtnKind`   | `bkCustom`   | One of: `bkCustom`, `bkOK`, `bkCancel`, `bkHelp`, `bkYes`, `bkNo`, `bkClose`, `bkAbort`, `bkRetry`, `bkIgnore`, `bkAll`. |
-| `Glyph`            | `TBitmap`          | empty        | User bitmap. Assigning a non-empty bitmap resets `Kind` to `bkCustom`. |
-| `NumGlyphs`        | `Integer`          | `1`          | 1–4: how many sub-images the `Glyph` bitmap is split into, stacked vertically. |
-| `Images`           | `TCustomImageList` | `nil`        | Source of the glyph when `Kind = bkCustom` and `Glyph` is empty.       |
-| `ImageIndex`       | `Integer`          | `-1`         | Index inside `Images`. `-1` disables the image source.                 |
-| `Transparent`      | `Boolean`          | `True`       | Whether `Glyph` uses transparency.                                     |
-| `GlyphScaled`      | `Boolean`          | `False`      | If `True`, `Glyph` and `Images` are stretched by the current DPI factor. The `Kind` icons are always DPI-scaled. |
-| `UseKindCaption`   | `Boolean`          | `True`       | If `True`, changing `Kind` overwrites `Caption` with the standard label. If `False`, your own caption is preserved. Automatically set to `False` the first time you assign a caption that does not match the current `Kind`'s default. |
-| `GlyphLayout`      | `TCssButtonLayout` | `blGlyphLeft` | Read-only. Reflects the effective value parsed from CSS.             |
-| `GlyphSpacing`     | `Integer`          | —            | Read-only. Effective spacing in **device pixels**.                    |
-| `GlyphMargin`      | `Integer`          | —            | Read-only. Effective margin in **device pixels**, or `-1` for "use CSS padding". |
+| Property               | Type               | Default      | Notes                                                                 |
+| ---------------------- | ------------------ | ------------ | --------------------------------------------------------------------- |
+| `Kind`                 | `TCssBitBtnKind`   | `bkCustom`   | One of: `bkCustom`, `bkOK`, `bkCancel`, `bkHelp`, `bkYes`, `bkNo`, `bkClose`, `bkAbort`, `bkRetry`, `bkIgnore`, `bkAll`. |
+| `Glyph`                | `TBitmap`          | empty        | User bitmap. Assigning a non-empty bitmap resets `Kind` to `bkCustom`. |
+| `NumGlyphs`            | `Integer`          | `1`          | 1–4: how many sub-images the `Glyph` bitmap is split into, stacked vertically. Ignored for `SvgImages`, `Images` and `Kind`. |
+| `Images`               | `TCustomImageList` | `nil`        | Source of the glyph when `Kind = bkCustom` and no `SvgImages` is set.  |
+| `SvgImages`            | `TCssSvgImgList`   | `nil`        | Preferred source of the glyph when `Kind = bkCustom`. Takes priority over `Images`. See [SVG Image Lists](#svg-image-lists-tcsssvgimglist). |
+| `ImageIndex`           | `Integer`          | `-1`         | Index for the normal state, inside `SvgImages` or `Images`. `-1` disables this source. |
+| `ImageIndexDisabled`   | `Integer`          | `-1`         | Index for the disabled state. `-1` means "fall back to `ImageIndex`". See below. |
+| `ImageIndexPressed`    | `Integer`          | `-1`         | Index for the pressed (`:active`) state. `-1` means "fall back to `ImageIndex`". |
+| `ImageIndexFocused`    | `Integer`          | `-1`         | Index for the focused state. `-1` means "fall back to `ImageIndex`".   |
+| `Transparent`          | `Boolean`          | `True`       | Whether `Glyph` uses transparency.                                     |
+| `GlyphScaled`          | `Boolean`          | `False`      | If `True`, `Glyph` and `Images` are stretched by the current DPI factor. The `SvgImages` and `Kind` sources are always DPI-scaled. |
+| `UseKindCaption`       | `Boolean`          | `True`       | If `True`, changing `Kind` overwrites `Caption` with the standard label. If `False`, your own caption is preserved. Automatically set to `False` the first time you assign a caption that does not match the current `Kind`'s default. |
+| `GlyphLayout`          | `TCssButtonLayout` | `blGlyphLeft` | Read-only. Reflects the effective value parsed from CSS.             |
+| `GlyphSpacing`         | `Integer`          | —            | Read-only. Effective spacing in **device pixels**.                    |
+| `GlyphMargin`          | `Integer`          | —            | Read-only. Effective margin in **device pixels**, or `-1` for "use CSS padding". |
+
+#### Per-State Image Indexes
+
+For the `SvgImages` and `Images` sources, `ImageIndex` selects the glyph for the normal state, and the three extra properties override it for the specific states:
+
+| State                        | Index used                                          |
+| ---------------------------- | --------------------------------------------------- |
+| Normal                       | `ImageIndex`                                        |
+| `Enabled = False`            | `ImageIndexDisabled`, if `>= 0`; otherwise `ImageIndex` |
+| Pressed (`:active`)          | `ImageIndexPressed`, if `>= 0`; otherwise `ImageIndex`  |
+| Focused                      | `ImageIndexFocused`, if `>= 0`; otherwise `ImageIndex`  |
+
+Only one state applies per paint. The lookup order matches the glyph state machine: disabled → pressed → focused → normal, so a disabled button always uses `ImageIndexDisabled` even if it is also focused or pressed.
+
+If a dedicated disabled image is provided via `ImageIndexDisabled`, that image is used **as is** — the automatic muted-tint treatment described below is skipped. This is the recommended way to ship hand-crafted disabled artwork.
 
 #### `NumGlyphs` and Glyph States
 
@@ -489,14 +512,16 @@ When a user `Glyph` is assigned, `NumGlyphs` tells the control how the source bi
 | 3           | ✓                | ✓                  | ✓                 | —                 |
 | 4           | ✓                | ✓                  | ✓                 | ✓                 |
 
-For `Kind` icons and for `Images`, `NumGlyphs` is ignored: those sources supply a single glyph per state, and the disabled variant is generated internally (see below).
+For `Kind` icons, `SvgImages` and `Images`, `NumGlyphs` is ignored: those sources supply a single glyph per state, and the disabled variant is generated internally if no explicit `ImageIndexDisabled` is set (see below).
 
 #### Disabled State
 
 When `Enabled = False`:
 
 - If the glyph source is `Kind`, the control regenerates the vector icon in a **muted palette**: the icon is fully desaturated, its contrast is compressed toward mid-gray, and the result is blended with the effective `:disabled` text color taken from CSS. The disabled icon therefore visually matches the disabled caption in both light and dark themes, without extra configuration.
-- If the source is a user `Glyph` with `NumGlyphs ≥ 2`, state 1 is used **as is** — the user already provided a dedicated disabled bitmap, no automatic desaturation is applied.
+- If the source is `SvgImages` and `ImageIndexDisabled` is set, that index is used **as is** — SVG still honours the current `:disabled` text color, because the rasteriser paints `currentColor` from CSS.
+- If the source is `SvgImages` and `ImageIndexDisabled` is **not** set, the alpha-aware desaturation is applied directly to the RGBA raster. Transparent pixels stay transparent, so the disabled icon has no visible box behind it. The AA edges of the icon survive too.
+- If the source is a user `Glyph` with `NumGlyphs ≥ 2`, state 1 is used as is — the user already provided a dedicated disabled bitmap, no automatic desaturation is applied.
 - If the source is `Glyph` with `NumGlyphs = 1` or an `Images` glyph, the bitmap is desaturated on the fly and cached. The same muted tint as above is applied.
 
 Both enabled and disabled variants are cached, so switching `Enabled` back and forth is free.
@@ -533,19 +558,28 @@ TCssBitBtn.toolbar {
 ```
 
 ```pascal
-// Custom bitmap with 4 states (normal / disabled / pressed / down).
-CssBitBtn1.Glyph.LoadFromFile('icon_states.png');
-CssBitBtn1.NumGlyphs    := 4;
-CssBitBtn1.GlyphScaled  := True;
+// SVG icon that recolors itself with the current CSS text color.
+// On :disabled the raster is auto-tinted, on :active it is reused
+// unless a dedicated pressed icon is provided.
+CssBitBtn1.SvgImages         := CssSvgImgList1;
+CssBitBtn1.ImageIndex        := CssSvgImgList1.IndexOf('save');
+CssBitBtn1.ImageIndexPressed := CssSvgImgList1.IndexOf('save_pressed');
+CssBitBtn1.Caption           := 'Save';
+CssBitBtn1.UseKindCaption    := False;
 
 // Built-in icon with a custom caption.
 CssBitBtn2.Kind            := bkOK;
 CssBitBtn2.Caption         := 'Save';
 CssBitBtn2.UseKindCaption  := False;
 
-// Glyph from an image list.
-CssBitBtn3.Images     := ImageList1;
-CssBitBtn3.ImageIndex := 3;
+// Bitmap glyph with 4 states (normal / disabled / pressed / down).
+CssBitBtn3.Glyph.LoadFromFile('icon_states.png');
+CssBitBtn3.NumGlyphs    := 4;
+CssBitBtn3.GlyphScaled  := True;
+
+// Glyph from a classic image list.
+CssBitBtn4.Images     := ImageList1;
+CssBitBtn4.ImageIndex := 3;
 ```
 
 #### Notes and Caveats
@@ -553,7 +587,10 @@ CssBitBtn3.ImageIndex := 3;
 - Assigning a non-empty `Glyph` (via the Object Inspector or in code) resets `Kind` to `bkCustom`, mirroring `TBitBtn`.
 - Setting a custom `Caption` when `UseKindCaption = True` automatically flips it to `False` — the current `Kind`'s label will no longer overwrite yours. Set `UseKindCaption := True` again to restore the standard label.
 - The `Kind` glyphs are drawn with the anti-aliased primitives of the base engine, so their edges are smooth at every DPI. They never use the system font, so no font substitution or missing-glyph issues occur.
+- `SvgImages` is preferred over `Images`. To force the classic `TImageList` for a specific button, just leave `SvgImages` unset on that button (the property is per-control).
+- The SVG icon is always rendered at the current DPI, because `TCssSvgImgList` bakes `Screen.PixelsPerInch / 96` into its own effective size. Setting `GlyphScaled` additionally multiplies the size, which is useful only when the same icon must be enlarged on purpose.
 - All glyph bitmaps are cached per state and per DPI factor. `ChangeScale` regenerates them automatically when the form moves to a monitor with a different scale.
+- When the source is `SvgImages`, the rendered glyph is kept as a `pf32bit` bitmap with a real alpha channel, and it is composited per-pixel onto the canvas. This is the only way the anti-aliased edges of the SVG survive on all LCL widgetsets — the `TBitmap.TransparentColor`-based path used for `Images` and `Glyph` would drop the alpha of the edges and produce a jagged outline.
 - In the designer, changing `Kind` repaints the control immediately, without waiting for the next focus event.
 
 ### TCssCheckBox
@@ -774,6 +811,121 @@ Additional Pascal properties: `AutoSnap`, `SnapThreshold`, `HighlightAdjacentCon
 | `html-mode`                                                                | `true` / `false` — enables HTML in cells.          |
 
 Child controls also expose `CheckBoxCssClass` / `CheckBoxCssStyle` and `EditStyleName` for the inline editor.
+
+---
+
+## SVG Image Lists (TCssSvgImgList)
+
+`TCssSvgImgList` is a non-visual component that plays the same role as `TImageList`, but stores its pictures as **native SVG text**. Each image is rasterised on demand, at the size and DPI the caller asks for, using the same anti-aliased primitives that `TCssStyledControl` uses for its own artwork.
+
+Because SVG is vector-based, a single entry can serve as a 16×16 toolbar icon, a 32×32 button glyph and a 64×64 HiDPI preview without any extra work. `TCssSvgImgList` is the recommended source for `TCssBitBtn` glyphs when your icons are already shipped as SVG (Illustrator, Inkscape, Figma, Iconify, Material Symbols, and so on).
+
+### Why not just use `TImageList`?
+
+- **Crisp at any DPI.** `TImageList` ships fixed-size bitmaps; on a 200 % monitor they either look tiny or blurry. `TCssSvgImgList` renders the vector source at the exact device pixel size.
+- **One asset, many sizes.** No need to author a separate PNG for every DPI bucket.
+- **`currentColor` support.** SVG paths that use `fill="currentColor"` are painted with the effective CSS text color of the consumer (`TCssBitBtn` passes `GetEffectiveTextColor` automatically). One icon can be a blue "info" bubble in the light theme and a pale yellow one in the dark theme, without two separate files.
+- **Smaller `.lfm` files.** SVG text compresses better than raw RGBA bitmaps, especially for line-art icons.
+
+### Where It Is Used
+
+- `TCssBitBtn.SvgImages` — the primary integration point. When set, the button sources its glyph from the list, preferring it over `Images`.
+- Anywhere in your own code that needs a `TBitmap` from an SVG: `TCssSvgImgList.GetBitmap`, `GetBitmapByName`, `DrawToCanvas`.
+- `TCssSvgImgList.AssignToImageList` — one-shot migration path: rasterise every SVG entry into a standard `TImageList` (for legacy controls that still require one). The alpha channel is preserved through a generated mask, so the resulting images keep their transparency.
+
+### Supported SVG Subset
+
+The built-in rasteriser is deliberately small but covers what icon sets actually use:
+
+- **Elements**: `svg`, `g`, `path`, `rect`, `circle`, `ellipse`, `line`, `polyline`, `polygon`, `text`, `tspan`.
+- **Path commands**: `M m L l H h V v C c S s Q q T t A a Z z`.
+- **Transforms**: `translate`, `scale`, `rotate`, `skewX`, `skewY`, `matrix`.
+- **Style**: `fill`, `fill-opacity`, `fill-rule`, `stroke`, `stroke-opacity`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `opacity`, `color` (`currentColor`), `style="..."`, `display`, `visibility`.
+- **Gradients**: `linearGradient`, `radialGradient`, including `gradientUnits`, `gradientTransform` and `spreadMethod`.
+- **View box**: `viewBox` + `preserveAspectRatio` (`meet` / `slice`, alignment keywords, `none`).
+
+Not supported: filters, `<use>` / `<defs>` references (other than gradients), `<textPath>`, CSS animations, embedded fonts. If your icons rely on any of these, pre-render them to PNG or simplify them in the SVG editor.
+
+### Pascal API
+
+| Member                                                 | Description                                                       |
+| ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `Items`                                                | Collection of `TCssSvgImgListItem` (`Name`, `Svg`).               |
+| `Count`                                                | Number of items (read-only).                                      |
+| `Width`, `Height`                                      | Design-time size of a single cell, in pixels (default `16` × `16`). |
+| `Scaled`                                               | If `True` (default), `Width` and `Height` are multiplied by `Screen.PixelsPerInch / 96`. |
+| `AddSvg(Name, Svg)`                                    | Appends an item and returns its index.                            |
+| `AddSvgFromFile(Name, FileName)`                       | Appends an item, loading SVG text from a file.                    |
+| `Delete(Index)`, `Clear`                               | Removes one item / all items.                                     |
+| `IndexOf(Name)`                                        | Case-insensitive lookup by `Name`, or `-1`.                       |
+| `GetSvg(Index)` / `GetSvg(Name)`                       | Returns the source SVG text.                                      |
+| `SetSvg(Index, Value)`                                 | Replaces the SVG text of an item.                                 |
+| `GetParseError(Index)`                                 | Returns the error string if the last parse failed, or an empty string. |
+| `GetEffectiveWidth` / `GetEffectiveHeight`             | Width / height after applying `Scaled`.                           |
+| `GetBitmap(Index, W, H, CurrentColor)`                 | Rasterises the SVG into a new `pf32bit` bitmap with a real alpha channel. The caller owns the bitmap. |
+| `GetBitmapByName(Name, W, H, CurrentColor)`            | Same, looked up by `Name`.                                        |
+| `DrawToCanvas(Canvas, Index, X, Y)`                    | Rasterises at the effective size and blits to the canvas.         |
+| `DrawToCanvas(Canvas, Index, X, Y, W, H, CurrentColor)` | Same, with an explicit size.                                      |
+| `AssignToImageList(ImageList, CurrentColor)`           | Rasterises every entry into a standard `TImageList`, generating the transparency mask. |
+| `SaveToStream` / `LoadFromStream`                      | Batch serialisation of all items.                                 |
+| `SaveToFile` / `LoadFromFile`                          | Same, from a file on disk.                                        |
+
+### `TCssSvgImgListItem`
+
+Each item has just two published properties:
+
+| Property | Notes                                                                                |
+| -------- | ------------------------------------------------------------------------------------ |
+| `Name`   | Logical name. Used by `IndexOf` and `GetBitmapByName`.                                |
+| `Svg`    | Full SVG text of the image.                                                           |
+| `Image`  | Read-only. Returns the parsed `TSvgImage` (lazily created).                           |
+
+### Example — Using It From Code
+
+```pascal
+// Load an icon at design time (see "Design-Time Support" below)
+// or from code:
+CssSvgImgList1.AddSvgFromFile('check',  'icons/check.svg');
+CssSvgImgList1.AddSvgFromFile('cancel', 'icons/cancel.svg');
+
+// Attach it to a button:
+CssBitBtn1.SvgImages  := CssSvgImgList1;
+CssBitBtn1.ImageIndex := CssSvgImgList1.IndexOf('check');
+
+// Or rasterise manually — the caller owns the returned bitmap:
+Bmp := CssSvgImgList1.GetBitmap(CssSvgImgList1.IndexOf('check'), 64, 64, clGreen);
+try
+  Image1.Picture.Assign(Bmp);
+finally
+  Bmp.Free;
+end;
+```
+
+### Example — Recolouring with `currentColor`
+
+Use `currentColor` inside the SVG wherever a design tool would normally hard-code a palette color:
+
+```xml
+<svg viewBox="0 0 16 16">
+  <path fill="currentColor" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13z"/>
+</svg>
+```
+
+The icon will then follow the effective CSS text color of the consumer. `TCssBitBtn` passes its `GetEffectiveTextColor` at rasterisation time, so the same SVG becomes green on a normal button, muted grey on a `:disabled` button, and white on a dark theme — all without a single extra file.
+
+### Performance Notes
+
+- The rasteriser flattens Bézier and arc segments into polygons once, then runs the anti-aliased coverage pass over them. Everything is done in memory; there is no disk cache.
+- `TCssSvgImgList` keeps an internal LRU cache of already-rasterised bitmaps keyed by `(index, width, height, currentColor, serial)`. The cache is invalidated whenever an item's `Svg` changes, a new item is added, or `Width` / `Height` / `Scaled` change.
+- For icon sets of a few dozen entries the cost is negligible. If you ship thousands of SVGs, load them on demand rather than all at once.
+- `TCssBitBtn` keeps its own small per-state cache of the scaled glyph, so re-painting a button does not re-rasterise the SVG on every frame.
+
+### Notes and Caveats
+
+- Only a single variant per entry is supported — no `light` / `dark` split inside one item. Use `currentColor`, or add two items (e.g. `check` and `check_dark`) and switch the `ImageIndex` in your code.
+- The SVG parser is not an XML validator. If it fails, `Image.Error` is non-empty and the rasteriser returns a blank bitmap. Call `GetParseError(Index)` if you need to surface the reason.
+- The rasteriser produces a `pf32bit` bitmap with a real per-pixel alpha channel — no `TransparentColor` chroma-keying anywhere, so semi-transparent strokes and antialiased edges blend correctly on any background.
+
 ---
 
 ## Themes (Light and Dark)
@@ -1089,6 +1241,11 @@ theme looks equally sharp at 100 %, 125 %, 150 %, 200 % and higher.
 
 ### What is *not* scaled
 
+- Every `TCssSvgImgList` entry is rasterised at the current DPI, so SVG
+  icons are always sharp at 100 %, 125 %, 150 %, 200 % and higher.
+  `TCssSvgImgList.Scaled` (default `True`) controls whether the design-time
+  cell size is multiplied by the DPI factor — leave it at `True` for the
+  same behaviour as the rest of the library.
 - Colors, fonts by name, `font-weight`, `font-style`, `text-decoration`,
   `text-align`, `vertical-align`, `cursor`, `opacity`, `box-shadow` color
   and all other non-length values — they are device-independent by nature.
@@ -1325,6 +1482,22 @@ Installing `CssStyledControlsDesign.lpk` adds the following editors.
 - A **component editor** with an `Edit CSS…` verb.
 
 Right-click a `TCssStyleProvider` on a form and choose **Edit CSS…** to open the editor.
+
+### On `TCssSvgImgList`
+
+A dedicated **visual editor** for the `Items` collection. Open it by double-clicking the component, or from the component's context menu (**Edit items…**).
+
+- **List with thumbnails.** Every entry is rendered at 32×32 next to its `Name`, so you can see the actual SVG artwork instead of a file path.
+- **`Load from file…`** — adds one or several `*.svg` files at once. The `Name` is derived from the file name (`icons/check.svg` → `check`), and a numeric suffix is appended automatically if a name is already taken (`check`, `check1`, `check2`, …).
+- **`Add empty`** — adds a placeholder item, useful when the SVG text is going to be pasted in from elsewhere.
+- **`Delete`**, **`Up`**, **`Down`** — remove the selected item or reorder the list. Order matters for `IndexOf`.
+- **`Name` editor** — renames the selected item, updating the list live. Renaming to an existing name is allowed; `IndexOf` returns the first match.
+- **`OK` / `Cancel`** — all changes are collected in the dialog and applied to the collection atomically. `Cancel` restores the original list from an internal backup, so nothing is written to the `.lfm`.
+
+The `Svg` property is **not** editable in the Object Inspector — for a 10 KB SVG payload a plain `TStrings` edit box is unusable. Instead, the property shows a short, informative summary such as `<SVG data: 1024 bytes>` or `(empty)`, and the actual editing happens through the visual editor described above.
+
+The component also has a **`Load SVG from file…` verb** in its context menu, which lets you add several icons to the list without opening the editor at all — useful when you just want to bulk-import a folder of SVGs.
+
 
 ### On `TCssPageControl`
 

@@ -109,6 +109,10 @@
         <Filename Value="..\Source\CssAntiAlias.pas"/>
         <UnitName Value="CssAntiAlias"/>
       </Item>
+      <Item>
+        <Filename Value="..\Source\CssSvgImgList.pas"/>
+        <UnitName Value="CssSvgImgList"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

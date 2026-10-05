@@ -9,7 +9,7 @@ interface
 
 uses
   CssStyledControlDesign, CssMenuReg, CssMenuDesigner, 
-  CssVirtualTreeColumnsEditor, LazarusPackageIntf;
+  CssVirtualTreeColumnsEditor, CssSvgImgListDesign, LazarusPackageIntf;
 
 implementation
 
@@ -17,6 +17,7 @@ procedure Register;
 begin
   RegisterUnit('CssStyledControlDesign', @CssStyledControlDesign.Register);
   RegisterUnit('CssMenuReg', @CssMenuReg.Register);
+  RegisterUnit('CssSvgImgListDesign', @CssSvgImgListDesign.Register);
 end;
 
 initialization

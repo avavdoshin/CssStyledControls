@@ -15,7 +15,7 @@
 interface
 
 uses
-  Classes, SysUtils, Graphics, Types;
+  Classes, SysUtils, Graphics, Types, IntfGraphics;
 
 type
   TCssBorderStyle = (cbsNone, cbsSolid, cbsDotted, cbsDashed);
@@ -151,6 +151,51 @@ procedure DrawAARoundedRectOverlay(
   const ARadii: TCssCornerRadii;
   AColor: TColor);
 
+// ----- Types for vector (SVG) rasterization --------------------------------
+type
+  TAAFillRule   = (aafrNonZero, aafrEvenOdd);
+  TAAStrokeCap  = (aascButt, aascRound, aascSquare);
+  TAAStrokeJoin = (aasjMiter, aasjRound, aasjBevel);
+  TAAFloatPoints   = array of TPointF;
+  TAAFloatPolygons = array of TAAFloatPoints;
+
+{ Builds an anti-aliased coverage mask (0..255) for a set of flat
+  polygons. Vertical subpixel sampling (8 rows) + analytical horizontal coverage. }
+procedure AABuildPolygonsCoverage(
+  var ACoverage: array of Byte;
+  AW, AH: Integer;
+  const APolygons: TAAFloatPolygons;
+  AFillRule: TAAFillRule);
+
+{ Builds a coverage mask for a stroke (outline) of a single polyline. The stroke
+  is tessellated into a polygon (taking caps and joins into account) and rasterized
+  via AABuildPolygonsCoverage. }
+procedure AABuildStrokeCoverage(
+  var ACoverage: array of Byte;
+  AW, AH: Integer;
+  const APath: TAAFloatPoints;
+  ALineWidth: Double;
+  ACap: TAAStrokeCap;
+  AJoin: TAAStrokeJoin;
+  AMiterLimit: Double;
+  AClosed: Boolean);
+
+{ Blends coverage to a canvas with an additional opacity multiplier. }
+procedure AABlendCoverageWithAlphaToCanvas(
+  ACanvas: TCanvas;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  AColor: TColor;
+  AOpacity: Double);
+
+{ Composites coverage into a 32-bit RGBA image (true alpha). }
+procedure AABlendCoverageToImage(
+  AImg: TLazIntfImage;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  AColor: TColor;
+  AOpacity: Double);
+
 // ----- Cached masks -----
 
 function GetCheckMarkMask(AW, AH: Integer;
@@ -160,10 +205,60 @@ function GetDotMask(ASize: Integer): TCssDotMaskEntry;
 
 procedure InvalidateAACaches;
 
+// ---- SVG Gradient types (used by TCssSvgImgList) --------------------------
+type
+  TSvgGradientMatrix = record
+    A, B, C, D, E, F: Double;
+  end;
+
+  TSvgGradientStop = record
+    Offset: Double;
+    Color: TColor;
+    Opacity: Double;
+  end;
+
+  TSvgGradientKind = (svgkLinear, svgkRadial);
+
+  TSvgGradientSpreadMethod = (svgsmPad, svgsmReflect, svgsmRepeat);
+
+  TSvgGradientParams = record
+    Kind: TSvgGradientKind;
+    // For linear: line from (X1,Y1) to (X2,Y2)
+    // For radial: circle centered at (CX,CY) with radius R, focal point at (FX,FY)
+    X1, Y1, X2, Y2: Double;
+    CX, CY, R, FX, FY: Double;
+    Stops: array of TSvgGradientStop;
+    Transform: TSvgGradientMatrix;
+    SpreadMethod: TSvgGradientSpreadMethod;
+  end;
+
+  function SvgGradientMatrixIdentity: TSvgGradientMatrix;
+
+// Computes the color and opacity of a gradient at a given point (AX, AY).
+// Returns True if the point is within the gradient's defined range.
+function SvgGradientColorAtPoint(const AGradient: TSvgGradientParams;
+  AX, AY: Double; out AColor: TColor; out AOpacity: Double): Boolean;
+
+// Blends a coverage mask with a gradient into a 32-bit RGBA image.
+procedure AABlendCoverageWithGradientToImage(
+  AImg: TLazIntfImage;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  const AGradient: TSvgGradientParams;
+  AOpacity: Double);
+
+// Blends a coverage mask with a gradient into a canvas.
+procedure AABlendCoverageWithGradientToCanvas(
+  ACanvas: TCanvas;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  const AGradient: TSvgGradientParams;
+  AOpacity: Double);
+
 implementation
 
 uses
-  Math, IntfGraphics, FPImage;
+  Math, FPImage;
 
 // ============================================================================
 //  Numeric helpers
@@ -1842,6 +1937,742 @@ begin
 
   if Assigned(GDotCache) then
     GDotCache.Clear;
+end;
+
+// ============================================================================
+//  Vector rasterization: polygon and stroke coverage
+// ============================================================================
+
+procedure AABlendCoverageWithAlphaToCanvas(
+  ACanvas: TCanvas;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  AColor: TColor;
+  AOpacity: Double);
+var
+  X, Y, Idx: Integer;
+  Cov, InvCov, Op: Double;
+  LineRGB, BgRGB: TColor;
+  LR, LG, LB: Byte;
+  BR, BG, BB: Byte;
+  R, G, B: Integer;
+  DstColor: TColor;
+begin
+  if ACanvas = nil then Exit;
+  if (AWidth <= 0) or (AHeight <= 0) then Exit;
+  if Length(ACoverage) < AWidth * AHeight then Exit;
+  Op := ClampD(AOpacity, 0, 1);
+  if Op <= 0 then Exit;
+  LineRGB := ColorToRGB(AColor);
+  LR := Byte(LineRGB and $FF);
+  LG := Byte((LineRGB shr 8) and $FF);
+  LB := Byte((LineRGB shr 16) and $FF);
+  for Y := 0 to AHeight - 1 do
+    for X := 0 to AWidth - 1 do
+    begin
+      Idx := Y * AWidth + X;
+      if ACoverage[Idx] = 0 then Continue;
+      Cov := (ACoverage[Idx] / 255.0) * Op;
+      InvCov := 1.0 - Cov;
+      DstColor := ACanvas.Pixels[ALeft + X, ATop + Y];
+      BgRGB := ColorToRGB(DstColor);
+      BR := Byte(BgRGB and $FF);
+      BG := Byte((BgRGB shr 8) and $FF);
+      BB := Byte((BgRGB shr 16) and $FF);
+      R := Round(LR * Cov + BR * InvCov);
+      G := Round(LG * Cov + BG * InvCov);
+      B := Round(LB * Cov + BB * InvCov);
+      ACanvas.Pixels[ALeft + X, ATop + Y] := RGBToColor(R, G, B);
+    end;
+end;
+
+procedure AABlendCoverageToImage(
+  AImg: TLazIntfImage;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  AColor: TColor;
+  AOpacity: Double);
+var
+  X, Y, Idx: Integer;
+  Cov, Op, DstA, OutA, KeepA: Double;
+  RGB: TColor;
+  SR, SG, SB: Byte;
+  Pix: TFPColor;
+  DR, DG, DB: Double;
+begin
+  if AImg = nil then Exit;
+  if (AWidth <= 0) or (AHeight <= 0) then Exit;
+  if Length(ACoverage) < AWidth * AHeight then Exit;
+  Op := ClampD(AOpacity, 0, 1);
+  if Op <= 0 then Exit;
+  RGB := ColorToRGB(AColor);
+  SR := Byte(RGB and $FF);
+  SG := Byte((RGB shr 8) and $FF);
+  SB := Byte((RGB shr 16) and $FF);
+  for Y := 0 to AHeight - 1 do
+  begin
+    if (ATop + Y < 0) or (ATop + Y >= AImg.Height) then Continue;
+    for X := 0 to AWidth - 1 do
+    begin
+      if (ALeft + X < 0) or (ALeft + X >= AImg.Width) then Continue;
+      Idx := Y * AWidth + X;
+      if ACoverage[Idx] = 0 then Continue;
+      Cov := (ACoverage[Idx] / 255.0) * Op;
+      if Cov <= 0 then Continue;
+      Pix := AImg.Colors[ALeft + X, ATop + Y];
+      DstA := Pix.Alpha / 65535.0;
+      DR := Pix.Red shr 8;
+      DG := Pix.Green shr 8;
+      DB := Pix.Blue shr 8;
+      OutA := Cov + DstA * (1 - Cov);
+      KeepA := DstA * (1 - Cov);
+      if OutA > 0 then
+      begin
+        Pix.Red   := Round((SR * Cov + DR * KeepA) / OutA) * 257;
+        Pix.Green := Round((SG * Cov + DG * KeepA) / OutA) * 257;
+        Pix.Blue  := Round((SB * Cov + DB * KeepA) / OutA) * 257;
+      end;
+      Pix.Alpha := Round(OutA * 65535);
+      AImg.Colors[ALeft + X, ATop + Y] := Pix;
+    end;
+  end;
+end;
+
+procedure AABuildPolygonsCoverage(
+  var ACoverage: array of Byte;
+  AW, AH: Integer;
+  const APolygons: TAAFloatPolygons;
+  AFillRule: TAAFillRule);
+const
+  SUBPIXEL_Y = 8;
+type
+  TEdge = record
+    X0, Y0, X1, Y1: Double;
+  end;
+var
+  Edges: array of TEdge;
+  Accum: array of Double;
+  XS: array of Double;
+  DS: array of Integer;
+  EdgeCount: Integer;
+  PolyIdx, I, J, K, Y, Smp, N, Total: Integer;
+  P0, P1: TPointF;
+  YY, XInt, Wt, SpanStart: Double;
+  Wind: Integer;
+
+  procedure AddSpan(ARow: Integer; XA, XB: Double);
+  var
+    LX, LXEnd, Base: Integer;
+  begin
+    if XB <= XA then Exit;
+    if (XB <= 0) or (XA >= AW) then Exit;
+    if XA < 0 then XA := 0;
+    if XB > AW then XB := AW;
+    Base := ARow * AW;
+    LX := Floor(XA);
+    LXEnd := Floor(XB);
+    if LX >= AW then Exit;
+    if LXEnd >= AW then LXEnd := AW - 1;
+    if LX = LXEnd then
+      Accum[Base + LX] := Accum[Base + LX] + (XB - XA) * Wt
+    else
+    begin
+      Accum[Base + LX] := Accum[Base + LX] + (LX + 1 - XA) * Wt;
+      for LX := LX + 1 to LXEnd - 1 do
+        Accum[Base + LX] := Accum[Base + LX] + Wt;
+      if XB > LXEnd then
+        Accum[Base + LXEnd] := Accum[Base + LXEnd] + (XB - LXEnd) * Wt;
+    end;
+  end;
+
+begin
+  if (AW <= 0) or (AH <= 0) then Exit;
+  Total := AW * AH;
+  if Length(ACoverage) < Total then Exit;
+  for I := 0 to Total - 1 do
+    ACoverage[I] := 0;
+
+  // Collect all non-horizontal edges.
+  EdgeCount := 0;
+  Edges := nil;
+  for PolyIdx := 0 to High(APolygons) do
+  begin
+    N := Length(APolygons[PolyIdx]);
+    if N < 3 then Continue;
+    for I := 0 to N - 1 do
+    begin
+      P0 := APolygons[PolyIdx][I];
+      P1 := APolygons[PolyIdx][(I + 1) mod N];
+      if Abs(P1.Y - P0.Y) < 1E-6 then Continue;
+      if EdgeCount >= Length(Edges) then
+        SetLength(Edges, Length(Edges) + 512);
+      Edges[EdgeCount].X0 := P0.X;
+      Edges[EdgeCount].Y0 := P0.Y;
+      Edges[EdgeCount].X1 := P1.X;
+      Edges[EdgeCount].Y1 := P1.Y;
+      Inc(EdgeCount);
+    end;
+  end;
+  if EdgeCount = 0 then Exit;
+
+  SetLength(Accum, Total);
+  for I := 0 to Total - 1 do Accum[I] := 0;
+  SetLength(XS, EdgeCount);
+  SetLength(DS, EdgeCount);
+  Wt := 1.0 / SUBPIXEL_Y;
+
+  for Y := 0 to AH - 1 do
+    for Smp := 0 to SUBPIXEL_Y - 1 do
+    begin
+      YY := Y + (Smp + 0.5) / SUBPIXEL_Y;
+      N := 0;
+      for I := 0 to EdgeCount - 1 do
+      begin
+        if ((Edges[I].Y0 <= YY) and (YY < Edges[I].Y1)) or
+           ((Edges[I].Y1 <= YY) and (YY < Edges[I].Y0)) then
+        begin
+          XInt := Edges[I].X0 + (YY - Edges[I].Y0) *
+            (Edges[I].X1 - Edges[I].X0) / (Edges[I].Y1 - Edges[I].Y0);
+          XS[N] := XInt;
+          if Edges[I].Y1 > Edges[I].Y0 then DS[N] := 1 else DS[N] := -1;
+          Inc(N);
+        end;
+      end;
+      if N < 2 then Continue;
+      // Sort intersections by X (insertion sort).
+      for I := 1 to N - 1 do
+      begin
+        XInt := XS[I];
+        J := DS[I];
+        K := I - 1;
+        while (K >= 0) and (XS[K] > XInt) do
+        begin
+          XS[K + 1] := XS[K];
+          DS[K + 1] := DS[K];
+          Dec(K);
+        end;
+        XS[K + 1] := XInt;
+        DS[K + 1] := J;
+      end;
+      if AFillRule = aafrEvenOdd then
+      begin
+        I := 0;
+        while I + 1 < N do
+        begin
+          AddSpan(Y, XS[I], XS[I + 1]);
+          Inc(I, 2);
+        end;
+      end
+      else
+      begin
+        Wind := 0;
+        SpanStart := 0;
+        for I := 0 to N - 1 do
+        begin
+          if Wind = 0 then
+          begin
+            SpanStart := XS[I];
+            Wind := Wind + DS[I];
+          end
+          else
+          begin
+            Wind := Wind + DS[I];
+            if Wind = 0 then
+              AddSpan(Y, SpanStart, XS[I]);
+          end;
+        end;
+      end;
+    end;
+
+  for I := 0 to Total - 1 do
+  begin
+    J := Round(Accum[I] * 255);
+    if J < 0 then J := 0;
+    if J > 255 then J := 255;
+    ACoverage[I] := Byte(J);
+  end;
+end;
+
+procedure AABuildStrokeCoverage(
+  var ACoverage: array of Byte;
+  AW, AH: Integer;
+  const APath: TAAFloatPoints;
+  ALineWidth: Double;
+  ACap: TAAStrokeCap;
+  AJoin: TAAStrokeJoin;
+  AMiterLimit: Double;
+  AClosed: Boolean);
+
+  function Pt(X, Y: Double): TPointF; inline;
+  begin Result.X := X; Result.Y := Y; end;
+  function VAdd(const A, B: TPointF): TPointF; inline;
+  begin Result.X := A.X + B.X; Result.Y := A.Y + B.Y; end;
+  function VSub(const A, B: TPointF): TPointF; inline;
+  begin Result.X := A.X - B.X; Result.Y := A.Y - B.Y; end;
+  function VMul(const A: TPointF; K: Double): TPointF; inline;
+  begin Result.X := A.X * K; Result.Y := A.Y * K; end;
+  function VCross(const A, B: TPointF): Double; inline;
+  begin Result := A.X * B.Y - A.Y * B.X; end;
+  function VDot(const A, B: TPointF): Double; inline;
+  begin Result := A.X * B.X + A.Y * B.Y; end;
+  function VUnit(const A: TPointF): TPointF; inline;
+  var L: Double;
+  begin
+    L := Sqrt(A.X * A.X + A.Y * A.Y);
+    if L < 1E-9 then Result := Pt(0, 0)
+    else Result := Pt(A.X / L, A.Y / L);
+  end;
+  function VSideN(const D: TPointF; Side: Integer): TPointF; inline;
+  begin
+    if Side < 0 then Result := Pt(-D.Y, D.X)
+    else Result := Pt(D.Y, -D.X);
+  end;
+  function VSame(const A, B: TPointF): Boolean; inline;
+  begin
+    Result := (Abs(A.X - B.X) < 1E-6) and (Abs(A.Y - B.Y) < 1E-6);
+  end;
+  procedure App(var Arr: TAAFloatPoints; var Cnt: Integer; const P: TPointF);
+  begin
+    if (Cnt > 0) and VSame(Arr[Cnt - 1], P) then Exit;
+    if Cnt >= Length(Arr) then SetLength(Arr, Length(Arr) + 64);
+    Arr[Cnt] := P;
+    Inc(Cnt);
+  end;
+  function LineHit(const A, AD, B, BD: TPointF; out T: Double): Boolean;
+  var Den: Double;
+  begin
+    Den := VCross(AD, BD);
+    Result := Abs(Den) > 1E-9;
+    if Result then T := VCross(VSub(B, A), BD) / Den;
+  end;
+
+var
+  Pts, Dirs, Left, Right, Outline: TAAFloatPoints;
+  N, SegCount, I, I0, LC, RC, OC, Total: Integer;
+  W2: Double;
+  IsClosed: Boolean;
+  Poly: TAAFloatPolygons;
+
+  procedure EmitJoin(const P, DD0, DD1: TPointF; Side: Integer;
+    var Arr: TAAFloatPoints; var Cnt: Integer);
+  var
+    N0v, N1v, LA, LB, LQ: TPointF;
+    LCr, LDt, LT, LMLen, LA0, LA1, LAng: Double;
+    LK, LSteps: Integer;
+    Outer: Boolean;
+  begin
+    N0v := VSideN(DD0, Side);
+    N1v := VSideN(DD1, Side);
+    LA := VAdd(P, VMul(N0v, W2));
+    LB := VAdd(P, VMul(N1v, W2));
+    LCr := VCross(DD0, DD1);
+    LDt := VDot(DD0, DD1);
+    if Abs(LCr) < 1E-7 then
+    begin
+      if LDt > 0 then
+        App(Arr, Cnt, VMul(VAdd(LA, LB), 0.5))
+      else
+      begin
+        App(Arr, Cnt, LA);
+        App(Arr, Cnt, LB);
+      end;
+      Exit;
+    end;
+    Outer := ((Side > 0) and (LCr > 0)) or ((Side < 0) and (LCr < 0));
+    if LineHit(LA, DD0, LB, DD1, LT) then
+    begin
+      LQ := VAdd(LA, VMul(DD0, LT));
+      LMLen := Sqrt(Sqr(LQ.X - P.X) + Sqr(LQ.Y - P.Y));
+      if (not Outer) or
+         ((AJoin = aasjMiter) and (LMLen <= AMiterLimit * W2)) then
+      begin
+        App(Arr, Cnt, LQ);
+        Exit;
+      end;
+    end;
+    if Outer and (AJoin = aasjRound) then
+    begin
+      App(Arr, Cnt, LA);
+      LA0 := ArcTan2(LA.Y - P.Y, LA.X - P.X);
+      LA1 := ArcTan2(LB.Y - P.Y, LB.X - P.X);
+      if (LCr > 0) and (LA1 < LA0) then LA1 := LA1 + 2 * Pi;
+      if (LCr < 0) and (LA1 > LA0) then LA1 := LA1 - 2 * Pi;
+      if Abs(LA1 - LA0) > Pi then
+      begin
+        if LA1 > LA0 then LA1 := LA1 - 2 * Pi
+        else LA1 := LA1 + 2 * Pi;
+      end;
+      LSteps := Max(1, Ceil(Abs(LA1 - LA0) / (Pi / 12)));
+      for LK := 1 to LSteps - 1 do
+      begin
+        LAng := LA0 + (LA1 - LA0) * LK / LSteps;
+        App(Arr, Cnt, Pt(P.X + Cos(LAng) * W2, P.Y + Sin(LAng) * W2));
+      end;
+      App(Arr, Cnt, LB);
+    end
+    else
+    begin
+      App(Arr, Cnt, LA);
+      App(Arr, Cnt, LB);
+    end;
+  end;
+
+  procedure EmitCap(const P, DD: TPointF; IsStart: Boolean;
+    var Arr: TAAFloatPoints; var Cnt: Integer);
+  var
+    LBase, LAng: Double;
+    LK, LSteps: Integer;
+    L, R: TPointF;
+  begin
+    case ACap of
+      aascButt: Exit;
+      aascSquare:
+      begin
+        if IsStart then
+        begin
+          R := VAdd(VSub(P, VMul(DD, W2)), VMul(VSideN(DD, +1), W2));
+          L := VAdd(VSub(P, VMul(DD, W2)), VMul(VSideN(DD, -1), W2));
+          App(Arr, Cnt, R);
+          App(Arr, Cnt, L);
+        end
+        else
+        begin
+          L := VAdd(VAdd(P, VMul(DD, W2)), VMul(VSideN(DD, -1), W2));
+          R := VAdd(VAdd(P, VMul(DD, W2)), VMul(VSideN(DD, +1), W2));
+          App(Arr, Cnt, L);
+          App(Arr, Cnt, R);
+        end;
+      end;
+      aascRound:
+      begin
+        LSteps := 12;
+        if IsStart then
+          LBase := ArcTan2(DD.Y, DD.X) - Pi / 2
+        else
+          LBase := ArcTan2(DD.Y, DD.X) + Pi / 2;
+        for LK := 1 to LSteps - 1 do
+        begin
+          LAng := LBase - Pi * LK / LSteps;
+          App(Arr, Cnt, Pt(P.X + Cos(LAng) * W2, P.Y + Sin(LAng) * W2));
+        end;
+      end;
+    end;
+  end;
+
+begin
+  Total := AW * AH;
+  if Length(ACoverage) < Total then Exit;
+  for I := 0 to Total - 1 do ACoverage[I] := 0;
+  if (AW <= 0) or (AH <= 0) then Exit;
+  W2 := ALineWidth / 2;
+  if W2 <= 1E-4 then Exit;
+  if AMiterLimit < 1 then AMiterLimit := 1;
+
+  // Remove duplicate points.
+  Pts := nil;
+  N := 0;
+  for I := 0 to High(APath) do
+    App(Pts, N, APath[I]);
+  IsClosed := AClosed and (N >= 3);
+  if IsClosed and (N > 1) and VSame(Pts[0], Pts[N - 1]) then Dec(N);
+
+  if N <= 1 then
+  begin
+    if (N = 1) and (ACap = aascRound) then
+    begin
+      // A single point with a round cap -> a disc.
+      SetLength(Outline, 24);
+      for I := 0 to 23 do
+        Outline[I] := Pt(Pts[0].X + Cos(2 * Pi * I / 24) * W2,
+                         Pts[0].Y + Sin(2 * Pi * I / 24) * W2);
+      SetLength(Poly, 1);
+      Poly[0] := Outline;
+      AABuildPolygonsCoverage(ACoverage, AW, AH, Poly, aafrNonZero);
+    end;
+    Exit;
+  end;
+
+  SegCount := N;
+  if not IsClosed then SegCount := N - 1;
+  SetLength(Dirs, SegCount);
+  for I := 0 to SegCount - 1 do
+    Dirs[I] := VUnit(VSub(Pts[(I + 1) mod N], Pts[I]));
+
+  Left := nil; Right := nil; Outline := nil;
+  LC := 0; RC := 0; OC := 0;
+
+  if IsClosed then
+  begin
+    for I := 0 to N - 1 do
+    begin
+      I0 := (I - 1 + SegCount) mod SegCount;
+      EmitJoin(Pts[I], Dirs[I0], Dirs[I], -1, Left, LC);
+      EmitJoin(Pts[I], Dirs[I0], Dirs[I], +1, Right, RC);
+    end;
+    for I := 0 to LC - 1 do App(Outline, OC, Left[I]);
+    for I := RC - 1 downto 0 do App(Outline, OC, Right[I]);
+  end
+  else
+  begin
+    App(Left, LC, VAdd(Pts[0], VMul(VSideN(Dirs[0], -1), W2)));
+    for I := 1 to N - 2 do
+      EmitJoin(Pts[I], Dirs[I - 1], Dirs[I], -1, Left, LC);
+    App(Left, LC, VAdd(Pts[N - 1], VMul(VSideN(Dirs[N - 2], -1), W2)));
+    App(Right, RC, VAdd(Pts[0], VMul(VSideN(Dirs[0], +1), W2)));
+    for I := 1 to N - 2 do
+      EmitJoin(Pts[I], Dirs[I - 1], Dirs[I], +1, Right, RC);
+    App(Right, RC, VAdd(Pts[N - 1], VMul(VSideN(Dirs[N - 2], +1), W2)));
+    for I := 0 to LC - 1 do App(Outline, OC, Left[I]);
+    EmitCap(Pts[N - 1], Dirs[N - 2], False, Outline, OC);
+    for I := RC - 1 downto 0 do App(Outline, OC, Right[I]);
+    EmitCap(Pts[0], Dirs[0], True, Outline, OC);
+  end;
+
+  if OC < 3 then Exit;
+  SetLength(Poly, 1);
+  SetLength(Poly[0], OC);
+  for I := 0 to OC - 1 do Poly[0][I] := Outline[I];
+  AABuildPolygonsCoverage(ACoverage, AW, AH, Poly, aafrNonZero);
+end;
+
+// ============================================================================
+//  SVG Gradient rasterization
+// ============================================================================
+
+function SvgGradientMatrixIdentity: TSvgGradientMatrix;
+begin
+  Result.A := 1; Result.B := 0; Result.C := 0;
+  Result.D := 1; Result.E := 0; Result.F := 0;
+end;
+
+function SvgGradientMatrixInvert(const M: TSvgGradientMatrix;
+  out Inv: TSvgGradientMatrix): Boolean;
+var
+  Det: Double;
+begin
+  Det := M.A * M.D - M.B * M.C;
+  Result := Abs(Det) > 1E-9;
+  if not Result then Exit;
+  Inv.A := M.D / Det;
+  Inv.B := -M.B / Det;
+  Inv.C := -M.C / Det;
+  Inv.D := M.A / Det;
+  Inv.E := (M.C * M.F - M.D * M.E) / Det;
+  Inv.F := (M.B * M.E - M.A * M.F) / Det;
+end;
+
+function SvgGradientTransformPoint(const M: TSvgGradientMatrix;
+  PX, PY: Double): TPointF;
+begin
+  Result.X := M.A * PX + M.C * PY + M.E;
+  Result.Y := M.B * PX + M.D * PY + M.F;
+end;
+
+function SvgGradientColorAtPoint(const AGradient: TSvgGradientParams;
+  AX, AY: Double; out AColor: TColor; out AOpacity: Double): Boolean;
+var
+  Inv: TSvgGradientMatrix;
+  P: TPointF;
+  T, Proj, Len, DX, DY, Dist: Double;
+  I: Integer;
+  LocalT: Double;
+  Col1, Col2: TColor;
+  R1, G1, B1, R2, G2, B2: Byte;
+  R, G, B: Integer;
+  Op1, Op2: Double;
+begin
+  Result := False;
+  AColor := clBlack;
+  AOpacity := 0;
+  if Length(AGradient.Stops) = 0 then Exit;
+
+  // Apply inverse transform to get point in gradient space
+  if not SvgGradientMatrixInvert(AGradient.Transform, Inv) then
+  begin
+    P.X := AX;
+    P.Y := AY;
+  end
+  else
+    P := SvgGradientTransformPoint(Inv, AX, AY);
+
+  if AGradient.Kind = svgkLinear then
+  begin
+    DX := AGradient.X2 - AGradient.X1;
+    DY := AGradient.Y2 - AGradient.Y1;
+    Len := Sqrt(DX * DX + DY * DY);
+    if Len < 1E-9 then Exit;
+    Proj := ((P.X - AGradient.X1) * DX + (P.Y - AGradient.Y1) * DY) / (Len * Len);
+    T := Proj;
+  end
+  else // svgkRadial
+  begin
+    DX := P.X - AGradient.FX;
+    DY := P.Y - AGradient.FY;
+    Dist := Sqrt(DX * DX + DY * DY);
+    if AGradient.R < 1E-9 then Exit;
+    T := Dist / AGradient.R;
+  end;
+
+  // Apply spread method
+  case AGradient.SpreadMethod of
+    svgsmPad:
+      begin
+        if T < 0 then T := 0;
+        if T > 1 then T := 1;
+      end;
+    svgsmRepeat:
+      begin
+        T := T - Floor(T);
+        if T < 0 then T := T + 1;
+      end;
+    svgsmReflect:
+      begin
+        T := T - 2 * Floor(T / 2);
+        if T > 1 then T := 2 - T;
+      end;
+  end;
+
+  // Find the two stops that bracket T
+  if T <= AGradient.Stops[0].Offset then
+  begin
+    AColor := AGradient.Stops[0].Color;
+    AOpacity := AGradient.Stops[0].Opacity;
+    Result := True;
+    Exit;
+  end;
+  if T >= AGradient.Stops[High(AGradient.Stops)].Offset then
+  begin
+    AColor := AGradient.Stops[High(AGradient.Stops)].Color;
+    AOpacity := AGradient.Stops[High(AGradient.Stops)].Opacity;
+    Result := True;
+    Exit;
+  end;
+
+  for I := 0 to High(AGradient.Stops) - 1 do
+  begin
+    if (T >= AGradient.Stops[I].Offset) and (T <= AGradient.Stops[I + 1].Offset) then
+    begin
+      if AGradient.Stops[I + 1].Offset - AGradient.Stops[I].Offset > 1E-6 then
+        LocalT := (T - AGradient.Stops[I].Offset) /
+                  (AGradient.Stops[I + 1].Offset - AGradient.Stops[I].Offset)
+      else
+        LocalT := 0;
+      Col1 := ColorToRGB(AGradient.Stops[I].Color);
+      Col2 := ColorToRGB(AGradient.Stops[I + 1].Color);
+      R1 := Byte(Col1 and $FF);
+      G1 := Byte((Col1 shr 8) and $FF);
+      B1 := Byte((Col1 shr 16) and $FF);
+      R2 := Byte(Col2 and $FF);
+      G2 := Byte((Col2 shr 8) and $FF);
+      B2 := Byte((Col2 shr 16) and $FF);
+      R := Round(R1 + (R2 - R1) * LocalT);
+      G := Round(G1 + (G2 - G1) * LocalT);
+      B := Round(B1 + (B2 - B1) * LocalT);
+      AColor := RGBToColor(R, G, B);
+      Op1 := AGradient.Stops[I].Opacity;
+      Op2 := AGradient.Stops[I + 1].Opacity;
+      AOpacity := Op1 + (Op2 - Op1) * LocalT;
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
+procedure AABlendCoverageWithGradientToImage(
+  AImg: TLazIntfImage;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  const AGradient: TSvgGradientParams;
+  AOpacity: Double);
+var
+  X, Y, Idx: Integer;
+  Cov, Op, DstA, OutA, KeepA, GradOp: Double;
+  Pix: TFPColor;
+  DR, DG, DB: Double;
+  GradColor: TColor;
+  SR, SG, SB: Byte;
+begin
+  if AImg = nil then Exit;
+  if (AWidth <= 0) or (AHeight <= 0) then Exit;
+  if Length(ACoverage) < AWidth * AHeight then Exit;
+  Op := ClampD(AOpacity, 0, 1);
+  if Op <= 0 then Exit;
+  for Y := 0 to AHeight - 1 do
+  begin
+    if (ATop + Y < 0) or (ATop + Y >= AImg.Height) then Continue;
+    for X := 0 to AWidth - 1 do
+    begin
+      if (ALeft + X < 0) or (ALeft + X >= AImg.Width) then Continue;
+      Idx := Y * AWidth + X;
+      if ACoverage[Idx] = 0 then Continue;
+      if not SvgGradientColorAtPoint(AGradient, ALeft + X + 0.5, ATop + Y + 0.5,
+        GradColor, GradOp) then Continue;
+      Cov := (ACoverage[Idx] / 255.0) * Op * GradOp;
+      if Cov <= 0 then Continue;
+      Pix := AImg.Colors[ALeft + X, ATop + Y];
+      DstA := Pix.Alpha / 65535.0;
+      DR := Pix.Red shr 8;
+      DG := Pix.Green shr 8;
+      DB := Pix.Blue shr 8;
+      SR := Byte(GradColor and $FF);
+      SG := Byte((GradColor shr 8) and $FF);
+      SB := Byte((GradColor shr 16) and $FF);
+      OutA := Cov + DstA * (1 - Cov);
+      KeepA := DstA * (1 - Cov);
+      if OutA > 0 then
+      begin
+        Pix.Red   := Round((SR * Cov + DR * KeepA) / OutA) * 257;
+        Pix.Green := Round((SG * Cov + DG * KeepA) / OutA) * 257;
+        Pix.Blue  := Round((SB * Cov + DB * KeepA) / OutA) * 257;
+      end;
+      Pix.Alpha := Round(OutA * 65535);
+      AImg.Colors[ALeft + X, ATop + Y] := Pix;
+    end;
+  end;
+end;
+
+procedure AABlendCoverageWithGradientToCanvas(
+  ACanvas: TCanvas;
+  ALeft, ATop, AWidth, AHeight: Integer;
+  const ACoverage: array of Byte;
+  const AGradient: TSvgGradientParams;
+  AOpacity: Double);
+var
+  X, Y, Idx: Integer;
+  Cov, InvCov, Op, GradOp: Double;
+  GradColor, DstColor: TColor;
+  LR, LG, LB: Byte;
+  BR, BG, BB: Byte;
+  R, G, B: Integer;
+begin
+  if ACanvas = nil then Exit;
+  if (AWidth <= 0) or (AHeight <= 0) then Exit;
+  if Length(ACoverage) < AWidth * AHeight then Exit;
+  Op := ClampD(AOpacity, 0, 1);
+  if Op <= 0 then Exit;
+  for Y := 0 to AHeight - 1 do
+    for X := 0 to AWidth - 1 do
+    begin
+      Idx := Y * AWidth + X;
+      if ACoverage[Idx] = 0 then Continue;
+      if not SvgGradientColorAtPoint(AGradient, ALeft + X + 0.5, ATop + Y + 0.5,
+        GradColor, GradOp) then Continue;
+      Cov := (ACoverage[Idx] / 255.0) * Op * GradOp;
+      if Cov <= 0 then Continue;
+      InvCov := 1.0 - Cov;
+      LR := Byte(GradColor and $FF);
+      LG := Byte((GradColor shr 8) and $FF);
+      LB := Byte((GradColor shr 16) and $FF);
+      DstColor := ACanvas.Pixels[ALeft + X, ATop + Y];
+      DstColor := ColorToRGB(DstColor);
+      BR := Byte(DstColor and $FF);
+      BG := Byte((DstColor shr 8) and $FF);
+      BB := Byte((DstColor shr 16) and $FF);
+      R := Round(LR * Cov + BR * InvCov);
+      G := Round(LG * Cov + BG * InvCov);
+      B := Round(LB * Cov + BB * InvCov);
+      ACanvas.Pixels[ALeft + X, ATop + Y] := RGBToColor(R, G, B);
+    end;
 end;
 
 initialization
