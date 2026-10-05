@@ -90,6 +90,7 @@ object Form1: TForm1
     TabPadding = 10
     ScrollButtonDisabledBackground = 16579320
     ScrollButtonDisabledArrowColor = 14800331
+    SvgImages = CssSvgImgList1
     ActivePage = CssTabSheet1
     ActivePageIndex = 0
     object CssTabSheet1: TCssTabSheet
@@ -104,6 +105,7 @@ object Form1: TForm1
       MonospaceFontName = 'Courier New'
       TabOrder = 0
       TabStop = True
+      ImageIndex = 1
       object CssGroupBox1: TCssGroupBox
         AnchorSideLeft.Control = CssTabSheet1
         AnchorSideTop.Control = CssTabSheet1
@@ -378,11 +380,13 @@ object Form1: TForm1
           MonospaceFontName = 'Courier New'
           TabOrder = 1
           TabStop = True
+          SvgImages = CssSvgImgList1
           PopupControl = CssButton5
           AutoPopup = True
           object MenuItem1: TCssMenuItem
             Caption = '<b>Menu item 1</b>'
             OnClick = MenuItem1Click
+            ImageIndex = 2
           end
           object MenuItem2: TCssMenuItem
             Caption = '<i>Menu item 2</i>'
@@ -409,8 +413,20 @@ object Form1: TForm1
     Height = 32
     Items = <    
       item
-        Name = 'icons8-ок (1)'
+        Name = 'icons8-ok'
         Svg = '<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="9.8581" y1="9.8581" x2="38.1419" y2="38.1419">'#13#10#9'<stop  offset="0" style="stop-color:#21AD64"/>'#13#10#9'<stop  offset="1" style="stop-color:#088242"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_1_);" d="M44,24c0,11.045-8.955,20-20,20S4,35.045,4,24S12.955,4,24,4S44,12.955,44,24z"/>'#13#10'<path style="opacity:0.05;" d="M32.172,16.172L22,26.344l-5.172-5.172c-0.781-0.781-2.047-0.781-2.828,0l-1.414,1.414'#13#10#9'c-0.781,0.781-0.781,2.047,0,2.828l8,8c0.781,0.781,2.047,0.781,2.828,0l13-13c0.781-0.781,0.781-2.047,0-2.828L35,16.172'#13#10#9'C34.219,15.391,32.953,15.391,32.172,16.172z"/>'#13#10'<path style="opacity:0.07;" d="M20.939,33.061l-8-8c-0.586-0.586-0.586-1.536,0-2.121l1.414-1.414c0.586-0.586,1.536-0.586,2.121,0'#13#10#9'L22,27.051l10.525-10.525c0.586-0.586,1.536-0.586,2.121,0l1.414,1.414c0.586,0.586,0.586,1.536,0,2.121l-13,13'#13#10#9'C22.475,33.646,21.525,33.646,20.939,33.061z"/>'#13#10'<path style="fill:#FFFFFF;" d="M21.293,32.707l-8-8c-0.391-0.391-0.391-1.024,0-1.414l1.414-1.414c0.391-0.391,1.024-0.391,1.414,0'#13#10#9'L22,27.758l10.879-10.879c0.391-0.391,1.024-0.391,1.414,0l1.414,1.414c0.391,0.391,0.391,1.024,0,1.414l-13,13'#13#10#9'C22.317,33.098,21.683,33.098,21.293,32.707z"/>'#13#10'</svg>'#13#10
+        Variants.Strings = (
+          'dark=<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="21.2409" y1="39.2409" x2="3.5406" y2="21.5406">'#13#10#9'<stop  offset="0.1077" style="stop-color:#0D7044"/>'#13#10#9'<stop  offset="0.4334" style="stop-color:#11945A"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_1_);" d="M16.599,41.42L1.58,26.401c-0.774-0.774-0.774-2.028,0-2.802l4.019-4.019'#13#10#9'c0.774-0.774,2.028-0.774,2.802,0L23.42,34.599c0.774,0.774,0.774,2.028,0,2.802l-4.019,4.019'#13#10#9'C18.627,42.193,17.373,42.193,16.599,41.42z"/>'#13#10'<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="-15.7702" y1="43.2279" x2="26.4026" y2="43.2279" gradientTransform="matrix(-0.7071 0.7071 -0.7071 -0.7071 63.8259 51.3076)">'#13#10#9'<stop  offset="0" style="stop-color:#2AC782"/>'#13#10#9'<stop  offset="1" style="stop-color:#21B876"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_2_);" d="M12.58,34.599L39.599,7.58c0.774-0.774,2.028-0.774,2.802,0l4.019,4.019'#13#10#9'c0.774,0.774,0.774,2.028,0,2.802L19.401,41.42c-0.774,0.774-2.028,0.774-2.802,0l-4.019-4.019'#13#10#9'C11.807,36.627,11.807,35.373,12.58,34.599z"/>'#13#10'</svg>'#13#10
+          'light=<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="9.8581" y1="9.8581" x2="38.1419" y2="38.1419">'#13#10#9'<stop  offset="0" style="stop-color:#21AD64"/>'#13#10#9'<stop  offset="1" style="stop-color:#088242"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_1_);" d="M44,24c0,11.045-8.955,20-20,20S4,35.045,4,24S12.955,4,24,4S44,12.955,44,24z"/>'#13#10'<path style="opacity:0.05;" d="M32.172,16.172L22,26.344l-5.172-5.172c-0.781-0.781-2.047-0.781-2.828,0l-1.414,1.414'#13#10#9'c-0.781,0.781-0.781,2.047,0,2.828l8,8c0.781,0.781,2.047,0.781,2.828,0l13-13c0.781-0.781,0.781-2.047,0-2.828L35,16.172'#13#10#9'C34.219,15.391,32.953,15.391,32.172,16.172z"/>'#13#10'<path style="opacity:0.07;" d="M20.939,33.061l-8-8c-0.586-0.586-0.586-1.536,0-2.121l1.414-1.414c0.586-0.586,1.536-0.586,2.121,0'#13#10#9'L22,27.051l10.525-10.525c0.586-0.586,1.536-0.586,2.121,0l1.414,1.414c0.586,0.586,0.586,1.536,0,2.121l-13,13'#13#10#9'C22.475,33.646,21.525,33.646,20.939,33.061z"/>'#13#10'<path style="fill:#FFFFFF;" d="M21.293,32.707l-8-8c-0.391-0.391-0.391-1.024,0-1.414l1.414-1.414c0.391-0.391,1.024-0.391,1.414,0'#13#10#9'L22,27.758l10.879-10.879c0.391-0.391,1.024-0.391,1.414,0l1.414,1.414c0.391,0.391,0.391,1.024,0,1.414l-13,13'#13#10#9'C22.317,33.098,21.683,33.098,21.293,32.707z"/>'#13#10'</svg>'#13#10
+        )
+      end    
+      item
+        Name = 'icons8-news'
+        Svg = '<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="41.0177" y1="26" x2="45.1757" y2="26">'#13#10#9'<stop  offset="0" style="stop-color:#3537B0"/>'#13#10#9'<stop  offset="1" style="stop-color:#4646CF"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_1_);" d="M43,11h-3v30h3c1.105,0,2-0.895,2-2V13C45,11.895,44.105,11,43,11z"/>'#13#10'<path style="fill:#5286FF;" d="M41,39V9c0-1.105-0.895-2-2-2H5C3.895,7,3,7.895,3,9v30c0,1.105,0.895,2,2,2h38'#13#10#9'C41.895,41,41,40.105,41,39z"/>'#13#10'<path style="fill:#FFFFFF;" d="M37,17H7c-0.552,0-1-0.448-1-1v-2c0-0.552,0.448-1,1-1h30c0.552,0,1,0.448,1,1v2'#13#10#9'C38,16.552,37.552,17,37,17z"/>'#13#10'<path style="fill:#FFFFFF;" d="M19,36H7c-0.552,0-1-0.448-1-1V22c0-0.552,0.448-1,1-1h12c0.552,0,1,0.448,1,1v13'#13#10#9'C20,35.552,19.552,36,19,36z"/>'#13#10'<path style="fill:#FFFFFF;" d="M38,24H24v-2c0-0.552,0.448-1,1-1h12c0.552,0,1,0.448,1,1V24z"/>'#13#10'<rect x="24" y="24" style="fill:#E6EEFF;" width="14" height="3"/>'#13#10'<rect x="24" y="27" style="fill:#CCDCFF;" width="14" height="3"/>'#13#10'<rect x="24" y="30" style="fill:#B3CBFF;" width="14" height="3"/>'#13#10'<path style="fill:#9ABAFF;" d="M37,36H25c-0.552,0-1-0.448-1-1v-2h14v2C38,35.552,37.552,36,37,36z"/>'#13#10'</svg>'#13#10
+      end    
+      item
+        Name = 'icons8-edit'
+        Svg = '<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<path style="fill:#C94F60;" d="M42.583,9.067l-3.651-3.65c-0.555-0.556-1.459-0.556-2.015,0l-1.718,1.72l5.664,5.664l1.72-1.718'#13#10#9'C43.139,10.526,43.139,9.625,42.583,9.067"/>'#13#10'<path style="fill:#F0F0F0;" d="M6.905,35.43L5,43l7.571-1.906l0.794-6.567L6.905,35.43z"/>'#13#10'<path style="fill:#EDBE00;" d="M36.032,17.632l-23.46,23.461l-5.665-5.665l23.46-23.461L36.032,17.632z"/>'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="35.6125" y1="7.4935" x2="35.6125" y2="17.9213">'#13#10#9'<stop  offset="0" style="stop-color:#DEDEDE"/>'#13#10#9'<stop  offset="1" style="stop-color:#D6D6D6"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_1_);" d="M30.363,11.968l4.832-4.834l5.668,5.664l-4.832,4.834L30.363,11.968z"/>'#13#10'<path style="fill:#787878;" d="M5.965,39.172L5,43l3.827-0.965L5.965,39.172z"/>'#13#10'</svg>'#13#10
       end>
     Left = 933
     Top = 145

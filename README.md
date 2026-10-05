@@ -25,6 +25,8 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [General CSS Properties](#general-css-properties)
 - [Per-Control CSS Properties](#per-control-css-properties)
 - [SVG Image Lists (TCssSvgImgList)](#svg-image-lists-tcsssvgimglist)
+- [Menus (TCssMainMenu, TCssPopupMenu)](#menus-tcssmainmenu-tcsspopupmenu)
+- [Tabs (TCssTabControl, TCssPageControl)](#tabs-tcstabcontrol-tcspagecontrol)
 - [Themes (Light and Dark)](#themes-light-and-dark)
 - [HTML Formatting](#html-formatting)
 - [Link Handling](#link-handling)
@@ -169,7 +171,6 @@ Both screenshots come from the included demo project (see [Demo Project](#demo-p
    }
    ```
 ---
-
 ## Demo Project
 
 A ready-to-run demonstration lives in the `Demo` folder:
@@ -184,16 +185,27 @@ Open `CssStyledControlsDemo.lpi` in Lazarus and press **F9**.
 
 What the demo shows:
 
-- A single form with a `TCssPageControl` (`Common controls` tab).
+- A single form with a `TCssPageControl` (`Common controls` tab) whose **tab strip is decorated with an SVG icon**. The page itself carries the icon (`CssTabSheet1.ImageIndex = 1`), so the tab automatically displays the second entry of the shared `TCssSvgImgList1` (`icons8-news`). The icon follows the tab text color in every state — plain, hovered, active — and switches to the `dark` variant of that entry together with the CSS theme.
+
 - A `TCssGroupBox` containing several `TCssButton`s (enabled, disabled, default, cancel, and one with a `TCssPopupMenu`).
+
 - Four `TCssBitBtn` controls next to those buttons, covering every glyph source the control supports:
   - `Kind = bkCancel` with a custom caption (`UseKindCaption = False`) — a **built-in vector icon** paired with a user-supplied label.
   - the same `Kind = bkCancel`, but `Enabled = False` — the same glyph is rendered in its **muted disabled variant**, in tone with the disabled caption.
   - a **custom SVG glyph** (`SvgImages = CssSvgImgList1`, `ImageIndex = 0`) — a 32×32 vector icon rasterised at the current DPI and drawn next to an HTML caption (`Custom <b>SVG</b>`, `HtmlMode = True`).
   - the same SVG glyph with `Enabled = False` — the rasteriser desaturates the RGBA image in place (transparent pixels stay transparent, anti-aliased edges are preserved) and re-tints it to match the disabled text color, so no box appears behind the icon.
-- A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources for the two custom-glyph buttons. It is configured at `32 × 32` design-time size with `Scaled = True`, so the icon is always rendered at the current DPI, and ships with one 48×48 checkmark icon whose circle is drawn from a `linearGradient`.
+
+- A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources for the demo. It is configured at `32 × 32` design-time size with `Scaled = True`, so every icon is always rendered at the current DPI, and ships with **three 48×48 icons**:
+  - `icons8-ok` — a gradient circle with a white checkmark. This entry has **per-theme variants**: its base `Svg` is the light artwork, and its `Variants` list carries an alternative `dark` body with a muted green gradient. Switching the CSS theme swaps the artwork automatically wherever this icon is used (both `TCssBitBtn3` / `TCssBitBtn4` and the shared `SvgImages` on the page control).
+  - `icons8-news` — a blue newspaper-style icon, used by the tab strip via `CssTabSheet1.ImageIndex = 1`.
+  - `icons8-edit` — a pencil-on-paper icon, used by `MenuItem1` in the popup menu via `MenuItem1.ImageIndex = 2`.
+
+- A `TCssPopupMenu` (`CssPopupMenu1`) whose icons are sourced **once at the menu level**: `CssPopupMenu1.SvgImages := CssSvgImgList1`. Every item can then simply set its own `ImageIndex` — `MenuItem1` uses `2` (`icons8-edit`), and `MenuItem2` leaves it at `-1`, so the icon column is not reserved when no item in the menu has an icon. The item-level `SvgImages` property is available as an override but is not needed in this demo.
+
 - A `TCssPanel` with a `TCssLabel` whose `Caption` is HTML demonstrating every supported tag: headings, bold / italic / underline / strike / code / kbd / samp / tt / sup / sub / `<q>`, alignment via both `align="…"` and `style="text-align:…"`, ordered and unordered lists, inline colors, legacy `<font color>`, spans, and clickable `<a>` links.
-- A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that switches the whole application between the **light** and **dark** variants by setting `CssStyleProvider1.DefaultStyleName`.
+
+- A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that switches the whole application between the **light** and **dark** variants by setting `CssStyleProvider1.DefaultStyleName`. Its `Hint` is itself written in HTML — `<h6>`, `<hr>` and `<li>` render through the CSS-styled hint window.
+
 - A `TCssProxy` that applies the same theme to the plain `TForm`.
 
 The relevant demo handlers are tiny:
@@ -213,6 +225,8 @@ begin
 end;
 ```
 
+Switching the toggle changes the CSS theme **and** every SVG icon at the same time — the tab-strip icon, both `TCssBitBtn` glyphs and the popup menu item icon all move to their `dark` variants in one step, without a single line of code in the form.
+
 ---
 
 ## Included Controls
@@ -221,10 +235,10 @@ end;
 | ------------------------- | ---------------------------------------------------------------------------- |
 | `TCssStyledControl`       | Base class of all CSS-styled controls. Contains the CSS engine, the HTML parser, and the AA renderer. |
 | `TCssStyleProvider`       | Non-visual component that holds CSS text and pushes it to controls.          |
-| `TCssSvgImgList`          | Non-visual component that stores images in native SVG format and renders them on demand, with HiDPI and anti-aliasing. A drop-in replacement for `TImageList` when vector icons are preferred. |
+| `TCssSvgImgList`          | Non-visual component that stores images in native SVG format, optionally with **per-theme variants** (`dark`, `light`, …), and renders them on demand with HiDPI and anti-aliasing. Drop-in replacement for `TImageList` when vector icons are preferred. |
 | `TCssProxy`               | Non-visual component that applies the active CSS variant to plain LCL controls (`TForm`, `TButton`, `TEdit`, `TLabel`, `TPanel`). |
 | `TCssButton`              | Push button with `Default`, `Cancel`, `ModalResult`, and `:default` / `:cancel` pseudo-classes. |
-| `TCssBitBtn`              | Button with a glyph (icon) next to the caption. Supports standard `TBitBtn.Kind` icons, custom bitmaps (`Glyph` + `NumGlyphs`), `TImageList`, `TCssSvgImgList`, HiDPI-aware rendering, per-state image indexes, and CSS-driven icon layout. |
+| `TCssBitBtn`              | Button with a glyph (icon) next to the caption. Supports standard `TBitBtn.Kind` icons, custom bitmaps (`Glyph` + `NumGlyphs`), `TImageList`, `TCssSvgImgList`, per-state image indexes (`ImageIndexDisabled` / `Pressed` / `Focused`), HiDPI-aware rendering, and CSS-driven icon layout. |
 | `TCssCheckBox`            | Tri-state check box with an optional Windows 11-style **switch** appearance. |
 | `TCssCheckGroup`          | Group of check boxes laid out in columns, with per-item state.               |
 | `TCssRadioButton`         | Radio button with an optional Windows 11-style **switch** appearance.        |
@@ -490,9 +504,9 @@ As soon as a source yields a valid image index, the next sources in the list are
 
 For the `SvgImages` and `Images` sources, `ImageIndex` selects the glyph for the normal state, and the three extra properties override it for the specific states:
 
-| State                        | Index used                                          |
-| ---------------------------- | --------------------------------------------------- |
-| Normal                       | `ImageIndex`                                        |
+| State                        | Index used                                              |
+| ---------------------------- | ------------------------------------------------------- |
+| Normal                       | `ImageIndex`                                            |
 | `Enabled = False`            | `ImageIndexDisabled`, if `>= 0`; otherwise `ImageIndex` |
 | Pressed (`:active`)          | `ImageIndexPressed`, if `>= 0`; otherwise `ImageIndex`  |
 | Focused                      | `ImageIndexFocused`, if `>= 0`; otherwise `ImageIndex`  |
@@ -549,7 +563,7 @@ TCssBitBtn {
   glyph-margin:  auto;
 }
 
-/* Right-aligned glyphs for toolbar-style buttons. */
+/* Top-aligned glyphs for toolbar-style buttons. */
 TCssBitBtn.toolbar {
   glyph-layout:  top;
   glyph-spacing: 2px;
@@ -813,23 +827,25 @@ Additional Pascal properties: `AutoSnap`, `SnapThreshold`, `HighlightAdjacentCon
 Child controls also expose `CheckBoxCssClass` / `CheckBoxCssStyle` and `EditStyleName` for the inline editor.
 
 ---
-
 ## SVG Image Lists (TCssSvgImgList)
 
 `TCssSvgImgList` is a non-visual component that plays the same role as `TImageList`, but stores its pictures as **native SVG text**. Each image is rasterised on demand, at the size and DPI the caller asks for, using the same anti-aliased primitives that `TCssStyledControl` uses for its own artwork.
 
-Because SVG is vector-based, a single entry can serve as a 16×16 toolbar icon, a 32×32 button glyph and a 64×64 HiDPI preview without any extra work. `TCssSvgImgList` is the recommended source for `TCssBitBtn` glyphs when your icons are already shipped as SVG (Illustrator, Inkscape, Figma, Iconify, Material Symbols, and so on).
+Because SVG is vector-based, a single entry can serve as a 16×16 toolbar icon, a 32×32 button glyph and a 64×64 HiDPI preview without any extra work. `TCssSvgImgList` is the recommended source for `TCssBitBtn`, `TCssMenuItem` and `TCssTabControl` glyphs when your icons are already shipped as SVG (Illustrator, Inkscape, Figma, Iconify, Material Symbols, and so on).
 
 ### Why not just use `TImageList`?
 
 - **Crisp at any DPI.** `TImageList` ships fixed-size bitmaps; on a 200 % monitor they either look tiny or blurry. `TCssSvgImgList` renders the vector source at the exact device pixel size.
 - **One asset, many sizes.** No need to author a separate PNG for every DPI bucket.
-- **`currentColor` support.** SVG paths that use `fill="currentColor"` are painted with the effective CSS text color of the consumer (`TCssBitBtn` passes `GetEffectiveTextColor` automatically). One icon can be a blue "info" bubble in the light theme and a pale yellow one in the dark theme, without two separate files.
+- **`currentColor` support.** SVG paths that use `fill="currentColor"` are painted with the effective CSS text color of the consumer (`TCssBitBtn`, `TCssMenuItem` and `TCssTabControl` pass the resolved color automatically). One icon can be a blue "info" bubble in the light theme and a pale yellow one in the dark theme, without two separate files.
+- **Per-theme variants.** A single entry can carry different SVG bodies for `dark`, `light`, `high-contrast` (or any other variant name), and the consumer picks the right one based on the currently active CSS theme.
 - **Smaller `.lfm` files.** SVG text compresses better than raw RGBA bitmaps, especially for line-art icons.
 
 ### Where It Is Used
 
-- `TCssBitBtn.SvgImages` — the primary integration point. When set, the button sources its glyph from the list, preferring it over `Images`.
+- `TCssBitBtn.SvgImages` — see [TCssBitBtn](#tcssbitbtn--button-with-glyph).
+- `TCssMenuItem.SvgImages` / `TCssMenuBase.SvgImages` — see [Menus](#menus-tcssmainmenu-tcsspopupmenu).
+- `TCssTabControl.SvgImages` / `TCssPageControl.SvgImages` — see [Tabs](#tabs-tcstabcontrol-tcspagecontrol).
 - Anywhere in your own code that needs a `TBitmap` from an SVG: `TCssSvgImgList.GetBitmap`, `GetBitmapByName`, `DrawToCanvas`.
 - `TCssSvgImgList.AssignToImageList` — one-shot migration path: rasterise every SVG entry into a standard `TImageList` (for legacy controls that still require one). The alpha channel is preserved through a generated mask, so the resulting images keep their transparency.
 
@@ -841,44 +857,229 @@ The built-in rasteriser is deliberately small but covers what icon sets actually
 - **Path commands**: `M m L l H h V v C c S s Q q T t A a Z z`.
 - **Transforms**: `translate`, `scale`, `rotate`, `skewX`, `skewY`, `matrix`.
 - **Style**: `fill`, `fill-opacity`, `fill-rule`, `stroke`, `stroke-opacity`, `stroke-width`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `opacity`, `color` (`currentColor`), `style="..."`, `display`, `visibility`.
-- **Gradients**: `linearGradient`, `radialGradient`, including `gradientUnits`, `gradientTransform` and `spreadMethod`.
+- **Gradients**: `linearGradient`, `radialGradient`, including `gradientUnits`, `gradientTransform` and `spreadMethod`. Gradients declared as direct children of `<svg>` are supported too, not only inside `<defs>`.
+- **Stops**: both `style="stop-color:...;stop-opacity:..."` and the presentation attributes `stop-color` / `stop-opacity` are honoured, so output from Illustrator, Inkscape and Figma is parsed correctly out of the box.
 - **View box**: `viewBox` + `preserveAspectRatio` (`meet` / `slice`, alignment keywords, `none`).
 
 Not supported: filters, `<use>` / `<defs>` references (other than gradients), `<textPath>`, CSS animations, embedded fonts. If your icons rely on any of these, pre-render them to PNG or simplify them in the SVG editor.
+
+---
+## Menus (TCssMainMenu, TCssPopupMenu)
+
+`TCssMainMenu`, `TCssPopupMenu` and their items support icons sourced from a `TCssSvgImgList`. Icons can be attached both per-item and per-menu, and follow the same theme / variant rules as the rest of the library.
+
+### Where the Icon Comes From
+
+Each `TCssMenuItem` has an `SvgImages` property, and so does the owning menu (`TCssMenuBase.SvgImages`). The resolution order at paint time is:
+
+1. **Item-level `SvgImages`**, when set on the specific item — this is the per-item override.
+2. **Menu-level `SvgImages`**, when the item does not set its own.
+3. Otherwise the item has no icon.
+
+This means a single `SvgImages := CssSvgImgList1` on the menu covers every item; individual items only need their `ImageIndex` set. When a specific item must use a different source list, set its own `SvgImages` and it wins for that item.
+
+`TCssMenuItem.ImageIndex` selects the entry inside the effective source list. `-1` (the default) disables the icon for that item.
+
+### Menu-wide Presentation
+
+The menu itself controls how the icons are drawn, via three CSS properties on `TCssMenuBase`:
+
+| Property           | Values              | Notes                                                                                                |
+| ------------------ | ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `menu-icon-layout` | `left` \| `right`   | Horizontal position of the icon relative to the caption. Default: `left`.                            |
+| `menu-icon-size`   | CSS length          | Icon size in device pixels. When omitted, the icon follows the height of the text on the menu canvas. |
+
+```css
+TCssPopupMenu {
+  menu-icon-layout: left;
+  menu-icon-size:   16px;   /* optional; if omitted, tracks text height */
+}
+```
+
+`menu-icon-size` is DPI-aware: it is scaled by the same factor as the rest of the CSS lengths. When it is not set, the icon follows `TextHeight('Mg')` on the menu canvas, capped by `menu-item-height`, so it stays in proportion with the font.
+
+### Item-Level CSS (for the icon)
+
+Per-item overrides are not exposed through CSS — they are per-component and per-item. Use the Object Inspector or code:
+
+```pascal
+MenuItem1.SvgImages  := CssSvgImgList1;
+MenuItem1.ImageIndex := CssSvgImgList1.IndexOf('save');
+
+MenuItem2.SvgImages  := CssSvgImgList1;
+MenuItem2.ImageIndex := CssSvgImgList1.IndexOf('open');
+```
+
+### Layout Rules
+
+- When at least one visible item in a popup has an icon, a column is reserved for it **in every row** so captions stay aligned. When no item has an icon, the column is not reserved at all.
+- The check-mark column is reserved **only** when at least one item is `Checked`; when nothing is checked, the space is not wasted.
+- The shortcut text and the submenu arrow remain pinned to the right edge. The caption gets exactly the space that is left between the reserved left columns and the reserved right columns.
+- The right-side slot of the item is resolved right-to-left in this order: `[pad] [arrow] [shortcut] [right icon when menu-icon-layout=right] [caption]`. This is what makes the layout stable under bold HTML text.
+- The menu's own `Paint` uses the exact same right-margin computation as its measuring pass, so bold HTML captions never wrap to a second line and never get clipped vertically.
+- Top-level items of `TCssMainMenu` support icons too, with the same resolution rules and the same `menu-icon-layout` / `menu-icon-size` CSS properties.
+
+### Example
+
+```css
+TCssPopupMenu {
+  menu-background:          #FFFFFF;
+  menu-border-color:        #E2E8F0;
+  menu-item-height:         26px;
+  menu-hover-background:    #2563EB;
+  menu-hover-text-color:    #FFFFFF;
+
+  menu-icon-layout:         left;
+  menu-icon-size:           16px;
+
+  menu-separator-color:     #E2E8F0;
+  menu-shortcut-color:      #94A3B8;
+}
+```
+
+```pascal
+CssPopupMenu1.SvgImages := CssSvgImgList1;
+
+MenuItem1.Caption    := 'Save';
+MenuItem1.ImageIndex := CssSvgImgList1.IndexOf('save');
+
+MenuItem2.Caption    := 'Open';
+MenuItem2.ImageIndex := CssSvgImgList1.IndexOf('open');
+```
+
+Switching `CssStyleProvider1.DefaultStyleName` from `Light` to `Dark` immediately swaps every menu icon to its `dark` variant, if the corresponding item defines one.
+
+---
+## Tabs (TCssTabControl, TCssPageControl)
+
+Both `TCssTabControl` and its descendant `TCssPageControl` support per-tab icons sourced from a `TCssSvgImgList`.
+
+### How to Attach Icons
+
+- **`TCssTabControl`** uses a parallel list of image indexes, `TabImageIndexes`. Line *N* of that string list corresponds to tab *N*; each line is either a number (an index into `SvgImages`) or `-1` / empty for "no icon".
+- **`TCssPageControl`** uses the `ImageIndex` property of each `TCssTabSheet`. Because pages and tabs are linked one-to-one, `TabImageIndexes` is derived automatically from the pages — the value of `TabImageIndexes` is ignored when the control has pages.
+
+```pascal
+// TCssTabControl — no pages, indexes in a parallel list:
+CssTabControl1.SvgImages := CssSvgImgList1;
+CssTabControl1.Tabs.Add('Save');
+CssTabControl1.Tabs.Add('Load');
+CssTabControl1.Tabs.Add('Settings');
+CssTabControl1.TabImageIndexes.Add('0');
+CssTabControl1.TabImageIndexes.Add('1');
+CssTabControl1.TabImageIndexes.Add('2');
+```
+
+```pascal
+// TCssPageControl — one ImageIndex per page:
+CssPageControl1.SvgImages := CssSvgImgList1;
+CssPageControl1.Pages[0].ImageIndex := 0;
+CssPageControl1.Pages[1].ImageIndex := 1;
+```
+
+### Presentation
+
+Two CSS properties on `TCssTabControl` / `TCssPageControl` control the icon layout:
+
+| Property          | Values             | Notes                                                                                                  |
+| ----------------- | ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `tab-icon-layout` | `left` \| `right`  | Horizontal position of the icon relative to the caption. Default: `left`.                               |
+| `tab-icon-size`   | CSS length         | Icon size in device pixels. When omitted, the icon follows the height of the tab text, capped by the tab height. |
+
+```css
+TCssPageControl {
+  tab-icon-layout: left;
+  tab-icon-size:   14px;   /* optional; if omitted, tracks text height */
+}
+```
+
+`tab-icon-size` is DPI-aware. When it is not set, the effective icon size is `TextHeight('Mg')` on the tab canvas, clamped to `TabHeight - 6` and to a minimum of 8 px, so it always fits inside the tab.
+
+### Layout Rules
+
+- The icon + caption group is centred inside the tab, whether or not the tab has an icon.
+- When the tab has an icon, the caption is left-aligned inside the remaining space, so the group stays visually balanced.
+- `GetTabWidth` reserves the same icon column width that `Paint` uses, so tab widths and icon positions stay in sync. Bold HTML captions are measured against the same width that is later given to them at paint time — nothing gets clipped.
+- `TCssPageControl.GetTabImageIndex` reads the index from the corresponding `TCssTabSheet`, so hiding a page via `TabVisible` automatically hides its icon together with the tab.
+
+### Example
+
+```css
+TCssTabControl,
+TCssPageControl {
+  tab-background:             transparent;
+  tab-hover-background:       #F1F5F9;
+  tab-active-background:      #EFF6FF;
+
+  tab-text-color:             #64748B;
+  tab-active-text-color:      #1D4ED8;
+
+  tab-icon-layout:            left;
+  tab-icon-size:              14px;
+
+  tab-scroll-button-background:            #F1F5F9;
+  tab-scroll-button-hover-background:      #E2E8F0;
+  tab-scroll-button-active-background:     #CBD5E1;
+  tab-scroll-button-disabled-background:   #F8FAFC;
+  tab-scroll-arrow-color:                  #475569;
+  tab-scroll-arrow-disabled-color:         #CBD5E1;
+}
+```
+
+The icon color follows the tab text color for the current state — `tab-text-color` for inactive / hovered tabs, `tab-active-text-color` for the active tab. When the CSS theme changes, the icons are re-rasterised with the new color and the new variant.
+
+---
+### Themes / Variants
+
+Every item can carry multiple SVG bodies — one per theme. Variants are stored as `VariantName=Svg text` pairs inside the item's `Variants` string list, and are looked up **case-insensitively**, so `dark` in the list will match `Dark` coming from `TCssStyleProvider.DefaultStyleName`.
+
+Resolution rules:
+
+1. The item first tries the exact variant name it was asked for.
+2. If that variant is not defined on the item — or its body is empty — the item falls back to the base `Svg` property.
+3. If the caller does not pass a variant name at all, the base `Svg` is used.
+
+The variant name is passed in by the consumer:
+
+- `TCssBitBtn`, `TCssMenuItem`, `TCssTabControl` pass `StyleName` (if set) or `StyleProvider.DefaultStyleName` of the owning control, so switching the theme switches the icons together with the rest of the UI.
+- Standalone users can pass it explicitly: `CssSvgImgList1.GetBitmap(0, 32, 32, clBlack, 'dark')`.
+- If there is no CSS at all, the fallback is `TCssSvgImgList.DefaultVariant` (empty by default).
 
 ### Pascal API
 
 | Member                                                 | Description                                                       |
 | ------------------------------------------------------ | ----------------------------------------------------------------- |
-| `Items`                                                | Collection of `TCssSvgImgListItem` (`Name`, `Svg`).               |
+| `Items`                                                | Collection of `TCssSvgImgListItem` (`Name`, `Svg`, `Variants`).   |
 | `Count`                                                | Number of items (read-only).                                      |
 | `Width`, `Height`                                      | Design-time size of a single cell, in pixels (default `16` × `16`). |
 | `Scaled`                                               | If `True` (default), `Width` and `Height` are multiplied by `Screen.PixelsPerInch / 96`. |
+| `DefaultVariant`                                       | Fallback variant name used by parameterless `GetBitmap` / `DrawToCanvas`. |
 | `AddSvg(Name, Svg)`                                    | Appends an item and returns its index.                            |
 | `AddSvgFromFile(Name, FileName)`                       | Appends an item, loading SVG text from a file.                    |
 | `Delete(Index)`, `Clear`                               | Removes one item / all items.                                     |
 | `IndexOf(Name)`                                        | Case-insensitive lookup by `Name`, or `-1`.                       |
-| `GetSvg(Index)` / `GetSvg(Name)`                       | Returns the source SVG text.                                      |
-| `SetSvg(Index, Value)`                                 | Replaces the SVG text of an item.                                 |
+| `GetSvg(Index)` / `GetSvg(Name)`                       | Returns the base SVG text.                                        |
+| `SetSvg(Index, Value)`                                 | Replaces the base SVG text of an item.                            |
 | `GetParseError(Index)`                                 | Returns the error string if the last parse failed, or an empty string. |
 | `GetEffectiveWidth` / `GetEffectiveHeight`             | Width / height after applying `Scaled`.                           |
-| `GetBitmap(Index, W, H, CurrentColor)`                 | Rasterises the SVG into a new `pf32bit` bitmap with a real alpha channel. The caller owns the bitmap. |
-| `GetBitmapByName(Name, W, H, CurrentColor)`            | Same, looked up by `Name`.                                        |
-| `DrawToCanvas(Canvas, Index, X, Y)`                    | Rasterises at the effective size and blits to the canvas.         |
-| `DrawToCanvas(Canvas, Index, X, Y, W, H, CurrentColor)` | Same, with an explicit size.                                      |
+| `GetVariantNames`                                      | Returns a sorted, de-duplicated list of every variant name used by any item. Caller owns the list. |
+| `HasVariant(Name)`                                     | `True` when at least one item defines the given variant.          |
+| `GetBitmap(Index, W, H, CurrentColor)`                 | Rasterises with the list's `DefaultVariant`. Caller owns the bitmap. |
+| `GetBitmap(Index, W, H, CurrentColor, Variant)`        | Same, with an explicit variant.                                   |
+| `GetBitmapByName(Name, W, H, CurrentColor [, Variant])`| Same, looked up by `Name`.                                        |
+| `DrawToCanvas(Canvas, Index, X, Y [, W, H, CurrentColor])` | Rasterises at the effective size (or an explicit one) and blits to the canvas. |
 | `AssignToImageList(ImageList, CurrentColor)`           | Rasterises every entry into a standard `TImageList`, generating the transparency mask. |
 | `SaveToStream` / `LoadFromStream`                      | Batch serialisation of all items.                                 |
 | `SaveToFile` / `LoadFromFile`                          | Same, from a file on disk.                                        |
 
 ### `TCssSvgImgListItem`
 
-Each item has just two published properties:
-
-| Property | Notes                                                                                |
-| -------- | ------------------------------------------------------------------------------------ |
-| `Name`   | Logical name. Used by `IndexOf` and `GetBitmapByName`.                                |
-| `Svg`    | Full SVG text of the image.                                                           |
-| `Image`  | Read-only. Returns the parsed `TSvgImage` (lazily created).                           |
+| Property   | Notes                                                                                |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `Name`     | Logical name. Used by `IndexOf`, `GetBitmapByName`, and shown in the visual editor.  |
+| `Svg`      | Base SVG text of the image — used when no variant matches.                           |
+| `Variants` | `TStrings` in `VariantName=SVG text` format. Assign or edit through the visual editor. |
+| `Image`    | Read-only. Returns the parsed `TSvgImage` for the base `Svg` (lazily created).        |
 
 ### Example — Using It From Code
 
@@ -911,20 +1112,36 @@ Use `currentColor` inside the SVG wherever a design tool would normally hard-cod
 </svg>
 ```
 
-The icon will then follow the effective CSS text color of the consumer. `TCssBitBtn` passes its `GetEffectiveTextColor` at rasterisation time, so the same SVG becomes green on a normal button, muted grey on a `:disabled` button, and white on a dark theme — all without a single extra file.
+The icon then follows the effective CSS text color of the consumer. `TCssBitBtn` passes `GetEffectiveTextColor`, `TCssMenuItem` and `TCssTabControl` pass the menu / tab text color, so the same SVG becomes green on a normal button, muted grey on a `:disabled` button, and white on a dark theme — all without a single extra file.
+
+### Example — Per-Theme Variants
+
+```
+CssSvgImgList1.Items[0].Name := 'check';
+CssSvgImgList1.Items[0].Svg  := '...light-theme SVG...';
+CssSvgImgList1.Items[0].Variants.Values['dark'] := '...dark-theme SVG...';
+```
+
+Then just switch the CSS theme on the provider:
+
+```pascal
+CssStyleProvider1.DefaultStyleName := 'dark';
+```
+
+Every consumer that points to this list (`TCssBitBtn`, `TCssMenuItem`, `TCssTabControl`) will pick the `dark` variant of `check` automatically.
 
 ### Performance Notes
 
 - The rasteriser flattens Bézier and arc segments into polygons once, then runs the anti-aliased coverage pass over them. Everything is done in memory; there is no disk cache.
-- `TCssSvgImgList` keeps an internal LRU cache of already-rasterised bitmaps keyed by `(index, width, height, currentColor, serial)`. The cache is invalidated whenever an item's `Svg` changes, a new item is added, or `Width` / `Height` / `Scaled` change.
+- `TCssSvgImgList` keeps an internal LRU cache of already-rasterised bitmaps keyed by `(index, width, height, currentColor, variant, serial)`. The cache is invalidated whenever an item's `Svg` or `Variants` change, a new item is added, or `Width` / `Height` / `Scaled` / `DefaultVariant` change.
 - For icon sets of a few dozen entries the cost is negligible. If you ship thousands of SVGs, load them on demand rather than all at once.
-- `TCssBitBtn` keeps its own small per-state cache of the scaled glyph, so re-painting a button does not re-rasterise the SVG on every frame.
+- `TCssBitBtn` keeps its own small per-state cache of the scaled glyph, so re-painting a button does not re-rasterise the SVG on every frame. The cache is keyed on the resolved variant too, so switching the theme only re-rasterises once.
 
 ### Notes and Caveats
 
-- Only a single variant per entry is supported — no `light` / `dark` split inside one item. Use `currentColor`, or add two items (e.g. `check` and `check_dark`) and switch the `ImageIndex` in your code.
 - The SVG parser is not an XML validator. If it fails, `Image.Error` is non-empty and the rasteriser returns a blank bitmap. Call `GetParseError(Index)` if you need to surface the reason.
 - The rasteriser produces a `pf32bit` bitmap with a real per-pixel alpha channel — no `TransparentColor` chroma-keying anywhere, so semi-transparent strokes and antialiased edges blend correctly on any background.
+- The `Variants` lookup is case-insensitive, which matters because `TCssStyleProvider.DefaultStyleName` is often capitalised (`Dark`, `Light`) while authors type variant names in lowercase.
 
 ---
 
@@ -1245,7 +1462,10 @@ theme looks equally sharp at 100 %, 125 %, 150 %, 200 % and higher.
   icons are always sharp at 100 %, 125 %, 150 %, 200 % and higher.
   `TCssSvgImgList.Scaled` (default `True`) controls whether the design-time
   cell size is multiplied by the DPI factor — leave it at `True` for the
-  same behaviour as the rest of the library.
+  same behaviour as the rest of the library. `TCssBitBtn`,
+  `TCssMenuItem` and `TCssTabControl` additionally treat icon sizes as
+  DPI-aware lengths (see `menu-icon-size`, `tab-icon-size`) and re-rasterise
+  on `ChangeScale`.
 - Colors, fonts by name, `font-weight`, `font-style`, `text-decoration`,
   `text-align`, `vertical-align`, `cursor`, `opacity`, `box-shadow` color
   and all other non-length values — they are device-independent by nature.
@@ -1487,17 +1707,22 @@ Right-click a `TCssStyleProvider` on a form and choose **Edit CSS…** to open t
 
 A dedicated **visual editor** for the `Items` collection. Open it by double-clicking the component, or from the component's context menu (**Edit items…**).
 
-- **List with thumbnails.** Every entry is rendered at 32×32 next to its `Name`, so you can see the actual SVG artwork instead of a file path.
-- **`Load from file…`** — adds one or several `*.svg` files at once. The `Name` is derived from the file name (`icons/check.svg` → `check`), and a numeric suffix is appended automatically if a name is already taken (`check`, `check1`, `check2`, …).
-- **`Add empty`** — adds a placeholder item, useful when the SVG text is going to be pasted in from elsewhere.
-- **`Delete`**, **`Up`**, **`Down`** — remove the selected item or reorder the list. Order matters for `IndexOf`.
-- **`Name` editor** — renames the selected item, updating the list live. Renaming to an existing name is allowed; `IndexOf` returns the first match.
-- **`OK` / `Cancel`** — all changes are collected in the dialog and applied to the collection atomically. `Cancel` restores the original list from an internal backup, so nothing is written to the `.lfm`.
+- **List with index and thumbnails.** Every entry is rendered at 32×32 next to its **collection index** (`[0]`, `[1]`, …) and its `Name`. The index is what you type into `ImageIndex` on any consumer (button, menu item, tab), so the editor shows it up front.
+- **Variant selector.** A combo box above the memo lists `(base)` plus every variant name that any item in the collection defines. The list is rebuilt whenever the underlying set of variants changes.
+- **`+ Variant`** — adds a new variant to the selected item. The new variant is seeded with a copy of the base `Svg`, so you have a starting point instead of a blank editor.
+- **`Remove`** — deletes the currently selected variant from the selected item (with confirmation). Only available when the item actually has that variant.
+- **`Load SVG...`** — loads an SVG file into the **currently selected variant** of the selected item. When the combo is on `(base)`, the file replaces `Svg`; otherwise it replaces the corresponding `Variants` entry.
+- **`Add items from file...`** — adds new items, one per file, with `Name` derived from the file name (`icons/check.svg` → `check`; collisions resolved with `check1`, `check2`, …). This is the batch-import path.
+- **`Add empty`**, **`Delete`**, **`Up`**, **`Down`** — manage the list of items.
+- **`Name` editor** — renames the selected item, updating the list live.
+- **Memo** — shows the SVG text of the currently selected variant. Editable when the current variant exists on the item; the base `Svg` is always editable.
+- **`OK` / `Cancel`** — collect every change into the collection and apply it atomically. `Cancel` restores the original list from an internal backup, including every item's `Variants`.
 
-The `Svg` property is **not** editable in the Object Inspector — for a 10 KB SVG payload a plain `TStrings` edit box is unusable. Instead, the property shows a short, informative summary such as `<SVG data: 1024 bytes>` or `(empty)`, and the actual editing happens through the visual editor described above.
+In the Object Inspector the `Svg` property is **not** editable. Instead, it shows a short, informative summary such as `<SVG data: 1024 bytes>` or `(empty)`. The actual editing happens through the visual editor.
 
-The component also has a **`Load SVG from file…` verb** in its context menu, which lets you add several icons to the list without opening the editor at all — useful when you just want to bulk-import a folder of SVGs.
+The component also has a **`Load SVG from file…` verb** in its context menu, which lets you add several icons to the list without opening the editor. The verb drops the loaded SVG into the list's `DefaultVariant` (or into the base `Svg` when `DefaultVariant` is empty).
 
+**Tip** — you can also edit variants directly through the Object Inspector's generic `TStrings` editor, on the `Variants` property of an item, if you prefer keyboard-only workflow. The visual editor is the recommended path when you are mixing icon files with hand-edited SVG.
 
 ### On `TCssPageControl`
 

@@ -10,6 +10,7 @@ uses
 type
   TCssTextAlign = (ctaLeft, ctaCenter, ctaRight);
   TCssVAlign = (cvaTop, cvaMiddle, cvaBottom);
+  TCssIconLayout = (cilLeft, cilRight);
 
   TCssLinkClickEvent = procedure(Sender: TObject; const AHref, AText: UnicodeString) of object;
 

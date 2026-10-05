@@ -187,20 +187,53 @@ type
   // --------------------------------------------------------------------------
   TCssSvgImgList = class;
 
+  { Draws a pf32bit bitmap with per-pixel alpha onto ACanvas.
+
+    Manual pixel loop, deliberately not using TBitmap.AlphaFormat (missing
+    in older LCL) or TLazIntfImage.AlphaBlend (signature changed across
+    LCL versions). For typical icon sizes the per-pixel cost is negligible.
+
+    Used by TCssBitBtn, TCssMenuItem, TCssTabControl to composite an SVG
+    glyph that was rendered by TCssSvgImgList. }
+  procedure DrawSvgBitmapWithAlpha(ACanvas: TCanvas; AX, AY: Integer;
+    ABmp: TBitmap);
+
+type
   TCssSvgImgListItem = class(TCollectionItem)
   private
     FName: string;
     FSvg: string;
-    FImage: TSvgImage;
-    function GetImage: TSvgImage;
+    FVariants: TStringList;     // 'VariantName=SVG text'
+    FImage: TSvgImage;          // lazily created cache
+    FImageVariant: string;      // which variant FImage was built from
+
+    function  GetImage: TSvgImage;
+    function  GetVariants: TStrings;
     procedure SetSvg(const AValue: string);
     procedure SetName(const AValue: string);
+    procedure SetVariants(const AValue: TStrings);
+    procedure OnVariantsChanged(Sender: TObject);
   public
-    destructor Destroy; override;
+    constructor Create(ACollection: TCollection); override;
+    destructor  Destroy; override;
+
+    { Effective SVG for AVariant, falling back to Svg. }
+    function EffectiveSvg(const AVariant: string): string;
+
+    { Lazily parsed image for AVariant, cached. }
+    function GetImageForVariant(const AVariant: string): TSvgImage;
+
     property Image: TSvgImage read GetImage;
   published
     property Name: string read FName write SetName;
     property Svg: string read FSvg write SetSvg;
+
+    { Per-variant SVG overrides, in "VariantName=SVG text" format.
+      Example:
+        dark=<svg ...>
+        light=<svg ...>
+      Variants not listed fall back to Svg. }
+    property Variants: TStrings read GetVariants write SetVariants;
   end;
 
   TCssSvgImgListItems = class(TCollection)
@@ -224,59 +257,73 @@ type
     FWidth: Integer;
     FHeight: Integer;
     FScaled: Boolean;
+    FDefaultVariant: string;
     FOnChange: TNotifyEvent;
     FSerial: Integer;
     FCache: TStringList;
-    function GetCount: Integer;
+    function  GetCount: Integer;
     procedure SetItems(const AValue: TCssSvgImgListItems);
     procedure SetWidth(AValue: Integer);
     procedure SetHeight(AValue: Integer);
     procedure SetScaled(AValue: Boolean);
+    procedure SetDefaultVariant(const AValue: string);
     procedure ClearCache;
-    function CacheGet(const ASig: string): TBitmap;
+    function  CacheGet(const ASig: string): TBitmap;
     procedure CachePut(const ASig: string; ABitmap: TBitmap);
   protected
     procedure Changed; virtual;
   public
     constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
+    destructor  Destroy; override;
     procedure Assign(Source: TPersistent); override;
 
-    function Count: Integer;
-    function IndexOf(const AName: string): Integer;
-    function AddSvg(const AName, ASvg: string): Integer;
-    function AddSvgFromFile(const AName, AFileName: string): Integer;
+    function  Count: Integer;
+    function  IndexOf(const AName: string): Integer;
+    function  AddSvg(const AName, ASvg: string): Integer;
+    function  AddSvgFromFile(const AName, AFileName: string): Integer;
     procedure Delete(AIndex: Integer);
     procedure Clear;
 
-    // --- Access to source SVG ---
-    function GetSvg(AIndex: Integer): string; overload;
-    function GetSvg(const AName: string): string; overload;
+    { --- Access to the source SVG text --- }
+    function  GetSvg(AIndex: Integer): string; overload;
+    function  GetSvg(const AName: string): string; overload;
     procedure SetSvg(AIndex: Integer; const AValue: string);
-    function GetParseError(AIndex: Integer): string;
+    function  GetParseError(AIndex: Integer): string;
 
-    // --- High DPI ---
-    function GetScaleFactor: Double;
-    function GetEffectiveWidth: Integer;
-    function GetEffectiveHeight: Integer;
+    { --- High DPI --- }
+    function  GetScaleFactor: Double;
+    function  GetEffectiveWidth: Integer;
+    function  GetEffectiveHeight: Integer;
 
-    // --- Raster output (caller owns the returned TBitmap) ---
-    function GetBitmap(AIndex: Integer; AWidth, AHeight: Integer;
-      ACurrentColor: TColor = clDefault): TBitmap;
-    function GetBitmapByName(const AName: string; AWidth, AHeight: Integer;
-      ACurrentColor: TColor = clDefault): TBitmap;
+    { --- Variants --- }
+    function  GetVariantNames: TStrings;   // caller owns the list
+    function  HasVariant(const AVariant: string): Boolean;
 
-    // --- Drawing to canvas ---
+    { --- Raster output (caller owns the returned TBitmap) --- }
+    function  GetBitmap(AIndex: Integer; AWidth, AHeight: Integer;
+      ACurrentColor: TColor = clDefault): TBitmap; overload;
+    function  GetBitmap(AIndex: Integer; AWidth, AHeight: Integer;
+      ACurrentColor: TColor; const AVariant: string): TBitmap; overload;
+
+    function  GetBitmapByName(const AName: string;
+      AWidth, AHeight: Integer;
+      ACurrentColor: TColor = clDefault): TBitmap; overload;
+    function  GetBitmapByName(const AName: string;
+      AWidth, AHeight: Integer;
+      ACurrentColor: TColor; const AVariant: string): TBitmap; overload;
+
+    { --- Drawing to canvas --- }
     procedure DrawToCanvas(ACanvas: TCanvas; AIndex: Integer;
       AX, AY: Integer); overload;
     procedure DrawToCanvas(ACanvas: TCanvas; AIndex: Integer;
-      AX, AY, AW, AH: Integer; ACurrentColor: TColor = clDefault); overload;
+      AX, AY, AW, AH: Integer;
+      ACurrentColor: TColor = clDefault); overload;
 
-    // --- Compatibility with standard TImageList ---
+    { --- Compatibility with standard TImageList --- }
     procedure AssignToImageList(AImageList: TCustomImageList;
       ACurrentColor: TColor = clDefault);
 
-    // --- Batch save/load of all items ---
+    { --- Batch save/load --- }
     procedure SaveToStream(AStream: TStream);
     procedure LoadFromStream(AStream: TStream);
     procedure SaveToFile(const AFileName: string);
@@ -285,6 +332,13 @@ type
     property Width: Integer read FWidth write SetWidth default 16;
     property Height: Integer read FHeight write SetHeight default 16;
     property Scaled: Boolean read FScaled write SetScaled default True;
+
+    { Variant used by parameterless GetBitmap / DrawToCanvas overloads
+      and by consumers such as TCssBitBtn / TCssMenuItem / TCssTabControl.
+      Leave empty to always use the per-item Svg. }
+    property DefaultVariant: string
+      read FDefaultVariant write SetDefaultVariant;
+
     property Items: TCssSvgImgListItems read FItems write SetItems;
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
   end;
@@ -390,6 +444,62 @@ begin
   if AValue < 0 then Result := 0
   else if AValue > 1 then Result := 1
   else Result := AValue;
+end;
+
+procedure DrawSvgBitmapWithAlpha(ACanvas: TCanvas; AX, AY: Integer;
+  ABmp: TBitmap);
+var
+  Img: TLazIntfImage;
+  X, Y, DX, DY: Integer;
+  Pix: TFPColor;
+  A: Integer;
+  DstColor: TColor;
+  SR, SG, SB, DR, DG, DB, R, G, B: Integer;
+begin
+  if (ACanvas = nil) or (ABmp = nil) or ABmp.Empty then Exit;
+
+  Img := ABmp.CreateIntfImage;
+  if Img = nil then Exit;
+
+  try
+    for Y := 0 to Img.Height - 1 do
+    begin
+      DY := AY + Y;
+      if (DY < 0) or (DY >= ACanvas.Height) then Continue;
+
+      for X := 0 to Img.Width - 1 do
+      begin
+        DX := AX + X;
+        if (DX < 0) or (DX >= ACanvas.Width) then Continue;
+
+        Pix := Img.Colors[X, Y];
+        A := Pix.Alpha shr 8;
+        if A = 0 then Continue;
+
+        SR := Pix.Red   shr 8;
+        SG := Pix.Green shr 8;
+        SB := Pix.Blue  shr 8;
+
+        if A = 255 then
+          ACanvas.Pixels[DX, DY] := RGBToColor(SR, SG, SB)
+        else
+        begin
+          DstColor := ColorToRGB(ACanvas.Pixels[DX, DY]);
+          DR :=  DstColor         and $FF;
+          DG := (DstColor shr  8) and $FF;
+          DB := (DstColor shr 16) and $FF;
+
+          R := (SR * A + DR * (255 - A)) div 255;
+          G := (SG * A + DG * (255 - A)) div 255;
+          B := (SB * A + DB * (255 - A)) div 255;
+
+          ACanvas.Pixels[DX, DY] := RGBToColor(R, G, B);
+        end;
+      end;
+    end;
+  finally
+    Img.Free;
+  end;
 end;
 
 // ---------------------------------------------------------------------------
@@ -2981,17 +3091,29 @@ end;
 //  Collection item
 // ============================================================================
 
+constructor TCssSvgImgListItem.Create(ACollection: TCollection);
+begin
+  inherited Create(ACollection);
+  FVariants := TStringList.Create;
+  FVariants.NameValueSeparator := '=';
+  FVariants.OnChange := @OnVariantsChanged;
+end;
+
 destructor TCssSvgImgListItem.Destroy;
 begin
+  FreeAndNil(FVariants);
   FreeAndNil(FImage);
   inherited Destroy;
 end;
 
 function TCssSvgImgListItem.GetImage: TSvgImage;
 begin
-  if FImage = nil then
-    FImage := TSvgImage.Create(FSvg);
-  Result := FImage;
+  Result := GetImageForVariant('');
+end;
+
+function TCssSvgImgListItem.GetVariants: TStrings;
+begin
+  Result := FVariants;
 end;
 
 procedure TCssSvgImgListItem.SetSvg(const AValue: string);
@@ -2999,6 +3121,7 @@ begin
   if FSvg = AValue then Exit;
   FSvg := AValue;
   FreeAndNil(FImage);
+  FImageVariant := '';
   Changed(False);
 end;
 
@@ -3007,6 +3130,57 @@ begin
   if FName = AValue then Exit;
   FName := AValue;
   Changed(False);
+end;
+
+procedure TCssSvgImgListItem.SetVariants(const AValue: TStrings);
+begin
+  FVariants.Assign(AValue);
+  { FVariants.OnChange fires automatically and invalidates the cache. }
+end;
+
+procedure TCssSvgImgListItem.OnVariantsChanged(Sender: TObject);
+begin
+  FreeAndNil(FImage);
+  FImageVariant := '';
+  Changed(False);
+end;
+
+function TCssSvgImgListItem.EffectiveSvg(const AVariant: string): string;
+var
+  I: Integer;
+begin
+  { Case-insensitive lookup, because the CSS variant name
+    ("Dark" / "Light") does not necessarily match the exact casing
+    used when the SVG variant was added ("dark" / "light"). }
+  if (AVariant <> '') and (FVariants <> nil) then
+  begin
+    for I := 0 to FVariants.Count - 1 do
+    begin
+      if SameText(FVariants.Names[I], AVariant) then
+      begin
+        Result := FVariants.ValueFromIndex[I];
+        if Result <> '' then
+          Exit;
+      end;
+    end;
+  end;
+  Result := FSvg;
+end;
+
+function TCssSvgImgListItem.GetImageForVariant(
+  const AVariant: string): TSvgImage;
+var
+  E: string;
+begin
+  if (FImage <> nil) and (FImageVariant = AVariant) then
+    Exit(FImage);
+
+  E := EffectiveSvg(AVariant);
+
+  FreeAndNil(FImage);
+  FImage := TSvgImage.Create(E);
+  FImageVariant := AVariant;
+  Result := FImage;
 end;
 
 // ============================================================================
@@ -3122,6 +3296,13 @@ begin
     FCache.Delete(0);
   end;
   FCache.AddObject(ASig, ABitmap);
+end;
+
+procedure TCssSvgImgList.SetDefaultVariant(const AValue: string);
+begin
+  if FDefaultVariant = AValue then Exit;
+  FDefaultVariant := AValue;
+  Changed;
 end;
 
 function TCssSvgImgList.GetCount: Integer;
@@ -3250,37 +3431,18 @@ begin
   Result := Max(1, Round(FHeight * GetScaleFactor));
 end;
 
-function TCssSvgImgList.GetBitmap(AIndex, AWidth, AHeight: Integer;
-  ACurrentColor: TColor): TBitmap;
-var
-  Sig: string;
-  Cached: TBitmap;
-  Item: TCssSvgImgListItem;
-  C: TColor;
-begin
-  Result := TBitmap.Create;
-  Result.PixelFormat := pf32bit;
-  if (AIndex < 0) or (AIndex >= Count) or (AWidth <= 0) or (AHeight <= 0) then
-    Exit;
-  C := ACurrentColor;
-  if C = clDefault then C := clBlack;
-  Sig := Format('%d;%d;%dx%d;%d',
-    [FSerial, AIndex, AWidth, AHeight, Integer(ColorToRGB(C))]);
-  Cached := CacheGet(Sig);
-  if Cached = nil then
-  begin
-    Item := FItems[AIndex];
-    Cached := TBitmap.Create;
-    Item.Image.RenderToBitmap(Cached, AWidth, AHeight, C);
-    CachePut(Sig, Cached);
-  end;
-  Result.Assign(Cached);
-end;
-
 function TCssSvgImgList.GetBitmapByName(const AName: string;
   AWidth, AHeight: Integer; ACurrentColor: TColor): TBitmap;
 begin
-  Result := GetBitmap(IndexOf(AName), AWidth, AHeight, ACurrentColor);
+  Result := GetBitmap(IndexOf(AName), AWidth, AHeight, ACurrentColor,
+    FDefaultVariant);
+end;
+
+function TCssSvgImgList.GetBitmapByName(const AName: string;
+  AWidth, AHeight: Integer; ACurrentColor: TColor;
+  const AVariant: string): TBitmap;
+begin
+  Result := GetBitmap(IndexOf(AName), AWidth, AHeight, ACurrentColor, AVariant);
 end;
 
 procedure TCssSvgImgList.DrawToCanvas(ACanvas: TCanvas; AIndex: Integer;
@@ -3363,6 +3525,88 @@ begin
       Bmp.Free;
     end;
   end;
+end;
+
+function TCssSvgImgList.GetVariantNames: TStrings;
+var
+  L: TStringList;
+  I, J: Integer;
+  Item: TCssSvgImgListItem;
+  N: string;
+begin
+  L := TStringList.Create;
+  L.Sorted := True;
+  L.Duplicates := dupIgnore;
+
+  try
+    for I := 0 to FItems.Count - 1 do
+    begin
+      Item := FItems[I];
+      for J := 0 to Item.Variants.Count - 1 do
+      begin
+        N := Item.Variants.Names[J];
+        if Trim(N) <> '' then
+          L.Add(N);
+      end;
+    end;
+  except
+    L.Free;
+    raise;
+  end;
+
+  Result := L;
+end;
+
+function TCssSvgImgList.HasVariant(const AVariant: string): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  if AVariant = '' then Exit;
+
+  for I := 0 to FItems.Count - 1 do
+    if FItems[I].Variants.IndexOfName(AVariant) >= 0 then
+      Exit(True);
+end;
+
+function TCssSvgImgList.GetBitmap(AIndex, AWidth, AHeight: Integer;
+  ACurrentColor: TColor): TBitmap;
+begin
+  Result := GetBitmap(AIndex, AWidth, AHeight, ACurrentColor,
+    FDefaultVariant);
+end;
+
+function TCssSvgImgList.GetBitmap(AIndex, AWidth, AHeight: Integer;
+  ACurrentColor: TColor; const AVariant: string): TBitmap;
+var
+  Sig: string;
+  Cached: TBitmap;
+  Item: TCssSvgImgListItem;
+  C: TColor;
+begin
+  Result := TBitmap.Create;
+  Result.PixelFormat := pf32bit;
+  if (AIndex < 0) or (AIndex >= Count) or
+     (AWidth <= 0) or (AHeight <= 0) then
+    Exit;
+
+  C := ACurrentColor;
+  if C = clDefault then C := clBlack;
+
+  Sig := Format('%d;%d;%s;%dx%d;%d',
+    [FSerial, AIndex, AVariant, AWidth, AHeight, Integer(ColorToRGB(C))]);
+
+  Cached := CacheGet(Sig);
+  if Cached = nil then
+  begin
+    Item := FItems[AIndex];
+    Cached := TBitmap.Create;
+    Item.GetImageForVariant(AVariant)
+        .RenderToBitmap(Cached, AWidth, AHeight, C);
+    CachePut(Sig, Cached);
+  end;
+
+  Result.Assign(Cached);
 end;
 
 procedure TCssSvgImgList.SaveToStream(AStream: TStream);

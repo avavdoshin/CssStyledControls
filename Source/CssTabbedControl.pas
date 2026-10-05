@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf,
-  IntfGraphics, FPImage, CssStyledControl;
+  IntfGraphics, FPImage, CssStyledControl, CssSvgImgList;
 
 const
   CSS_TAB_SCROLL_EDGE_MARGIN = 6;
@@ -14,6 +14,9 @@ const
   CSS_TAB_SCROLL_GAP = 6;
 
 type
+  { Horizontal position of the tab icon relative to the caption. }
+  TCssTabIconLayout = (tilLeft, tilRight);
+
   TCssTabPosition = (ctpTop, ctpBottom, ctpLeft, ctpRight);
 
   TCssPageControl = class;
@@ -29,8 +32,11 @@ type
     FLastAppliedRadius: Integer;
     FLastAppliedSize: TPoint;
 
+    FImageIndex: Integer;
+
     // Property setters
     procedure SetTabVisible(AValue: Boolean);
+    procedure SetImageIndex(AValue: Integer);
   protected
     procedure SetParent(AParent: TWinControl); override;
     // Painting
@@ -56,6 +62,8 @@ type
   published
     property TabVisible: Boolean read FTabVisible write SetTabVisible default True;
     property PageControl: TCssPageControl read FPageControl;
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
 
     property Align;
     property Color;
@@ -128,6 +136,15 @@ type
     FShowFocusWhenChildFocusedSet: Boolean;
     FHasFocusedChild: Boolean;
 
+    FSvgImages: TCssSvgImgList;
+    FTabImageIndexes: TStringList;
+
+    FTabIconLayout: TCssTabIconLayout;
+    FTabIconLayoutSet: Boolean;
+
+    FTabIconSize: Integer;
+    FTabIconSizeSet: Boolean;
+
     // Appearance getters
     function GetTabBackground: TColor;
     function GetTabHoverBackground: TColor;
@@ -136,6 +153,8 @@ type
     function GetTabActiveTextColor: TColor;
     function GetTabBorderColor: TColor;
     function GetTabRadius: Integer;
+    function GetTabIconLayout: TCssTabIconLayout;
+    function GetTabIconSize(ACanvas: TCanvas): Integer;
 
     // Layout getters
     function GetTabPadding: Integer;
@@ -194,6 +213,10 @@ type
     function  HasFocusedChild: Boolean;
     procedure UpdateFocusedChildState;
 
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetTabImageIndexes(AValue: TStrings);
+    function  GetTabImageIndexes: TStrings;
+    function  GetEffectiveSvgVariant: string;
   protected
     // Focus
     procedure ChildFocusChanged(AChildFocused: Boolean); override;
@@ -226,6 +249,14 @@ type
 
     // Geometry
     function GetContentRect: TRect; override;
+
+    { Resolves the SVG index for visible tab ATabIndex. Base class reads
+      from TabImageIndexes; TCssPageControl overrides this to read from
+      the corresponding TCssTabSheet. }
+    function  GetTabImageIndex(ATabIndex: Integer): Integer; virtual;
+
+    procedure Notification(AComponent: TComponent;
+      Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -252,6 +283,14 @@ type
     property ScrollButtonSize: Integer read FScrollButtonSize write SetScrollButtonSize default 0;
     property ScrollButtonDisabledBackground: TColor read GetScrollButtonDisabledBackground write FScrollButtonDisabledBackground;
     property ScrollButtonDisabledArrowColor: TColor read GetScrollButtonDisabledArrowColor write FScrollButtonDisabledArrowColor;
+
+    { SVG source for the per-tab icons. }
+    property SvgImages: TCssSvgImgList
+      read FSvgImages write SetSvgImages;
+
+    { One line per tab. Each line is an index inside SvgImages, or
+      "-1"/empty for "no icon". Line N corresponds to tab N. }
+    property TabImageIndexes: TStrings read GetTabImageIndexes write SetTabImageIndexes;
 
     // Standard properties
     property Align;
@@ -294,6 +333,7 @@ type
     procedure StyleChanged; override;
     procedure TabPositionChanged; override;
     function  TabUsesHtml(Index: Integer): Boolean; override;
+    function  GetTabImageIndex(ATabIndex: Integer): Integer; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -349,6 +389,7 @@ begin
   ControlStyle := ControlStyle + [csAcceptsControls];
 
   FTabVisible := True;
+  FImageIndex := -1;
   Caption := 'Page';
 
   Width := 200;
@@ -470,6 +511,15 @@ begin
     FPageControl.SyncTabs;
     FPageControl.Invalidate;
   end;
+end;
+
+procedure TCssTabSheet.SetImageIndex(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndex = AValue then Exit;
+  FImageIndex := AValue;
+  if Assigned(FPageControl) then
+    FPageControl.Invalidate;
 end;
 
 procedure TCssTabSheet.InheritStyleFromPageControl;
@@ -647,6 +697,7 @@ begin
   inherited Create(AOwner);
 
   FTabs := TStringList.Create;
+  FTabImageIndexes := TStringList.Create;
   FTabs.OnChange := @TabsChanged;
 
   FTabIndex := -1;
@@ -671,6 +722,11 @@ end;
 
 destructor TCssTabControl.Destroy;
 begin
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FreeAndNil(FTabImageIndexes);
+
   FTabs.Free;
 
   inherited Destroy;
@@ -889,6 +945,26 @@ begin
   end;
 end;
 
+function TCssTabControl.GetTabImageIndex(ATabIndex: Integer): Integer;
+begin
+  Result := -1;
+  if (ATabIndex < 0) or (FTabImageIndexes = nil) then Exit;
+  if ATabIndex >= FTabImageIndexes.Count then Exit;
+  Result := StrToIntDef(Trim(FTabImageIndexes[ATabIndex]), -1);
+end;
+
+procedure TCssTabControl.Notification(AComponent: TComponent;
+  Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    Invalidate;
+  end;
+end;
+
 function TCssTabControl.TabAtPos(X, Y: Integer): Integer;
 var
   I: Integer;
@@ -983,6 +1059,41 @@ begin
     Result := 4;
 end;
 
+function TCssTabControl.GetTabIconLayout: TCssTabIconLayout;
+begin
+  if FTabIconLayoutSet then
+    Result := FTabIconLayout
+  else
+    Result := tilLeft;
+end;
+
+{ Returns the device-pixel size of a tab icon.
+
+  Default: follow the height of a line of text on the given canvas, capped
+  by the tab height so the icon never overflows the tab. When the CSS
+  property `tab-icon-size` is set, that value (already scaled to device
+  pixels) is used instead. }
+function TCssTabControl.GetTabIconSize(ACanvas: TCanvas): Integer;
+var
+  MaxIcon: Integer;
+begin
+  if FTabIconSizeSet then
+    Exit(FTabIconSize);
+
+  MaxIcon := ScalePx(FTabHeight) - ScalePx(6);
+  if MaxIcon < ScalePx(8) then
+    MaxIcon := ScalePx(8);
+
+  if ACanvas = nil then
+    Exit(ScalePx(16));
+
+  Result := ACanvas.TextHeight('Mg');
+  if Result > MaxIcon then
+    Result := MaxIcon;
+  if Result < ScalePx(8) then
+    Result := ScalePx(8);
+end;
+
 function TCssTabControl.GetTabWidth(Index: Integer): Integer;
 var
   TextW: Integer;
@@ -1010,6 +1121,9 @@ begin
     TextW := 0;
 
   Result := TextW + ScalePx(GetTabPadding) * 2;
+
+  if (FSvgImages <> nil) and (GetTabImageIndex(Index) >= 0) then
+    Inc(Result, GetTabIconSize(Canvas) + ScalePx(4));
 
   if Result < ScalePx(FTabWidth) then
     Result := ScalePx(FTabWidth);
@@ -1601,6 +1715,45 @@ begin
   end;
 end;
 
+procedure TCssTabControl.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+  FSvgImages := AValue;
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  Invalidate;
+end;
+
+procedure TCssTabControl.SetTabImageIndexes(AValue: TStrings);
+begin
+  FTabImageIndexes.Assign(AValue);
+  Invalidate;
+end;
+
+function TCssTabControl.GetTabImageIndexes : TStrings;
+begin
+  Result := FTabImageIndexes;
+end;
+
+function TCssTabControl.GetEffectiveSvgVariant: string;
+begin
+  if StyleProvider <> nil then
+  begin
+    if Trim(StyleName) <> '' then
+      Exit(StyleName);
+    Exit(StyleProvider.DefaultStyleName);
+  end;
+
+  if FSvgImages <> nil then
+    Exit(FSvgImages.DefaultVariant);
+
+  Result := '';
+end;
+
 function TCssTabControl.GetEffectiveHoverState: Boolean;
 begin
   if FShowFocusWhenChildFocused and FHasFocusedChild then
@@ -1631,6 +1784,12 @@ var
   TabR, Strip, SavedClip: TRect;
   BG, FG, BorderC: TColor;
   TS: TTextStyle;
+  IconBmp: TBitmap;
+  IconW, IconH, IconX, IconY, Gap, StartX, TextW, TotalW: Integer;
+  TextLeft: Integer;
+  TextR: TRect;
+  HasIcon: Boolean;
+  Layout: TCssTabIconLayout;
 begin
   inherited Paint;
 
@@ -1645,6 +1804,8 @@ begin
     SavedClip := Canvas.ClipRect;
     Canvas.ClipRect := Strip;
     try
+      Layout := GetTabIconLayout;
+
       for I := FFirstVisibleTab to FTabs.Count - 1 do
       begin
         TabR := GetTabRect(I);
@@ -1710,23 +1871,106 @@ begin
 
         Canvas.Font.Color := FG;
 
+        { Resolve icon source and per-tab index. }
+        HasIcon := (FSvgImages <> nil) and
+                   (GetTabImageIndex(I) >= 0) and
+                   (GetTabImageIndex(I) < FSvgImages.Count);
+
+        if HasIcon then
+        begin
+          IconW := GetTabIconSize(Canvas);
+          IconH := IconW;
+          Gap := ScalePx(4);
+        end
+        else
+        begin
+          IconW := 0;
+          IconH := 0;
+          Gap := 0;
+        end;
+
+        { Measure caption. }
+        if TabUsesHtml(I) then
+          TextW := MeasureHtmlTextSize(Canvas, FTabs[I], TabR.Width).cx
+        else
+          TextW := Canvas.TextWidth(FTabs[I]);
+
+        { Centre the icon + caption group horizontally inside the tab. }
+        TotalW := TextW;
+        if HasIcon then
+          TotalW := TotalW + IconW + Gap;
+
+        StartX := TabR.Left + (TabR.Width - TotalW) div 2;
+        if StartX < TabR.Left then
+          StartX := TabR.Left;
+
+        { Left icon. }
+        if HasIcon and (Layout = tilLeft) then
+        begin
+          IconX := StartX;
+          IconY := TabR.Top + (TabR.Height - IconH) div 2;
+
+          IconBmp := FSvgImages.GetBitmap(GetTabImageIndex(I),
+            IconW, IconH, FG, GetEffectiveSvgVariant);
+          try
+            DrawSvgBitmapWithAlpha(Canvas, IconX, IconY, IconBmp);
+          finally
+            IconBmp.Free;
+          end;
+
+          TextLeft := StartX + IconW + Gap;
+        end
+        else
+          TextLeft := StartX;
+
+        { Draw the caption. }
         if TabUsesHtml(I) then
         begin
-          DrawHtmlTextWithAlign(
-            Canvas, TabR, FTabs[I],
-            ctaCenter, cvaMiddle,
-            FG
-          );
+          if HasIcon then
+          begin
+            TextR := Rect(TextLeft, TabR.Top,
+                          TextLeft + TextW, TabR.Bottom);
+            DrawHtmlTextWithAlign(Canvas, TextR, FTabs[I],
+              ctaLeft, cvaMiddle, FG);
+          end
+          else
+            DrawHtmlTextWithAlign(Canvas, TabR, FTabs[I],
+              ctaCenter, cvaMiddle, FG);
         end
         else
         begin
           TS := Default(TTextStyle);
           FillChar(TS, SizeOf(TS), 0);
-          TS.Alignment := taCenter;
           TS.Layout := tlCenter;
           TS.Clipping := True;
 
-          Canvas.TextRect(TabR, TabR.Left, TabR.Top, FTabs[I], TS);
+          if HasIcon then
+          begin
+            TS.Alignment := taLeftJustify;
+            TextR := Rect(TextLeft, TabR.Top,
+                          TextLeft + TextW, TabR.Bottom);
+            Canvas.TextRect(TextR, TextLeft, TabR.Top, FTabs[I], TS);
+          end
+          else
+          begin
+            TS.Alignment := taCenter;
+            Canvas.TextRect(TabR, TabR.Left, TabR.Top, FTabs[I], TS);
+          end;
+        end;
+
+        { Right icon. }
+        if HasIcon and (Layout = tilRight) then
+        begin
+          IconX := TextLeft + TextW + Gap;
+          IconY := TabR.Top + (TabR.Height - IconH) div 2;
+
+          IconBmp := FSvgImages.GetBitmap(GetTabImageIndex(I),
+            IconW, IconH, FG, GetEffectiveSvgVariant);
+          try
+            DrawSvgBitmapWithAlpha(Canvas, IconX, IconY, IconBmp);
+          finally
+            IconBmp.Free;
+          end;
         end;
       end;
     finally
@@ -1852,6 +2096,8 @@ begin
   FScrollButtonRadiusSet := False;
   FScrollButtonDisabledBackgroundSet := False;
   FScrollButtonDisabledArrowColorSet := False;
+  FTabIconLayoutSet := False;
+  FTabIconSizeSet := False;
 
   inherited ResetStyle;
 end;
@@ -2061,6 +2307,32 @@ begin
     FShowFocusWhenChildFocused := (S = 'true') or (S = '1') or (S = 'yes');
     FShowFocusWhenChildFocusedSet := True;
     Invalidate;
+    Exit;
+  end;
+
+  if AName = 'tab-icon-layout' then
+  begin
+    S := LowerCase(Trim(AValue));
+    if S = 'left' then
+    begin
+      FTabIconLayout := tilLeft;
+      FTabIconLayoutSet := True;
+    end
+    else if S = 'right' then
+    begin
+      FTabIconLayout := tilRight;
+      FTabIconLayoutSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'tab-icon-size' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      FTabIconSize := Px;
+      FTabIconSizeSet := True;
+    end;
     Exit;
   end;
 
@@ -2437,6 +2709,24 @@ begin
     Result := FTabUseHtml[Index]
   else
     Result := HtmlMode;
+end;
+
+function TCssPageControl.GetTabImageIndex(ATabIndex: Integer): Integer;
+var
+  PageIdx: Integer;
+  Sheet: TCssTabSheet;
+begin
+  Result := -1;
+
+  if (ATabIndex < 0) or (ATabIndex >= Length(FTabToPage)) then Exit;
+
+  PageIdx := FTabToPage[ATabIndex];
+  if (PageIdx < 0) or (PageIdx >= FPages.Count) then Exit;
+
+  Sheet := TCssTabSheet(FPages[PageIdx]);
+  if Sheet = nil then Exit;
+
+  Result := Sheet.ImageIndex;
 end;
 
 initialization

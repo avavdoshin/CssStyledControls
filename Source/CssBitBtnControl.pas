@@ -118,6 +118,8 @@ type
     function  ImageIndexForState(AState: Integer): Integer;
     function  HasAnyValidImageIndex: Boolean;
     procedure DrawBitmapWithAlpha(ACanvas: TCanvas; AX, AY: Integer; ABmp: TBitmap);
+
+    function  GetEffectiveSvgVariant: string;
   protected
     procedure SetCaption(const AValue: TCaption); override;
     procedure Loaded; override;
@@ -1224,7 +1226,8 @@ begin
 
     // CssSvgImgList returns a pf32bit bitmap with a real alpha channel,
     // so no chroma-key is needed.
-    TempSrc := FSvgImages.GetBitmap(ImgIdx, RW, RH, GetEffectiveTextColor);
+    TempSrc := FSvgImages.GetBitmap(ImgIdx, RW, RH, GetEffectiveTextColor,
+      GetEffectiveSvgVariant);
 
     SrcBitmap := TempSrc;
     SrcRect := Rect(0, 0, SrcBitmap.Width, SrcBitmap.Height);
@@ -1438,62 +1441,34 @@ end;
   For 32x32 button glyphs the per-pixel loop is fast enough. }
 procedure TCssBitBtn.DrawBitmapWithAlpha(ACanvas: TCanvas;
   AX, AY: Integer; ABmp: TBitmap);
-var
-  Img: TLazIntfImage;
-  X, Y, DX, DY: Integer;
-  Pix: TFPColor;
-  A: Integer;
-  DstColor: TColor;
-  SR, SG, SB: Integer;
-  DR, DG, DB: Integer;
-  R, G, B: Integer;
 begin
-  if (ABmp = nil) or ABmp.Empty then Exit;
+  DrawSvgBitmapWithAlpha(ACanvas, AX, AY, ABmp);
+end;
 
-  Img := ABmp.CreateIntfImage;
-  if Img = nil then Exit;
+{ Returns the variant name that the SVG icon should be rendered with.
 
-  try
-    for Y := 0 to Img.Height - 1 do
-    begin
-      DY := AY + Y;
-      if (DY < 0) or (DY >= ACanvas.Height) then Continue;
+  Priority:
+    1. StyleName of this control, when set;
+    2. StyleProvider.DefaultStyleName, when a provider is assigned;
+    3. SvgImages.DefaultVariant, for standalone use without CSS;
+    4. empty string (base Svg).
 
-      for X := 0 to Img.Width - 1 do
-      begin
-        DX := AX + X;
-        if (DX < 0) or (DX >= ACanvas.Width) then Continue;
-
-        Pix := Img.Colors[X, Y];
-        A := Pix.Alpha shr 8;
-        if A = 0 then Continue;
-
-        SR := Pix.Red   shr 8;
-        SG := Pix.Green shr 8;
-        SB := Pix.Blue  shr 8;
-
-        if A = 255 then
-        begin
-          ACanvas.Pixels[DX, DY] := RGBToColor(SR, SG, SB);
-        end
-        else
-        begin
-          DstColor := ColorToRGB(ACanvas.Pixels[DX, DY]);
-          DR :=  DstColor         and $FF;
-          DG := (DstColor shr  8) and $FF;
-          DB := (DstColor shr 16) and $FF;
-
-          R := (SR * A + DR * (255 - A)) div 255;
-          G := (SG * A + DG * (255 - A)) div 255;
-          B := (SB * A + DB * (255 - A)) div 255;
-
-          ACanvas.Pixels[DX, DY] := RGBToColor(R, G, B);
-        end;
-      end;
-    end;
-  finally
-    Img.Free;
+  This is what ties TCssSvgImgList variants to the active CSS theme:
+  switching DefaultStyleName on the provider immediately changes the
+  variant used by every bit button that references it. }
+function TCssBitBtn.GetEffectiveSvgVariant: string;
+begin
+  if StyleProvider <> nil then
+  begin
+    if Trim(StyleName) <> '' then
+      Exit(StyleName);
+    Exit(StyleProvider.DefaultStyleName);
   end;
+
+  if FSvgImages <> nil then
+    Exit(FSvgImages.DefaultVariant);
+
+  Result := '';
 end;
 
 procedure TCssBitBtn.DrawGlyphAndCaption(ACanvas: TCanvas; const ARect: TRect);

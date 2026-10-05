@@ -6,10 +6,13 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
-  Forms, CssStyledControl;
+  Forms, CssStyledControl, CssSvgImgList;
 
 type
   TCssMenuBase = class;
+
+  { Horizontal position of the item icon relative to the caption. }
+  TCssMenuIconLayout = (milLeft, milRight);
 
   { Single menu item. It is a TComponent, so it participates
     in the standard LCL streaming and appears in the IDE
@@ -32,6 +35,9 @@ type
     FVisible: Boolean;
     FSeparator: Boolean;
 
+    FSvgImages: TCssSvgImgList;
+    FImageIndex: Integer;
+
     FOnClick: TNotifyEvent;
     FOnChanged: TNotifyEvent;
     FDesignerData: Pointer;   // IDE-only: back-reference to TTreeNode
@@ -50,10 +56,14 @@ type
     procedure SetVisible(AValue: Boolean);
     procedure SetSeparator(AValue: Boolean);
 
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetImageIndex(AValue: Integer);
+
     procedure DoChanged;
   protected
-    { Standard LCL streaming hook: returns child items in order. }
     procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
+    procedure Notification(AComponent: TComponent;
+      Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -70,12 +80,16 @@ type
     function HasParent: Boolean; override;
     procedure SetParentComponent(Value: TComponent); override;
 
-    // Reparenting (used by the designer and by MoveNode)
-    procedure Detach;                                 // detach from current parent
-    procedure AttachTo(ANewParent: TCssMenuItem;      // attach as sub-item
-      AIndex: Integer);
+    // Reparenting
+    procedure Detach;
+    procedure AttachTo(ANewParent: TCssMenuItem; AIndex: Integer);
 
-    // Non-published accessors
+    { Item-level SvgImages if set, otherwise the owning menu's. }
+    function GetEffectiveSvgImages: TCssSvgImgList;
+
+    { SVG variant name derived from the owning menu's CSS theme. }
+    function GetEffectiveSvgVariant: string;
+
     property Count: Integer read GetCount;
     property Items[Index: Integer]: TCssMenuItem read GetItem; default;
     property Parent: TCssMenuItem read FParent;
@@ -90,7 +104,15 @@ type
     property Visible: Boolean read FVisible write SetVisible default True;
     property Separator: Boolean read FSeparator write SetSeparator default False;
     property OnClick: TNotifyEvent read FOnClick write FOnClick;
-    // Tag, Name, Owner are inherited from TComponent
+
+    { Optional per-item override; when unset the item uses the menu's
+      SvgImages. }
+    property SvgImages: TCssSvgImgList
+      read FSvgImages write SetSvgImages;
+
+    { Index inside the effective SvgImages. -1 disables the icon. }
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
   end;
 
   { Friend class that exposes protected TComponent methods
@@ -105,6 +127,8 @@ type
   private
     FItems: TList;            // top-level items only
 
+    FSvgImages: TCssSvgImgList;
+
     // Menu appearance
     FMenuBackground: TColor;      FMenuBackgroundSet: Boolean;
     FMenuBorderColor: TColor;     FMenuBorderColorSet: Boolean;
@@ -118,11 +142,18 @@ type
     FMenuSeparatorHeight: Integer;FMenuSeparatorHeightSet: Boolean;
     FMenuSeparatorWidth: Integer; FMenuSeparatorWidthSet: Boolean;
 
+    // Icon size (auto by default; overridable via `menu-icon-size`)
+    FMenuIconSize: Integer;
+    FMenuIconSizeSet: Boolean;
+
+    // Icon position relative to caption (left by default)
+    FMenuIconLayout: TCssMenuIconLayout;
+    FMenuIconLayoutSet: Boolean;
+
     // Saved text alignment for HTML drawing
     FSavedVAlign: TCssVAlign;
     FSavedTextAlign: TCssTextAlign;
 
-    // Property getters
     function GetCount: Integer;
     function GetItem(Index: Integer): TCssMenuItem;
     function GetMenuBackground: TColor;
@@ -136,11 +167,16 @@ type
     function GetMenuShortcutColor: TColor;
     function GetMenuSeparatorHeight: Integer;
     function GetMenuSeparatorWidth: Integer;
+    function GetMenuIconSize(ACanvas: TCanvas): Integer;
+    function GetMenuIconLayout: TCssMenuIconLayout;
+
+    procedure SetSvgImages(AValue: TCssSvgImgList);
   protected
     procedure ApplyDeclaration(const AName, AValue: string); override;
     procedure ResetStyle; override;
+    procedure Notification(AComponent: TComponent;
+      Operation: TOperation); override;
 
-    { Standard LCL streaming hook: returns top-level items. }
     procedure GetChildren(Proc: TGetChildProc; Root: TComponent); override;
 
     property ItemsList: TList read FItems;
@@ -150,7 +186,6 @@ type
     function GetParentComponent: TComponent; override;
     function DesignOwner: TComponent;
 
-    // Item management
     function AddItem: TCssMenuItem;
     function InsertItem(Index: Integer): TCssMenuItem;
     function IndexOfItem(AItem: TCssMenuItem): Integer;
@@ -158,71 +193,59 @@ type
     procedure AttachItem(AItem: TCssMenuItem; AIndex: Integer);
     procedure ClearItems;
 
-    // HTML drawing helpers
     procedure BeginMenuHtmlDraw;
     procedure EndMenuHtmlDraw;
 
-    // Properties
     property Count: Integer read GetCount;
     property Items[Index: Integer]: TCssMenuItem read GetItem; default;
+  published
+    { Default SVG source for all items of this menu. Items with their own
+      SvgImages override this value. }
+    property SvgImages: TCssSvgImgList
+      read FSvgImages write SetSvgImages;
   end;
 
   TCssMenuPopupForm = class(TForm)
   private
-    // Data
     FMenu: TCssMenuBase;
     FItems: TList;
     FVisibleItems: TList;
     FHoverIndex: Integer;
 
-    // Popup hierarchy
     FParentPopup: TCssMenuPopupForm;
     FSubPopup: TCssMenuPopupForm;
     FParentMenuItem: TCssMenuItem;
 
-    // Event handlers
-    procedure FormDeactivate(Sender: TObject);
+    FCheckColumnWidth: Integer;    // left column reserved for check marks
+    FIconColumnWidth: Integer;     // left column reserved for icons
+    FRightIconColumnWidth: Integer;// right column reserved for icons
+    FIconSize: Integer;            // device-pixel icon size
+    FTextOffset: Integer;          // text offset from R.Left
+    FIconLayout: TCssMenuIconLayout;
 
-    // Mouse-over helpers
+    procedure FormDeactivate(Sender: TObject);
     function IsMouseOverSelf: Boolean;
     function IsMouseOverTree: Boolean;
-
-    // Item layout
     procedure BuildVisibleItems;
     procedure CalcSize;
-
-    // Geometry
     function ItemRect(Index: Integer): TRect;
     function ItemAtPos(X, Y: Integer): Integer;
-
-    // Popup chain management
     function GetRoot: TCssMenuPopupForm;
     procedure CloseSubPopup;
     procedure CloseChain;
     procedure OpenSubPopup(AItem: TCssMenuItem; Index: Integer);
     procedure ExecuteItem(AItem: TCssMenuItem);
-
-    // Drawing helpers
     procedure DrawCheckMark(R: TRect; AColor: TColor);
     procedure DrawSubArrow(R: TRect; AColor: TColor);
-
-    // Navigation helpers
     function FindNextSelectable(StartIndex: Integer): Integer;
     function FindPrevSelectable(StartIndex: Integer): Integer;
-
     function ScalePx(APx: Integer): Integer;
   protected
-    // Painting
     procedure Paint; override;
-
-    // Mouse events
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-
-    // Keyboard events
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
   public
-    // Events
     FOnClosed: TNotifyEvent;
     FOnNavigateLeft: TNotifyEvent;
     FOnNavigateRight: TNotifyEvent;
@@ -236,40 +259,29 @@ type
 
   TCssPopupMenu = class(TCssMenuBase)
   private
-    // Data
     FPopupForm: TCssMenuPopupForm;
     FPopupControl: TControl;
     FAutoPopup: Boolean;
-
-    // Events
     FOnPopup: TNotifyEvent;
     FOnClose: TNotifyEvent;
 
-    // Property setter and handlers
     procedure SetPopupControl(AValue: TControl);
     procedure PopupFormClosed(Sender: TObject);
     procedure PopupControlMouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
   protected
-    // Painting
     procedure Paint; override;
-
-    // Initialization
     procedure CreateWnd; override;
     procedure CreateParams(var Params: TCreateParams); override;
-
-    // Component notification
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    // Popup control
     procedure Popup(X, Y: Integer);
     procedure PopupAtMouse;
     procedure PopupAtControl(AControl: TControl);
     procedure CloseMenu;
-
     function IsMenuOpen: Boolean;
   published
     property PopupControl: TControl read FPopupControl write SetPopupControl;
@@ -280,49 +292,34 @@ type
 
   TCssMainMenu = class(TCssMenuBase)
   private
-    // State
     FHoverIndex: Integer;
     FOpenIndex: Integer;
     FDropdown: TCssMenuPopupForm;
 
-    // Appearance
     FMenuBarBackground: TColor;
     FMenuBarBackgroundSet: Boolean;
 
-    // Geometry
     function GetTopItemRect(Index: Integer): TRect;
     function TopItemAtPos(X, Y: Integer): Integer;
     function GetTopItemWidth(AItem: TCssMenuItem): Integer;
 
-    // Dropdown management
     procedure CloseDropdown;
     procedure OpenDropdown(Index: Integer);
-
-    // Keyboard selection
     procedure SelectTopItem(AIndex: Integer);
     procedure ExecuteTopItem(AItem: TCssMenuItem);
 
-    // Appearance getter
     function GetMenuBarBackground: TColor;
 
-    // Navigation helpers
     function FindNextTopItem(StartIndex: Integer): Integer;
     function FindPrevTopItem(StartIndex: Integer): Integer;
     procedure DropdownNavigateLeft(Sender: TObject);
     procedure DropdownNavigateRight(Sender: TObject);
   protected
-    // Painting
     procedure Paint; override;
-
-    // Mouse events
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseLeave; override;
-
-    // Keyboard events
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-
-    // Initialization and style
     procedure ApplyDeclaration(const AName, AValue: string); override;
     procedure ResetStyle; override;
   public
@@ -358,10 +355,8 @@ begin
   FItems := TList.Create;
   FEnabled := True;
   FVisible := True;
+  FImageIndex := -1;
 
-  // Auto-register with the logical parent. This is what makes items
-  // loaded from the .lfm end up in the parent's item list without any
-  // explicit call from the reader.
   if AOwner is TCssMenuItem then
   begin
     FParent := TCssMenuItem(AOwner);
@@ -378,6 +373,8 @@ destructor TCssMenuItem.Destroy;
 var
   Item: TCssMenuItem;
 begin
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
   DetachLogical;
 
   while FItems.Count > 0 do
@@ -399,6 +396,17 @@ var
 begin
   for I := 0 to FItems.Count - 1 do
     Proc(TCssMenuItem(FItems[I]));
+end;
+
+procedure TCssMenuItem.Notification(AComponent: TComponent;
+  Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    DoChanged;
+  end;
 end;
 
 function TCssMenuItem.GetParentComponent: TComponent;
@@ -584,6 +592,49 @@ begin
     ANewParent.FItems.Insert(AIndex, Self);
 end;
 
+function TCssMenuItem.GetEffectiveSvgImages: TCssSvgImgList;
+var
+  M: TCssMenuBase;
+begin
+  if FSvgImages <> nil then
+    Exit(FSvgImages);
+
+  M := Menu;
+  if (M <> nil) and (M.SvgImages <> nil) then
+    Exit(M.SvgImages);
+
+  Result := nil;
+end;
+
+function TCssMenuItem.GetEffectiveSvgVariant: string;
+var
+  M: TCssMenuBase;
+  Img: TCssSvgImgList;
+begin
+  M := Menu;
+
+  if M = nil then
+  begin
+    Img := GetEffectiveSvgImages;
+    if Img <> nil then
+      Exit(Img.DefaultVariant);
+    Exit('');
+  end;
+
+  if M.StyleProvider <> nil then
+  begin
+    if Trim(M.StyleName) <> '' then
+      Exit(M.StyleName);
+    Exit(M.StyleProvider.DefaultStyleName);
+  end;
+
+  Img := GetEffectiveSvgImages;
+  if Img <> nil then
+    Exit(Img.DefaultVariant);
+
+  Result := '';
+end;
+
 procedure TCssMenuItem.SetCaption(const AValue: string);
 begin
   if FCaption = AValue then Exit;
@@ -626,6 +677,25 @@ begin
   DoChanged;
 end;
 
+procedure TCssMenuItem.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+  FSvgImages := AValue;
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+  DoChanged;
+end;
+
+procedure TCssMenuItem.SetImageIndex(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndex = AValue then Exit;
+  FImageIndex := AValue;
+  DoChanged;
+end;
+
 procedure TCssMenuItem.DoChanged;
 var
   M: TCssMenuBase;
@@ -651,6 +721,9 @@ destructor TCssMenuBase.Destroy;
 var
   Item: TCssMenuItem;
 begin
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
   while FItems.Count > 0 do
   begin
     Item := TCssMenuItem(FItems[FItems.Count - 1]);
@@ -662,6 +735,33 @@ begin
   FItems.Free;
 
   inherited Destroy;
+end;
+
+procedure TCssMenuBase.Notification(AComponent: TComponent;
+  Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    Invalidate;
+  end;
+end;
+
+procedure TCssMenuBase.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  Invalidate;
 end;
 
 function TCssMenuBase.GetCount: Integer;
@@ -851,6 +951,40 @@ begin
     Result := 1;
 end;
 
+{ Returns the device-pixel size of a menu icon.
+
+  Default: follow the height of a line of text on the given canvas,
+  capped by the menu item height. When `menu-icon-size` is set via CSS,
+  that value (already in device pixels) is used instead. }
+function TCssMenuBase.GetMenuIconSize(ACanvas: TCanvas): Integer;
+var
+  MaxIcon: Integer;
+begin
+  if FMenuIconSizeSet then
+    Exit(FMenuIconSize);
+
+  MaxIcon := GetMenuItemHeight - ScalePx(6);
+  if MaxIcon < ScalePx(8) then
+    MaxIcon := ScalePx(8);
+
+  if ACanvas = nil then
+    Exit(ScalePx(16));
+
+  Result := ACanvas.TextHeight('Mg');
+  if Result > MaxIcon then
+    Result := MaxIcon;
+  if Result < ScalePx(8) then
+    Result := ScalePx(8);
+end;
+
+function TCssMenuBase.GetMenuIconLayout: TCssMenuIconLayout;
+begin
+  if FMenuIconLayoutSet then
+    Result := FMenuIconLayout
+  else
+    Result := milLeft;
+end;
+
 procedure TCssMenuBase.ResetStyle;
 begin
   FMenuBackgroundSet := False;
@@ -864,6 +998,8 @@ begin
   FMenuShortcutColorSet := False;
   FMenuSeparatorHeightSet := False;
   FMenuSeparatorWidthSet := False;
+  FMenuIconSizeSet := False;
+  FMenuIconLayoutSet := False;
 
   inherited ResetStyle;
 end;
@@ -895,6 +1031,7 @@ procedure TCssMenuBase.ApplyDeclaration(const AName, AValue: string);
 var
   C: TColor;
   Px: Integer;
+  S: string;
 begin
   if AName = 'menu-background' then
   begin
@@ -1006,6 +1143,32 @@ begin
     Exit;
   end;
 
+  if AName = 'menu-icon-size' then
+  begin
+    if ParseCssLengthPx(AValue, Px) then
+    begin
+      FMenuIconSize := Px;
+      FMenuIconSizeSet := True;
+    end;
+    Exit;
+  end;
+
+  if AName = 'menu-icon-layout' then
+  begin
+    S := LowerCase(Trim(AValue));
+    if S = 'left' then
+    begin
+      FMenuIconLayout := milLeft;
+      FMenuIconLayoutSet := True;
+    end
+    else if S = 'right' then
+    begin
+      FMenuIconLayout := milRight;
+      FMenuIconLayoutSet := True;
+    end;
+    Exit;
+  end;
+
   inherited ApplyDeclaration(AName, AValue);
 end;
 
@@ -1020,6 +1183,9 @@ begin
   FItems := AItems;
   FVisibleItems := TList.Create;
   FHoverIndex := -1;
+  FCheckColumnWidth := 0;
+  FIconColumnWidth := 0;
+  FRightIconColumnWidth := 0;
 
   BorderStyle := bsNone;
   ShowInTaskBar := stNever;
@@ -1056,7 +1222,6 @@ end;
 
 procedure TCssMenuPopupForm.FormDeactivate(Sender: TObject);
 begin
-  // If the mouse is over any window in this menu chain — do not close.
   if GetRoot.IsMouseOverTree then
     Exit;
 
@@ -1066,21 +1231,63 @@ end;
 procedure TCssMenuPopupForm.BuildVisibleItems;
 var
   I: Integer;
+  It: TCssMenuItem;
+  Img: TCssSvgImgList;
+  AnyChecked, AnyIcon: Boolean;
 begin
   FVisibleItems.Clear;
+  FCheckColumnWidth := 0;
+  FIconColumnWidth := 0;
+  FRightIconColumnWidth := 0;
+  FTextOffset := 0;
+
+  Canvas.Font := Font;
+  FIconSize := FMenu.GetMenuIconSize(Canvas);
+  FIconLayout := FMenu.GetMenuIconLayout;
+
+  AnyChecked := False;
+  AnyIcon := False;
 
   for I := 0 to FItems.Count - 1 do
   begin
-    if TCssMenuItem(FItems[I]).Visible then
-      FVisibleItems.Add(FItems[I]);
+    It := TCssMenuItem(FItems[I]);
+    if It.Visible then
+    begin
+      FVisibleItems.Add(It);
+
+      if It.Checked then
+        AnyChecked := True;
+
+      Img := It.GetEffectiveSvgImages;
+      if (Img <> nil) and
+         (It.ImageIndex >= 0) and
+         (It.ImageIndex < Img.Count) then
+        AnyIcon := True;
+    end;
   end;
+
+  { The check-mark column is reserved only when at least one item is
+    checked. The icon column is reserved only when at least one item has
+    an icon, and it goes on the left or right depending on
+    `menu-icon-layout`. }
+  if AnyChecked then
+    FCheckColumnWidth := ScalePx(20);
+
+  if AnyIcon then
+  begin
+    if FIconLayout = milLeft then
+      FIconColumnWidth := FIconSize + ScalePx(6)
+    else
+      FRightIconColumnWidth := FIconSize + ScalePx(6);
+  end;
+
+  FTextOffset := ScalePx(6) + FCheckColumnWidth + FIconColumnWidth;
 end;
 
 procedure TCssMenuPopupForm.CalcSize;
 var
-  I, W, CapW, TotalH, IH, SepH: Integer;
+  I, W, CapW, TotalH, IH, SepH, TextW, RightMargin: Integer;
   Item: TCssMenuItem;
-  S: TSize;
 begin
   IH := FMenu.GetMenuItemHeight;
   SepH := FMenu.GetMenuSeparatorHeight;
@@ -1103,15 +1310,25 @@ begin
     Inc(TotalH, IH);
 
     if FMenu.HtmlMode then
-    begin
-      S := FMenu.MeasureHtmlTextSize(Item.Caption, 0);
-      CapW := S.cx + ScalePx(60);
-    end
+      TextW := FMenu.MeasureHtmlTextSize(Item.Caption, 0).cx
     else
-      CapW := Canvas.TextWidth(Item.Caption) + ScalePx(60);
+      TextW := Canvas.TextWidth(Item.Caption);
 
+    { Right margin must match exactly the one used by Paint. Otherwise
+      bold HTML text (whose measured width is on the edge of the
+      available box) will wrap to a second line at draw time and get
+      clipped vertically. }
+    RightMargin := ScalePx(10);
+    if FRightIconColumnWidth > 0 then
+      RightMargin := RightMargin + FRightIconColumnWidth;
     if Item.Shortcut <> '' then
-      CapW := CapW + Canvas.TextWidth(Item.Shortcut) + ScalePx(20);
+      RightMargin := RightMargin + ScalePx(12) + Canvas.TextWidth(Item.Shortcut);
+    if Item.HasChildren then
+      RightMargin := RightMargin + ScalePx(18);
+
+    { A few extra pixels guard against rounding differences between the
+      measuring font and the drawing font on some platforms. }
+    CapW := FTextOffset + TextW + RightMargin + ScalePx(4);
 
     if CapW > W then
       W := CapW;
@@ -1135,7 +1352,6 @@ begin
   Left := X;
   Top := Y;
 
-  // Determine the monitor on which the invocation point is located.
   Mon := Screen.MonitorFromPoint(Point(X, Y), mdNearest);
 
   if not Assigned(Mon) then
@@ -1146,7 +1362,6 @@ begin
   else
     MR := Rect(0, 0, Screen.Width, Screen.Height);
 
-  // Do not let the menu go beyond the monitor's work area.
   if Left + Width > MR.Right then
     Left := MR.Right - Width;
 
@@ -1280,6 +1495,7 @@ begin
 
   CloseChain;
 end;
+
 procedure TCssMenuPopupForm.DrawCheckMark(R: TRect; AColor: TColor);
 var
   CheckRect: TRect;
@@ -1331,7 +1547,6 @@ var
 begin
   Result := -1;
 
-  // Search forward from the current position.
   I := StartIndex + 1;
 
   while I < FVisibleItems.Count do
@@ -1347,7 +1562,6 @@ begin
     Inc(I);
   end;
 
-  // If not found — search from the beginning.
   I := 0;
 
   while I < StartIndex do
@@ -1371,7 +1585,6 @@ var
 begin
   Result := -1;
 
-  // Search backward from the current position.
   I := StartIndex - 1;
 
   while I >= 0 do
@@ -1387,7 +1600,6 @@ begin
     Dec(I);
   end;
 
-  // If not found — search from the end.
   I := FVisibleItems.Count - 1;
 
   while I > StartIndex do
@@ -1424,6 +1636,11 @@ var
   Item: TCssMenuItem;
   R: TRect;
   FG: TColor;
+  Img: TCssSvgImgList;
+  IconBmp: TBitmap;
+  IconX, IconY, IconW, IconH: Integer;
+  HasIcon: Boolean;
+  RightEdge, ShortcutX, RightIconX, TextRight, TextW: Integer;
 begin
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := FMenu.GetMenuBackground;
@@ -1464,11 +1681,60 @@ begin
     else
       FG := FMenu.GetMenuDisabledText;
 
-    if Item.Checked then
+    { Check-mark column: reserved whether or not this row has a check. }
+    if Item.Checked and (FCheckColumnWidth > 0) then
       DrawCheckMark(R, FG);
+
+    Img := Item.GetEffectiveSvgImages;
+    HasIcon := (Img <> nil) and
+               (Item.ImageIndex >= 0) and
+               (Item.ImageIndex < Img.Count);
+
+    { Left icon: sits right after the check column. }
+    if HasIcon and (FIconLayout = milLeft) then
+    begin
+      IconW := FIconSize;
+      IconH := FIconSize;
+      IconX := R.Left + ScalePx(6) + FCheckColumnWidth;
+      IconY := R.Top + (R.Height - IconH) div 2;
+
+      IconBmp := Img.GetBitmap(
+        Item.ImageIndex, IconW, IconH, FG, Item.GetEffectiveSvgVariant);
+      try
+        DrawSvgBitmapWithAlpha(Canvas, IconX, IconY, IconBmp);
+      finally
+        IconBmp.Free;
+      end;
+    end;
 
     Canvas.Brush.Style := bsClear;
     Canvas.Font.Color := FG;
+
+    { Right-side layout, resolved from the right edge inwards:
+        [pad] [arrow] [shortcut] [right icon] [caption ...] }
+    RightEdge := R.Right - ScalePx(10);
+
+    if Item.HasChildren then
+      RightEdge := RightEdge - ScalePx(18);
+
+    ShortcutX := 0;
+    if Item.Shortcut <> '' then
+    begin
+      TextW := Canvas.TextWidth(Item.Shortcut);
+      RightEdge := RightEdge - TextW;
+      ShortcutX := RightEdge;
+      RightEdge := RightEdge - ScalePx(12);
+    end;
+
+    RightIconX := 0;
+    if HasIcon and (FIconLayout = milRight) then
+    begin
+      RightEdge := RightEdge - FIconSize;
+      RightIconX := RightEdge;
+      RightEdge := RightEdge - ScalePx(6);
+    end;
+
+    TextRight := RightEdge;
 
     if FMenu.HtmlMode then
     begin
@@ -1476,7 +1742,7 @@ begin
       try
         FMenu.DrawHtmlText(
           Canvas,
-          Rect(R.Left + ScalePx(26), R.Top, R.Right - ScalePx(24), R.Bottom),
+          Rect(R.Left + FTextOffset, R.Top, TextRight, R.Bottom),
           Item.Caption,
           FG
         );
@@ -1487,17 +1753,33 @@ begin
     else
     begin
       Canvas.TextOut(
-        R.Left + ScalePx(26),
+        R.Left + FTextOffset,
         R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Caption)) div 2),
         Item.Caption
       );
+    end;
+
+    { Right icon: between the caption and the shortcut. }
+    if HasIcon and (FIconLayout = milRight) then
+    begin
+      IconW := FIconSize;
+      IconH := FIconSize;
+      IconY := R.Top + (R.Height - IconH) div 2;
+
+      IconBmp := Img.GetBitmap(
+        Item.ImageIndex, IconW, IconH, FG, Item.GetEffectiveSvgVariant);
+      try
+        DrawSvgBitmapWithAlpha(Canvas, RightIconX, IconY, IconBmp);
+      finally
+        IconBmp.Free;
+      end;
     end;
 
     if Item.Shortcut <> '' then
     begin
       Canvas.Font.Color := FMenu.GetMenuShortcutColor;
       Canvas.TextOut(
-        R.Right - Canvas.TextWidth(Item.Shortcut) - ScalePx(24),
+        ShortcutX,
         R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Shortcut)) div 2),
         Item.Shortcut
       );
@@ -1517,7 +1799,6 @@ begin
 
   Idx := ItemAtPos(X, Y);
 
-  // Do not highlight disabled items or separators.
   if Idx >= 0 then
   begin
     Item := TCssMenuItem(FVisibleItems[Idx]);
@@ -1960,14 +2241,12 @@ function TCssMainMenu.HandleKeyDown(var Key: Word; Shift: TShiftState): Boolean;
 begin
   Result := True;
 
-  // Alt or F10 activate the menu.
   if (Key = VK_MENU) or (Key = VK_F10) then
   begin
     Activate;
     Exit;
   end;
 
-  // If the menu is open, handle navigation.
   if (FOpenIndex >= 0) or (FHoverIndex >= 0) then
   begin
     case Key of
@@ -2044,6 +2323,8 @@ end;
 function TCssMainMenu.GetTopItemWidth(AItem: TCssMenuItem): Integer;
 var
   S: TSize;
+  Img: TCssSvgImgList;
+  IconW, IconSize: Integer;
 begin
   Result := 0;
 
@@ -2058,13 +2339,24 @@ begin
 
   Canvas.Font := Font;
 
+  { Reserve space for the icon when the item has one. The reservation
+    is the same whether the icon sits to the left or to the right of
+    the caption: icon size + 6 px gap on each side. }
+  IconW := 0;
+  Img := AItem.GetEffectiveSvgImages;
+  if (Img <> nil) and (AItem.ImageIndex >= 0) and (AItem.ImageIndex < Img.Count) then
+  begin
+    IconSize := GetMenuIconSize(Canvas);
+    IconW := IconSize + ScalePx(12);
+  end;
+
   if HtmlMode then
   begin
     S := MeasureHtmlTextSize(AItem.Caption, 0);
-    Result := S.cx + ScalePx(20);
+    Result := S.cx + ScalePx(20) + IconW;
   end
   else
-    Result := Canvas.TextWidth(AItem.Caption) + ScalePx(20);
+    Result := Canvas.TextWidth(AItem.Caption) + ScalePx(20) + IconW;
 
   if Result < ScalePx(20) then
     Result := ScalePx(20);
@@ -2113,7 +2405,7 @@ begin
     Exit;
 
   FOpenIndex := Index;
-  FHoverIndex := Index; // synchronize so the old section is not highlighted
+  FHoverIndex := Index;
 
   FDropdown := TCssMenuPopupForm.CreateMenu(Self, Self, Item.FItems);
   FDropdown.FParentMenuItem := Item;
@@ -2126,7 +2418,7 @@ begin
 
   FDropdown.ShowPopup(P.X, P.Y);
 
-  Invalidate; // repaint the menu bar
+  Invalidate;
 end;
 
 procedure TCssMainMenu.ExecuteTopItem(AItem: TCssMenuItem);
@@ -2201,12 +2493,20 @@ var
   R: TRect;
   S: TSize;
   FG: TColor;
+  Img: TCssSvgImgList;
+  IconBmp: TBitmap;
+  IconX, IconY, IconW, IconH, TextLeft: Integer;
+  IconSize, TextRight: Integer;
+  HasIcon: Boolean;
+  Layout: TCssMenuIconLayout;
 begin
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := GetMenuBarBackground;
   Canvas.FillRect(ClientRect);
 
   Canvas.Font := Font;
+
+  Layout := GetMenuIconLayout;
 
   for I := 0 to FItems.Count - 1 do
   begin
@@ -2245,12 +2545,59 @@ begin
     if not Item.Enabled then
       FG := GetMenuDisabledText;
 
+    Img := Item.GetEffectiveSvgImages;
+    HasIcon := (Img <> nil) and
+               (Item.ImageIndex >= 0) and
+               (Item.ImageIndex < Img.Count);
+
+    { Left icon. }
+    IconW := 0;
+    if HasIcon and (Layout = milLeft) then
+    begin
+      IconSize := GetMenuIconSize(Canvas);
+      IconW := IconSize;
+      IconH := IconSize;
+      IconX := R.Left + ScalePx(6);
+      IconY := R.Top + (R.Height - IconH) div 2;
+
+      IconBmp := Img.GetBitmap(
+        Item.ImageIndex, IconW, IconH, FG, Item.GetEffectiveSvgVariant);
+      try
+        DrawSvgBitmapWithAlpha(Canvas, IconX, IconY, IconBmp);
+      finally
+        IconBmp.Free;
+      end;
+
+      Inc(IconW, ScalePx(6));
+    end;
+
     Canvas.Brush.Style := bsClear;
     Canvas.Font.Color := FG;
 
+    if HasIcon and (Layout = milRight) then
+    begin
+      IconSize := GetMenuIconSize(Canvas);
+      IconW := IconSize + ScalePx(12);
+    end
+    else if HasIcon then
+      IconSize := GetMenuIconSize(Canvas)
+    else
+      IconSize := 0;
+
+    { Text placement. }
+    if HasIcon and (Layout = milLeft) then
+      TextLeft := R.Left + ScalePx(6) + IconW
+    else
+      TextLeft := R.Left + ScalePx(10);
+
+    if HasIcon and (Layout = milRight) then
+      TextRight := R.Right - ScalePx(6) - IconSize - ScalePx(6)
+    else
+      TextRight := R.Right - ScalePx(10);
+
     if HtmlMode then
     begin
-      S := MeasureHtmlTextSize(Item.Caption, (R.Right - R.Left) - ScalePx(20));
+      S := MeasureHtmlTextSize(Item.Caption, TextRight - TextLeft);
 
       TextTop := R.Top + (((R.Bottom - R.Top) - S.cy) div 2);
 
@@ -2259,7 +2606,7 @@ begin
 
       DrawHtmlText(
         Canvas,
-        Rect(R.Left + ScalePx(10), TextTop, R.Right - ScalePx(10), TextTop + S.cy),
+        Rect(TextLeft, TextTop, TextRight, TextTop + S.cy),
         Item.Caption,
         FG
       );
@@ -2267,10 +2614,28 @@ begin
     else
     begin
       Canvas.TextOut(
-        R.Left + ScalePx(10),
+        TextLeft,
         R.Top + (((R.Bottom - R.Top) - Canvas.TextHeight(Item.Caption)) div 2),
         Item.Caption
       );
+    end;
+
+    { Right icon. }
+    if HasIcon and (Layout = milRight) then
+    begin
+      IconSize := GetMenuIconSize(Canvas);
+      IconW := IconSize;
+      IconH := IconSize;
+      IconX := R.Right - ScalePx(6) - IconW;
+      IconY := R.Top + (R.Height - IconH) div 2;
+
+      IconBmp := Img.GetBitmap(
+        Item.ImageIndex, IconW, IconH, FG, Item.GetEffectiveSvgVariant);
+      try
+        DrawSvgBitmapWithAlpha(Canvas, IconX, IconY, IconBmp);
+      finally
+        IconBmp.Free;
+      end;
     end;
   end;
 end;
@@ -2289,7 +2654,6 @@ begin
     Invalidate;
   end;
 
-  // If the menu is already open and the mouse moved to another item — switch.
   if (FOpenIndex >= 0) and (Idx >= 0) and (Idx <> FOpenIndex) then
     OpenDropdown(Idx);
 end;
@@ -2369,7 +2733,6 @@ begin
   FPopupControl := nil;
   FAutoPopup := False;
 
-  // So that the control is not drawn as a normal visual element.
   Width := 100;
   Height := 24;
 end;
@@ -2384,8 +2747,6 @@ end;
 
 procedure TCssPopupMenu.Paint;
 begin
-  // At runtime we draw nothing.
-  // At design time we show a placeholder.
   if csDesigning in ComponentState then
   begin
     Canvas.Pen.Style := psDash;
@@ -2407,7 +2768,6 @@ end;
 
 procedure TCssPopupMenu.CreateWnd;
 begin
-  // Do not create a window if there is no parent.
   if not Assigned(Parent) then
     Exit;
 

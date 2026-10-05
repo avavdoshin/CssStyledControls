@@ -38,20 +38,34 @@ implementation
 const
   SVG_THUMB_SIZE   = 32;
   SVG_THUMB_MARGIN = 6;
+  BASE_VARIANT_TAG = '(base)';
 
 type
   TCssSvgBackupItem = record
     Name: string;
     Svg: string;
+    Variants: TStringList;
   end;
 
   TCssSvgCollectionForm = class(TForm)
   private
     FCollection: TCollection;
+
     FListBox: TListBox;
+
     FNameLabel: TLabel;
     FNameEdit: TEdit;
+
+    FVariantLabel: TLabel;
+    FVariantCombo: TComboBox;
+    FVariantAddBtn: TButton;
+    FVariantDelBtn: TButton;
+    FVariantLoadBtn: TButton;
+
+    FSvgLabel: TLabel;
+    FSvgMemo: TMemo;
     FInfoLabel: TLabel;
+
     FBtnAdd: TButton;
     FBtnLoad: TButton;
     FBtnDelete: TButton;
@@ -59,17 +73,27 @@ type
     FBtnDown: TButton;
     FBtnOK: TButton;
     FBtnCancel: TButton;
+
     FThumbs: array of TBitmap;
     FBackup: array of TCssSvgBackupItem;
     FUpdating: Boolean;
+    FCurrentVariant: string;
+
     procedure BuildUI;
     procedure SetCollection(AValue: TCollection);
+
     procedure SaveBackup;
+    procedure ClearBackup;
+
     procedure ClearThumbs;
     procedure RebuildThumbs;
+    procedure RebuildThumb(AIndex: Integer);
+
     procedure RefreshList(AKeepIndex: Integer = -1);
     procedure RefreshInfo;
+    procedure RefreshVariantsCombo;
     procedure UpdateButtons;
+
     procedure DoDrawItem(Control: TWinControl; Index: Integer;
       Rect: TRect; State: TOwnerDrawState);
     procedure DoListClick(Sender: TObject);
@@ -79,8 +103,19 @@ type
     procedure DoUp(Sender: TObject);
     procedure DoDown(Sender: TObject);
     procedure DoNameChange(Sender: TObject);
+    procedure DoVariantChanged(Sender: TObject);
+    procedure DoVariantAdd(Sender: TObject);
+    procedure DoVariantDelete(Sender: TObject);
+    procedure DoVariantLoad(Sender: TObject);
+    procedure DoSvgMemoChange(Sender: TObject);
+
     function  SelIndex: Integer;
     function  ItemAt(AIndex: Integer): TCssSvgImgListItem;
+    function  CurrentVariantLabel: string;
+    function  EffectiveSvgOf(Item: TCssSvgImgListItem): string;
+    procedure SetEffectiveSvgOf(Item: TCssSvgImgListItem; const V: string);
+    function  ItemHasCurrentVariant(Item: TCssSvgImgListItem): Boolean;
+
     procedure LoadSvgFiles(const AFiles: TStrings);
   public
     constructor CreateNew(AOwner: TComponent; Num: Integer = 0); override;
@@ -192,6 +227,7 @@ var
   I: Integer;
   Item: TCssSvgImgListItem;
   BaseName: string;
+  VarName: string;
 begin
   if not (Component is TCssSvgImgList) then
   begin
@@ -211,6 +247,8 @@ begin
         [ofFileMustExist, ofAllowMultiSelect, ofPathMustExist];
       if not Dlg.Execute then Exit;
 
+      VarName := List.DefaultVariant;
+
       for I := 0 to Dlg.Files.Count - 1 do
       begin
         L.Clear;
@@ -228,7 +266,11 @@ begin
         BaseName := StripExt(Dlg.Files[I]);
         Item := List.Items.Add;
         Item.Name := MakeUniqueName(List.Items, BaseName);
-        Item.Svg := L.Text;
+
+        if VarName = '' then
+          Item.Svg := L.Text
+        else
+          Item.Variants.Values[VarName] := L.Text;
       end;
 
       if Assigned(Designer) then
@@ -253,6 +295,7 @@ end;
 destructor TCssSvgCollectionForm.Destroy;
 begin
   ClearThumbs;
+  ClearBackup;
   inherited Destroy;
 end;
 
@@ -262,14 +305,20 @@ const
   BTN_H   = 28;
   BTN_GAP = 6;
   LIST_W  = 380;
+  RIGHT_X = 396;
+  ROW_H   = 24;
+  LBL_W   = 55;
+  VBTN_W  = 85;
 begin
   Caption := 'SVG Image List';
-  Width := 720;
-  Height := 480;
+  Width := 980;
+  Height := 560;
   Position := poScreenCenter;
   BorderStyle := bsSizeable;
-  Constraints.MinWidth := 640;
-  Constraints.MinHeight := 360;
+  Constraints.MinWidth := 840;
+  Constraints.MinHeight := 460;
+
+  { ---------------- List ---------------- }
 
   FListBox := TListBox.Create(Self);
   FListBox.Parent := Self;
@@ -281,25 +330,90 @@ begin
   FListBox.OnDrawItem := @DoDrawItem;
   FListBox.OnClick := @DoListClick;
 
+  { ---------------- Name row ---------------- }
+
   FNameLabel := TLabel.Create(Self);
   FNameLabel.Parent := Self;
   FNameLabel.Caption := 'Name:';
-  FNameLabel.SetBounds(MARGIN + LIST_W + MARGIN, MARGIN + 4, 50, 20);
+  FNameLabel.SetBounds(RIGHT_X, MARGIN + 4, LBL_W, 20);
   FNameLabel.Anchors := [akTop, akRight];
 
   FNameEdit := TEdit.Create(Self);
   FNameEdit.Parent := Self;
-  FNameEdit.SetBounds(MARGIN + LIST_W + MARGIN + 50, MARGIN, 200, 24);
+  FNameEdit.SetBounds(RIGHT_X + LBL_W, MARGIN,
+    Width - (RIGHT_X + LBL_W) - MARGIN, ROW_H);
   FNameEdit.Anchors := [akTop, akRight];
   FNameEdit.OnChange := @DoNameChange;
 
+  { ---------------- Variant row ---------------- }
+
+  FVariantLabel := TLabel.Create(Self);
+  FVariantLabel.Parent := Self;
+  FVariantLabel.Caption := 'Variant:';
+  FVariantLabel.SetBounds(RIGHT_X, MARGIN + ROW_H + 8, LBL_W, 20);
+  FVariantLabel.Anchors := [akTop, akRight];
+
+  FVariantCombo := TComboBox.Create(Self);
+  FVariantCombo.Parent := Self;
+  FVariantCombo.Style := csDropDownList;
+  FVariantCombo.SetBounds(RIGHT_X + LBL_W, MARGIN + ROW_H + 4, 160, ROW_H);
+  FVariantCombo.Anchors := [akTop, akRight];
+  FVariantCombo.OnChange := @DoVariantChanged;
+
+  FVariantAddBtn := TButton.Create(Self);
+  FVariantAddBtn.Parent := Self;
+  FVariantAddBtn.Caption := '+ Variant';
+  FVariantAddBtn.SetBounds(FVariantCombo.Left + FVariantCombo.Width + BTN_GAP,
+    FVariantCombo.Top, VBTN_W, ROW_H);
+  FVariantAddBtn.Anchors := [akTop, akRight];
+  FVariantAddBtn.OnClick := @DoVariantAdd;
+
+  FVariantDelBtn := TButton.Create(Self);
+  FVariantDelBtn.Parent := Self;
+  FVariantDelBtn.Caption := 'Remove';
+  FVariantDelBtn.SetBounds(FVariantAddBtn.Left + FVariantAddBtn.Width + BTN_GAP,
+    FVariantCombo.Top, VBTN_W, ROW_H);
+  FVariantDelBtn.Anchors := [akTop, akRight];
+  FVariantDelBtn.OnClick := @DoVariantDelete;
+
+  FVariantLoadBtn := TButton.Create(Self);
+  FVariantLoadBtn.Parent := Self;
+  FVariantLoadBtn.Caption := 'Load SVG...';
+  FVariantLoadBtn.SetBounds(FVariantDelBtn.Left + FVariantDelBtn.Width + BTN_GAP,
+    FVariantCombo.Top, VBTN_W, ROW_H);
+  FVariantLoadBtn.Anchors := [akTop, akRight];
+  FVariantLoadBtn.OnClick := @DoVariantLoad;
+
+  { ---------------- SVG memo ---------------- }
+
+  FSvgLabel := TLabel.Create(Self);
+  FSvgLabel.Parent := Self;
+  FSvgLabel.Caption := 'SVG text (editable):';
+  FSvgLabel.SetBounds(RIGHT_X, FVariantCombo.Top + ROW_H + 8, 200, 20);
+  FSvgLabel.Anchors := [akTop, akRight];
+
+  FSvgMemo := TMemo.Create(Self);
+  FSvgMemo.Parent := Self;
+  FSvgMemo.SetBounds(RIGHT_X, FSvgLabel.Top + 20,
+    Width - RIGHT_X - MARGIN, 240);
+  FSvgMemo.Anchors := [akTop, akRight, akBottom];
+  FSvgMemo.ScrollBars := ssBoth;
+  FSvgMemo.WordWrap := False;
+  FSvgMemo.WantTabs := True;
+  FSvgMemo.Font.Name := 'Courier New';
+  FSvgMemo.Font.Size := 9;
+  FSvgMemo.OnChange := @DoSvgMemoChange;
+
   FInfoLabel := TLabel.Create(Self);
   FInfoLabel.Parent := Self;
-  FInfoLabel.SetBounds(MARGIN + LIST_W + MARGIN, MARGIN + 36, 220, 200);
-  FInfoLabel.Anchors := [akTop, akRight];
+  FInfoLabel.SetBounds(RIGHT_X, FSvgMemo.Top + FSvgMemo.Height + 6,
+    Width - RIGHT_X - MARGIN, 60);
+  FInfoLabel.Anchors := [akRight, akBottom];
   FInfoLabel.AutoSize := False;
   FInfoLabel.WordWrap := True;
   FInfoLabel.Caption := '';
+
+  { ---------------- Bottom buttons ---------------- }
 
   FBtnAdd := TButton.Create(Self);
   FBtnAdd.Parent := Self;
@@ -310,9 +424,9 @@ begin
 
   FBtnLoad := TButton.Create(Self);
   FBtnLoad.Parent := Self;
-  FBtnLoad.Caption := 'Load from file...';
+  FBtnLoad.Caption := 'Add items from file...';
   FBtnLoad.SetBounds(FBtnAdd.Left + FBtnAdd.Width + BTN_GAP,
-    FBtnAdd.Top, 130, BTN_H);
+    FBtnAdd.Top, 170, BTN_H);
   FBtnLoad.Anchors := [akLeft, akBottom];
   FBtnLoad.OnClick := @DoLoad;
 
@@ -360,7 +474,9 @@ end;
 procedure TCssSvgCollectionForm.SetCollection(AValue: TCollection);
 begin
   FCollection := AValue;
+  FCurrentVariant := '';
   SaveBackup;
+  RefreshVariantsCombo;
   RefreshList;
 end;
 
@@ -369,13 +485,25 @@ var
   I: Integer;
   Item: TCssSvgImgListItem;
 begin
+  ClearBackup;
   SetLength(FBackup, FCollection.Count);
   for I := 0 to FCollection.Count - 1 do
   begin
     Item := TCssSvgImgListItem(FCollection.Items[I]);
     FBackup[I].Name := Item.Name;
     FBackup[I].Svg  := Item.Svg;
+    FBackup[I].Variants := TStringList.Create;
+    FBackup[I].Variants.Assign(Item.Variants);
   end;
+end;
+
+procedure TCssSvgCollectionForm.ClearBackup;
+var
+  I: Integer;
+begin
+  for I := 0 to High(FBackup) do
+    FreeAndNil(FBackup[I].Variants);
+  SetLength(FBackup, 0);
 end;
 
 procedure TCssSvgCollectionForm.RestoreBackup;
@@ -392,10 +520,14 @@ begin
       Item := TCssSvgImgListItem(FCollection.Add);
       Item.Name := FBackup[I].Name;
       Item.Svg  := FBackup[I].Svg;
+      if FBackup[I].Variants <> nil then
+        Item.Variants.Assign(FBackup[I].Variants);
     end;
   finally
     FCollection.EndUpdate;
   end;
+  FCurrentVariant := '';
+  RefreshVariantsCombo;
   RefreshList;
 end;
 
@@ -408,33 +540,49 @@ begin
   SetLength(FThumbs, 0);
 end;
 
+procedure TCssSvgCollectionForm.RebuildThumb(AIndex: Integer);
+var
+  Item: TCssSvgImgListItem;
+  Bmp: TBitmap;
+  SvgText: string;
+begin
+  if (AIndex < 0) or (AIndex >= FCollection.Count) then Exit;
+  if (AIndex >= Length(FThumbs)) then Exit;
+
+  Item := TCssSvgImgListItem(FCollection.Items[AIndex]);
+  SvgText := EffectiveSvgOf(Item);
+
+  if FThumbs[AIndex] = nil then
+    FThumbs[AIndex] := TBitmap.Create;
+
+  Bmp := FThumbs[AIndex];
+  Bmp.PixelFormat := pf24bit;
+  Bmp.SetSize(SVG_THUMB_SIZE, SVG_THUMB_SIZE);
+  Bmp.Canvas.Brush.Color := clWhite;
+  Bmp.Canvas.Brush.Style := bsSolid;
+  Bmp.Canvas.FillRect(0, 0, SVG_THUMB_SIZE, SVG_THUMB_SIZE);
+
+  if Trim(SvgText) <> '' then
+  begin
+    try
+      Item.GetImageForVariant(FCurrentVariant)
+          .RenderToCanvas(Bmp.Canvas, 0, 0, SVG_THUMB_SIZE, SVG_THUMB_SIZE);
+    except
+      // Invalid SVG - leave the thumbnail blank.
+    end;
+  end;
+end;
+
 procedure TCssSvgCollectionForm.RebuildThumbs;
 var
   I: Integer;
-  Item: TCssSvgImgListItem;
-  Bmp: TBitmap;
 begin
   ClearThumbs;
   SetLength(FThumbs, FCollection.Count);
   for I := 0 to FCollection.Count - 1 do
   begin
-    Item := TCssSvgImgListItem(FCollection.Items[I]);
-    Bmp := TBitmap.Create;
-    Bmp.PixelFormat := pf24bit;
-    Bmp.SetSize(SVG_THUMB_SIZE, SVG_THUMB_SIZE);
-    Bmp.Canvas.Brush.Color := clWhite;
-    Bmp.Canvas.Brush.Style := bsSolid;
-    Bmp.Canvas.FillRect(0, 0, SVG_THUMB_SIZE, SVG_THUMB_SIZE);
-    if Trim(Item.Svg) <> '' then
-    begin
-      try
-        Item.Image.RenderToCanvas(Bmp.Canvas, 0, 0,
-          SVG_THUMB_SIZE, SVG_THUMB_SIZE);
-      except
-        // Invalid SVG - just leave the thumbnail blank.
-      end;
-    end;
-    FThumbs[I] := Bmp;
+    FThumbs[I] := nil;
+    RebuildThumb(I);
   end;
 end;
 
@@ -473,17 +621,56 @@ begin
   FListBox.Invalidate;
 end;
 
+function TCssSvgCollectionForm.CurrentVariantLabel: string;
+begin
+  if FCurrentVariant = '' then
+    Result := 'base'
+  else
+    Result := FCurrentVariant;
+end;
+
+function TCssSvgCollectionForm.EffectiveSvgOf(
+  Item: TCssSvgImgListItem): string;
+begin
+  Result := Item.EffectiveSvg(FCurrentVariant);
+end;
+
+procedure TCssSvgCollectionForm.SetEffectiveSvgOf(
+  Item: TCssSvgImgListItem; const V: string);
+begin
+  if FCurrentVariant = '' then
+    Item.Svg := V
+  else
+    Item.Variants.Values[FCurrentVariant] := V;
+end;
+
+function TCssSvgCollectionForm.ItemHasCurrentVariant(
+  Item: TCssSvgImgListItem): Boolean;
+begin
+  if FCurrentVariant = '' then
+    Result := True
+  else
+    Result := Item.Variants.IndexOfName(FCurrentVariant) >= 0;
+end;
+
 procedure TCssSvgCollectionForm.RefreshInfo;
 var
   Item: TCssSvgImgListItem;
   I: Integer;
+  SvgText: string;
+  HasVar: Boolean;
+  VariantHint: string;
 begin
   I := SelIndex;
+
   if (I < 0) or (I >= FCollection.Count) then
   begin
     FUpdating := True;
     try
       FNameEdit.Text := '';
+      FSvgMemo.Lines.Clear;
+      FSvgMemo.Enabled := False;
+      FSvgMemo.Color := clBtnFace;
     finally
       FUpdating := False;
     end;
@@ -492,42 +679,144 @@ begin
   end;
 
   Item := TCssSvgImgListItem(FCollection.Items[I]);
+  SvgText := EffectiveSvgOf(Item);
+  HasVar := ItemHasCurrentVariant(Item);
+
   FUpdating := True;
   try
     FNameEdit.Text := Item.Name;
+    FSvgMemo.Lines.Text := SvgText;
+
+    FSvgMemo.Enabled := HasVar;
+    if HasVar then
+      FSvgMemo.Color := clWindow
+    else
+      FSvgMemo.Color := clBtnFace;
   finally
     FUpdating := False;
   end;
 
-  if Item.Svg = '' then
-    FInfoLabel.Caption := 'SVG data: (empty)'
+  if not HasVar then
+    VariantHint := Format('variant "%s" not set on this item yet',
+      [FCurrentVariant])
+  else if SvgText = '' then
+    VariantHint := '(empty)'
   else
-    FInfoLabel.Caption := Format('SVG data: %d bytes', [Length(Item.Svg)]);
+    VariantHint := Format('%d bytes', [Length(SvgText)]);
+
+  if FCurrentVariant = '' then
+    FInfoLabel.Caption :=
+      Format('SVG data (base): %s', [VariantHint])
+  else
+    FInfoLabel.Caption :=
+      Format('SVG data (%s): %s', [FCurrentVariant, VariantHint]);
+
+  if (FCurrentVariant <> '') and
+     (Item.Variants.IndexOfName(FCurrentVariant) >= 0) and
+     (Item.Variants.Values[FCurrentVariant] = '') then
+    FInfoLabel.Caption := FInfoLabel.Caption + ' - variant is empty';
+end;
+
+procedure TCssSvgCollectionForm.RefreshVariantsCombo;
+var
+  Names: TStringList;
+  I, J, Idx: Integer;
+  Item: TCssSvgImgListItem;
+  SavedVariant: string;
+  Found: Boolean;
+begin
+  SavedVariant := FCurrentVariant;
+  Found := (SavedVariant = '');
+
+  Names := TStringList.Create;
+  try
+    Names.Sorted := True;
+    Names.Duplicates := dupIgnore;
+
+    for I := 0 to FCollection.Count - 1 do
+    begin
+      Item := TCssSvgImgListItem(FCollection.Items[I]);
+      for J := 0 to Item.Variants.Count - 1 do
+      begin
+        if Trim(Item.Variants.Names[J]) <> '' then
+          Names.Add(Item.Variants.Names[J]);
+      end;
+    end;
+
+    FVariantCombo.Items.BeginUpdate;
+    try
+      FVariantCombo.Items.Clear;
+      FVariantCombo.Items.Add(BASE_VARIANT_TAG);
+
+      for I := 0 to Names.Count - 1 do
+      begin
+        FVariantCombo.Items.Add(Names[I]);
+        if not Found and SameText(Names[I], SavedVariant) then
+          Found := True;
+      end;
+
+      if not Found and (SavedVariant <> '') then
+        FVariantCombo.Items.Add(SavedVariant);
+
+      if SavedVariant = '' then
+        FVariantCombo.ItemIndex := 0
+      else
+      begin
+        Idx := FVariantCombo.Items.IndexOf(SavedVariant);
+        if Idx < 0 then Idx := 0;
+        FVariantCombo.ItemIndex := Idx;
+      end;
+    finally
+      FVariantCombo.Items.EndUpdate;
+    end;
+  finally
+    Names.Free;
+  end;
 end;
 
 procedure TCssSvgCollectionForm.UpdateButtons;
 var
   I: Integer;
-  HasSel, CanUp, CanDown: Boolean;
+  HasSel, HasVar: Boolean;
+  Item: TCssSvgImgListItem;
 begin
   I := SelIndex;
-  HasSel  := (I >= 0) and (I < FCollection.Count);
-  CanUp   := HasSel and (I > 0);
-  CanDown := HasSel and (I < FCollection.Count - 1);
+  HasSel := (I >= 0) and (I < FCollection.Count);
 
   FBtnDelete.Enabled := HasSel;
-  FBtnUp.Enabled     := CanUp;
-  FBtnDown.Enabled   := CanDown;
+  FBtnUp.Enabled     := HasSel and (I > 0);
+  FBtnDown.Enabled   := HasSel and (I < FCollection.Count - 1);
   FNameEdit.Enabled  := HasSel;
+
+  HasVar := False;
+  if HasSel then
+  begin
+    Item := TCssSvgImgListItem(FCollection.Items[I]);
+    HasVar := ItemHasCurrentVariant(Item);
+  end;
+
+  // "+ Variant": available whenever an item is selected.
+  FVariantAddBtn.Enabled := HasSel;
+
+  // "Remove": only for a specific variant that exists on the selected item.
+  FVariantDelBtn.Enabled := HasSel and (FCurrentVariant <> '') and HasVar;
+
+  // "Load SVG...": base variant is always loadable; a specific variant
+  // requires that the variant already exists on the item.
+  FVariantLoadBtn.Enabled := HasSel and HasVar;
 end;
 
 procedure TCssSvgCollectionForm.DoDrawItem(Control: TWinControl;
   Index: Integer; Rect: TRect; State: TOwnerDrawState);
+const
+  IDX_W = 32;   // width of the "[N]" column, in pixels
 var
   LB: TListBox;
-  BgColor, FgColor: TColor;
+  BgColor, FgColor, IdxColor: TColor;
   Item: TCssSvgImgListItem;
-  TextX, TextY: Integer;
+  TextX, TextY, NameW: Integer;
+  Suffix, IdxStr: string;
+  J: Integer;
 begin
   LB := TListBox(Control);
 
@@ -535,11 +824,13 @@ begin
   begin
     BgColor := clHighlight;
     FgColor := clHighlightText;
+    IdxColor := clHighlightText;
   end
   else
   begin
     BgColor := clWindow;
     FgColor := clWindowText;
+    IdxColor := clGray;
   end;
 
   LB.Canvas.Brush.Color := BgColor;
@@ -548,19 +839,49 @@ begin
 
   if (Index < 0) or (Index >= LB.Items.Count) then Exit;
 
+  { Index column, drawn first, before the thumbnail. The value shown is
+    the actual collection index of the item, so it can be typed directly
+    into ImageIndex on any consumer (button, menu item, tab). }
+  IdxStr := '[' + IntToStr(Index) + ']';
+  LB.Canvas.Font.Color := IdxColor;
+  TextY := Rect.Top + (Rect.Height - LB.Canvas.TextHeight('Ag')) div 2;
+  LB.Canvas.TextOut(Rect.Left + SVG_THUMB_MARGIN, TextY, IdxStr);
+
+  { Thumbnail column. }
   if (Index < Length(FThumbs)) and (FThumbs[Index] <> nil) then
     LB.Canvas.Draw(
-      Rect.Left + SVG_THUMB_MARGIN,
+      Rect.Left + IDX_W + SVG_THUMB_MARGIN,
       Rect.Top + (Rect.Height - SVG_THUMB_SIZE) div 2,
       FThumbs[Index]);
 
   Item := ItemAt(Index);
   if Item <> nil then
   begin
+    Suffix := '';
+    if Item.Variants.Count > 0 then
+    begin
+      for J := 0 to Item.Variants.Count - 1 do
+      begin
+        if J = 0 then
+          Suffix := '  ['
+        else
+          Suffix := Suffix + ', ';
+        Suffix := Suffix + Item.Variants.Names[J];
+      end;
+      Suffix := Suffix + ']';
+    end;
+
     LB.Canvas.Font.Color := FgColor;
-    TextX := Rect.Left + SVG_THUMB_SIZE + 2 * SVG_THUMB_MARGIN;
-    TextY := Rect.Top + (Rect.Height - LB.Canvas.TextHeight('Ag')) div 2;
+    TextX := Rect.Left + IDX_W + SVG_THUMB_SIZE + 2 * SVG_THUMB_MARGIN;
+
     LB.Canvas.TextOut(TextX, TextY, Item.Name);
+    NameW := LB.Canvas.TextWidth(Item.Name);
+
+    if Suffix <> '' then
+    begin
+      LB.Canvas.Font.Color := clGray;
+      LB.Canvas.TextOut(TextX + NameW, TextY, Suffix);
+    end;
   end;
 end;
 
@@ -576,7 +897,7 @@ var
 begin
   Item := TCssSvgImgListItem(FCollection.Add);
   Item.Name := MakeUniqueName(FCollection, 'Image');
-  Item.Svg  := '';
+  RefreshVariantsCombo;
   RefreshList(Item.Index);
 end;
 
@@ -586,7 +907,7 @@ var
 begin
   Dlg := TOpenDialog.Create(Self);
   try
-    Dlg.Title := 'Load SVG file(s)';
+    Dlg.Title := 'Add SVG files as new items';
     Dlg.Filter := 'SVG files (*.svg)|*.svg|All files (*.*)|*.*';
     Dlg.Options := Dlg.Options +
       [ofFileMustExist, ofAllowMultiSelect, ofPathMustExist];
@@ -624,9 +945,11 @@ begin
       BaseName := StripExt(AFiles[I]);
       Item := TCssSvgImgListItem(FCollection.Add);
       Item.Name := MakeUniqueName(FCollection, BaseName);
-      Item.Svg  := L.Text;
+      Item.Svg := L.Text;
       LastIndex := Item.Index;
     end;
+
+    RefreshVariantsCombo;
 
     if LastIndex >= 0 then
       RefreshList(LastIndex)
@@ -647,6 +970,7 @@ begin
     FCollection.Delete(I);
     if I >= FCollection.Count then
       I := FCollection.Count - 1;
+    RefreshVariantsCombo;
     RefreshList(I);
   end;
 end;
@@ -701,6 +1025,178 @@ begin
   end;
 end;
 
+procedure TCssSvgCollectionForm.DoVariantChanged(Sender: TObject);
+begin
+  if FUpdating then Exit;
+
+  if FVariantCombo.ItemIndex <= 0 then
+    FCurrentVariant := ''
+  else
+    FCurrentVariant := FVariantCombo.Items[FVariantCombo.ItemIndex];
+
+  RebuildThumbs;
+  FListBox.Invalidate;
+  RefreshInfo;
+  UpdateButtons;
+end;
+
+procedure TCssSvgCollectionForm.DoVariantAdd(Sender: TObject);
+var
+  I: Integer;
+  Item: TCssSvgImgListItem;
+  NewName: string;
+begin
+  I := SelIndex;
+  if (I < 0) or (I >= FCollection.Count) then Exit;
+
+  Item := TCssSvgImgListItem(FCollection.Items[I]);
+
+  // Suggest a name: current variant (if specific), or "dark", or "light".
+  if FCurrentVariant <> '' then
+    NewName := FCurrentVariant
+  else if Item.Variants.IndexOfName('dark') < 0 then
+    NewName := 'dark'
+  else if Item.Variants.IndexOfName('light') < 0 then
+    NewName := 'light'
+  else
+    NewName := '';
+
+  if not InputQuery('New variant',
+    'Enter variant name (for example: "dark", "light"):', NewName) then
+    Exit;
+
+  NewName := Trim(NewName);
+  if NewName = '' then Exit;
+
+  if Item.Variants.IndexOfName(NewName) >= 0 then
+  begin
+    FCurrentVariant := NewName;
+    RefreshVariantsCombo;
+    RefreshInfo;
+    UpdateButtons;
+    Exit;
+  end;
+
+  // Seed the new variant with a copy of the base SVG, so the user has a
+  // starting point instead of a blank editor.
+  Item.Variants.Values[NewName] := Item.Svg;
+
+  FCurrentVariant := NewName;
+  RefreshVariantsCombo;
+  RefreshInfo;
+  UpdateButtons;
+  RebuildThumb(I);
+  FListBox.Invalidate;
+end;
+
+procedure TCssSvgCollectionForm.DoVariantDelete(Sender: TObject);
+var
+  I, Idx: Integer;
+  Item: TCssSvgImgListItem;
+begin
+  if FCurrentVariant = '' then Exit;
+
+  I := SelIndex;
+  if (I < 0) or (I >= FCollection.Count) then Exit;
+
+  Item := TCssSvgImgListItem(FCollection.Items[I]);
+  Idx := Item.Variants.IndexOfName(FCurrentVariant);
+  if Idx < 0 then Exit;
+
+  if MessageDlg('Delete variant "' + FCurrentVariant + '" from item "' +
+    Item.Name + '"?', mtConfirmation, [mbYes, mbNo], 0) <> mrYes then
+    Exit;
+
+  Item.Variants.Delete(Idx);
+
+  RefreshVariantsCombo;
+  RefreshInfo;
+  UpdateButtons;
+  RebuildThumb(I);
+  FListBox.Invalidate;
+end;
+
+procedure TCssSvgCollectionForm.DoVariantLoad(Sender: TObject);
+var
+  I: Integer;
+  Item: TCssSvgImgListItem;
+  Dlg: TOpenDialog;
+  L: TStringList;
+begin
+  I := SelIndex;
+  if (I < 0) or (I >= FCollection.Count) then Exit;
+
+  Item := TCssSvgImgListItem(FCollection.Items[I]);
+  if not ItemHasCurrentVariant(Item) then Exit;
+
+  Dlg := TOpenDialog.Create(Self);
+  L := TStringList.Create;
+  try
+    if FCurrentVariant = '' then
+      Dlg.Title := 'Load SVG for base variant'
+    else
+      Dlg.Title := 'Load SVG for variant "' + FCurrentVariant + '"';
+    Dlg.Filter := 'SVG files (*.svg)|*.svg|All files (*.*)|*.*';
+    Dlg.Options := Dlg.Options + [ofFileMustExist, ofPathMustExist];
+
+    if not Dlg.Execute then Exit;
+
+    try
+      L.LoadFromFile(Dlg.FileName);
+    except
+      on E: Exception do
+      begin
+        MessageDlg('Failed to load ' + Dlg.FileName + #13#10 + E.Message,
+          mtError, [mbOK], 0);
+        Exit;
+      end;
+    end;
+
+    SetEffectiveSvgOf(Item, L.Text);
+
+    RefreshInfo;
+    UpdateButtons;
+    RebuildThumb(I);
+    FListBox.Invalidate;
+  finally
+    L.Free;
+    Dlg.Free;
+  end;
+end;
+
+procedure TCssSvgCollectionForm.DoSvgMemoChange(Sender: TObject);
+var
+  I: Integer;
+  Item: TCssSvgImgListItem;
+  SvgText: string;
+begin
+  if FUpdating then Exit;
+
+  I := SelIndex;
+  if (I < 0) or (I >= FCollection.Count) then Exit;
+
+  Item := TCssSvgImgListItem(FCollection.Items[I]);
+  SvgText := FSvgMemo.Lines.Text;
+
+  if EffectiveSvgOf(Item) = SvgText then Exit;
+
+  SetEffectiveSvgOf(Item, SvgText);
+
+  RebuildThumb(I);
+  FListBox.Invalidate;
+  RefreshVariantsCombo;
+
+  if SvgText = '' then
+    FInfoLabel.Caption :=
+      Format('SVG data (%s): (empty)', [CurrentVariantLabel])
+  else
+    FInfoLabel.Caption :=
+      Format('SVG data (%s): %d bytes',
+        [CurrentVariantLabel, Length(SvgText)]);
+
+  UpdateButtons;
+end;
+
 function TCssSvgCollectionForm.SelIndex: Integer;
 begin
   Result := FListBox.ItemIndex;
@@ -718,21 +1214,18 @@ end;
 
 procedure Register;
 begin
-  // 1) Svg in the Object Inspector - read-only with a short summary.
   RegisterPropertyEditor(
     TypeInfo(string),
     TCssSvgImgListItem,
     'Svg',
     TCssSvgTextProperty);
 
-  // 2) The Items property of TCssSvgImgList - opens our editor with thumbnails.
   RegisterPropertyEditor(
     TypeInfo(TCssSvgImgListItems),
     TCssSvgImgList,
     'Items',
     TCssSvgItemsProperty);
 
-  // 3) The component's context menu in the designer.
   RegisterComponentEditor(
     TCssSvgImgList,
     TCssSvgImgListEditor);
