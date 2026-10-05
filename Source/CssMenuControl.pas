@@ -240,6 +240,7 @@ type
     function FindNextSelectable(StartIndex: Integer): Integer;
     function FindPrevSelectable(StartIndex: Integer): Integer;
     function ScalePx(APx: Integer): Integer;
+    procedure ApplyMenuFont(ACanvas: TCanvas);
   protected
     procedure Paint; override;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
@@ -1241,7 +1242,7 @@ begin
   FRightIconColumnWidth := 0;
   FTextOffset := 0;
 
-  Canvas.Font := Font;
+  ApplyMenuFont(Canvas);
   FIconSize := FMenu.GetMenuIconSize(Canvas);
   FIconLayout := FMenu.GetMenuIconLayout;
 
@@ -1292,7 +1293,7 @@ begin
   IH := FMenu.GetMenuItemHeight;
   SepH := FMenu.GetMenuSeparatorHeight;
 
-  Canvas.Font := Font;
+  ApplyMenuFont(Canvas);
 
   W := 0;
   TotalH := ScalePx(4);
@@ -1624,6 +1625,17 @@ begin
     Result := APx;
 end;
 
+procedure TCssMenuPopupForm.ApplyMenuFont(ACanvas: TCanvas);
+begin
+  if ACanvas = nil then
+    Exit;
+
+  if Assigned(FMenu) then
+    FMenu.AssignEffectiveCssFontToFont(ACanvas.Font)
+  else
+    ACanvas.Font := Self.Font;
+end;
+
 procedure TCssMenuPopupForm.SelectFirstItem;
 begin
   FHoverIndex := FindNextSelectable(-1);
@@ -1650,7 +1662,7 @@ begin
   Canvas.Pen.Color := FMenu.GetMenuBorderColor;
   Canvas.Rectangle(0, 0, ClientWidth, ClientHeight);
 
-  Canvas.Font := Font;
+  ApplyMenuFont(Canvas);
 
   for I := 0 to FVisibleItems.Count - 1 do
   begin
@@ -2280,7 +2292,7 @@ begin
     Exit;
   end;
 
-  Canvas.Font := Font;
+  UpdateCanvasFont;
 
   X := ScalePx(4);
 
@@ -2337,7 +2349,7 @@ begin
     Exit;
   end;
 
-  Canvas.Font := Font;
+  UpdateCanvasFont;
 
   { Reserve space for the icon when the item has one. The reservation
     is the same whether the icon sits to the left or to the right of
@@ -2504,7 +2516,7 @@ begin
   Canvas.Brush.Color := GetMenuBarBackground;
   Canvas.FillRect(ClientRect);
 
-  Canvas.Font := Font;
+  UpdateCanvasFont;
 
   Layout := GetMenuIconLayout;
 

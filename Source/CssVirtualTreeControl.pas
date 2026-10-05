@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, Forms,
-  CssStyledControl, CssScrollControl, CssEditControl, CssCheckboxControl, CssAntiAlias;
+  CssStyledControl, CssScrollControl, CssEditControl, CssCheckboxControl, CssAntiAlias, CssSvgImgList;
 
 type
   TCssVirtualNodeState = (
@@ -182,6 +182,13 @@ type
     Column: Integer;
     var HintText: string) of object;
 
+  TCssGetImageIndexEvent = procedure(
+    Sender: TObject;
+    Node: TCssVirtualNode;
+    Column: Integer;
+    var ImageIndex: Integer
+  ) of object;
+
   TCssNodeMovedEvent = procedure(
     Sender: TObject;
     Node: TCssVirtualNode;
@@ -338,6 +345,13 @@ type
     FSearchText: string;
     FSearchTime: QWord;
 
+    FImages: TCssSvgImgList;
+    FImageVariant: string;
+    FShowImages: Boolean;
+    FImageSize: Integer;
+    FImageSpacing: Integer;
+    FOnGetImageIndex: TCssGetImageIndexEvent;
+
     // Column resizing
     FAllowColumnResize: Boolean;
     FColumnResizeTolerance: Integer;
@@ -441,6 +455,23 @@ type
     FOnGetCellHint: TCssGetCellHintEvent;
     FOnNodeMoved: TCssNodeMovedEvent;
     FOnIncrementalSearch: TCssIncrementalSearchEvent;
+
+    procedure SetImages(AValue: TCssSvgImgList);
+    procedure SetImageVariant(const AValue: string);
+    procedure SetShowImages(AValue: Boolean);
+    procedure SetImageSize(AValue: Integer);
+    procedure SetImageSpacing(AValue: Integer);
+
+    function  GetCellImageIndex(Node: TCssVirtualNode; Column: Integer): Integer;
+    function  GetImageDisplayWidth: Integer;
+    function  GetImageDisplayHeight: Integer;
+    function  GetCellImageShift(Node: TCssVirtualNode; Column: Integer): Integer;
+    function  GetCellImageRect(Node: TCssVirtualNode; Column: Integer;
+      const CellR: TRect): TRect;
+    procedure DrawCellImage(Node: TCssVirtualNode; Column: Integer;
+      const ImageR: TRect);
+    function  GetTextStartXBase(Node: TCssVirtualNode;
+      const RowR: TRect): Integer;
 
     // --- Tree structure ---
     function GetVisibleCount: Integer;
@@ -772,6 +803,10 @@ type
     function GetEffectiveCellVAlign(Node: TCssVirtualNode;
       Column: Integer): TCssVAlign;
 
+    function GetCellImageRectPublic(Node: TCssVirtualNode; Column: Integer): TRect;
+
+    procedure RefreshImages;
+
     // Exposed style helpers
     property CheckBoxStyle: TCssCheckBox read FCheckBoxNormal;
     property CheckBoxCheckedStyle: TCssCheckBox read FCheckBoxChecked;
@@ -796,6 +831,13 @@ type
 
     property MultiSelect: Boolean read FMultiSelect write FMultiSelect default False;
     property ShowCheckboxes: Boolean read FShowCheckboxes write FShowCheckboxes default False;
+
+    property Images: TCssSvgImgList read FImages write SetImages;
+    property ImageVariant: string read FImageVariant write SetImageVariant;
+    property ShowImages: Boolean read FShowImages write SetShowImages default True;
+    property ImageSize: Integer read FImageSize write SetImageSize default 0;
+    property ImageSpacing: Integer read FImageSpacing write SetImageSpacing default 4;
+    property OnGetImageIndex: TCssGetImageIndexEvent read FOnGetImageIndex write FOnGetImageIndex;
 
     property AllowEditing: Boolean read FAllowEditing write FAllowEditing default False;
     property AllowDrag: Boolean read FAllowDrag write FAllowDrag default False;
@@ -1240,6 +1282,13 @@ begin
   FSearchText := '';
   FSearchTime := 0;
 
+  FImages := nil;
+  FImageVariant := '';
+  FShowImages := True;
+  FImageSize := 0;
+  FImageSpacing := 4;
+  FOnGetImageIndex := nil;
+
   FEditingNode := nil;
   FEditingColumn := -1;
   FEditClosing := False;
@@ -1390,6 +1439,253 @@ begin
     if Abs(X - ColRight) <= Tol then
       Exit(I);
   end;
+end;
+
+procedure TCssVirtualStringTree.SetImages(AValue: TCssSvgImgList);
+begin
+  if FImages = AValue then
+    Exit;
+
+  FImages := AValue;
+
+  if not (csLoading in ComponentState) then
+    Invalidate;
+end;
+
+procedure TCssVirtualStringTree.SetImageVariant(const AValue: string);
+begin
+  if FImageVariant = AValue then
+    Exit;
+
+  FImageVariant := AValue;
+  Invalidate;
+end;
+
+procedure TCssVirtualStringTree.SetShowImages(AValue: Boolean);
+begin
+  if FShowImages = AValue then
+    Exit;
+
+  FShowImages := AValue;
+  Invalidate;
+end;
+
+procedure TCssVirtualStringTree.SetImageSize(AValue: Integer);
+begin
+  if AValue < 0 then
+    AValue := 0;
+
+  if FImageSize = AValue then
+    Exit;
+
+  FImageSize := AValue;
+  Invalidate;
+end;
+
+procedure TCssVirtualStringTree.SetImageSpacing(AValue: Integer);
+begin
+  if AValue < 0 then
+    AValue := 0;
+
+  if FImageSpacing = AValue then
+    Exit;
+
+  FImageSpacing := AValue;
+  Invalidate;
+end;
+
+function TCssVirtualStringTree.GetCellImageIndex(
+  Node: TCssVirtualNode; Column: Integer): Integer;
+begin
+  Result := -1;
+
+  if not FShowImages then
+    Exit;
+
+  if not Assigned(FImages) then
+    Exit;
+
+  if (Node = nil) or (Column < 0) then
+    Exit;
+
+  if Assigned(FOnGetImageIndex) then
+    FOnGetImageIndex(Self, Node, Column, Result);
+
+  if (Result < 0) or (Result >= FImages.Count) then
+    Result := -1;
+end;
+
+function TCssVirtualStringTree.GetImageDisplayWidth: Integer;
+var
+  MaxIcon, Base: Integer;
+begin
+  Result := 0;
+  if not Assigned(FImages) then Exit;
+
+  MaxIcon := FItemHeight - ScalePx(2);
+  if MaxIcon < ScalePx(8) then
+    MaxIcon := ScalePx(8);
+
+  if FImageSize > 0 then
+  begin
+    Result := ScalePx(FImageSize);
+  end
+  else
+  begin
+    Base := Canvas.TextHeight('Mg');
+
+    if Base > FImages.GetEffectiveWidth then
+      Base := FImages.GetEffectiveWidth;
+
+    Result := Base;
+  end;
+
+  if Result > MaxIcon then
+    Result := MaxIcon;
+  if Result < ScalePx(8) then
+    Result := ScalePx(8);
+end;
+
+function TCssVirtualStringTree.GetImageDisplayHeight: Integer;
+var
+  MaxIcon, FontBase, NativeH: Integer;
+begin
+  Result := 0;
+
+  if not Assigned(FImages) then
+    Exit;
+
+  MaxIcon := FItemHeight - ScalePx(2);
+  if MaxIcon < ScalePx(8) then
+    MaxIcon := ScalePx(8);
+
+  if FImageSize > 0 then
+  begin
+    Result := ScalePx(FImageSize);
+  end
+  else
+  begin
+    FontBase := Canvas.TextHeight('Mg');
+
+    // uncomment if need keep original svg size
+{    NativeH := FImages.GetEffectiveHeight;
+    if NativeH <= 0 then
+      NativeH := ScalePx(16);
+
+    if FontBase > NativeH then
+      FontBase := NativeH; }
+
+    Result := FontBase;
+  end;
+
+  if Result > MaxIcon then
+    Result := MaxIcon;
+  if Result < ScalePx(8) then
+    Result := ScalePx(8);
+end;
+
+function TCssVirtualStringTree.GetCellImageShift(
+  Node: TCssVirtualNode; Column: Integer): Integer;
+var
+  Idx, W: Integer;
+begin
+  Result := 0;
+
+  if not FShowImages or not Assigned(FImages) then
+    Exit;
+
+  Idx := GetCellImageIndex(Node, Column);
+  if Idx < 0 then
+    Exit;
+
+  W := GetImageDisplayWidth;
+  if W <= 0 then
+    Exit;
+
+  Result := W + ScalePx(FImageSpacing);
+end;
+
+function TCssVirtualStringTree.GetCellImageRect(
+  Node: TCssVirtualNode;
+  Column: Integer;
+  const CellR: TRect): TRect;
+var
+  Idx, W, H, X, Y: Integer;
+begin
+  Result := Rect(0, 0, 0, 0);
+
+  Idx := GetCellImageIndex(Node, Column);
+  if Idx < 0 then
+    Exit;
+
+  W := GetImageDisplayWidth;
+  H := GetImageDisplayHeight;
+  if (W <= 0) or (H <= 0) then
+    Exit;
+
+  if Column = 0 then
+    X := GetTextStartXBase(Node, CellR)
+  else
+    X := CellR.Left + ScalePx(3);
+
+  Y := CellR.Top + (FItemHeight - H) div 2;
+
+  Result := Rect(X, Y, X + W, Y + H);
+end;
+
+procedure TCssVirtualStringTree.DrawCellImage(
+  Node: TCssVirtualNode;
+  Column: Integer;
+  const ImageR: TRect);
+var
+  Idx, W, H: Integer;
+  Bmp: TBitmap;
+  IconColor: TColor;
+begin
+  if (ImageR.Right <= ImageR.Left) or (ImageR.Bottom <= ImageR.Top) then
+    Exit;
+
+  Idx := GetCellImageIndex(Node, Column);
+  if Idx < 0 then
+    Exit;
+
+  W := ImageR.Right - ImageR.Left;
+  H := ImageR.Bottom - ImageR.Top;
+
+  if IsNodeDisabled(Node) then
+    IconColor := GetDisabledColor
+  else
+    IconColor := GetButtonColor;
+
+  Bmp := FImages.GetBitmap(Idx, W, H, IconColor, FImageVariant);
+  try
+    DrawSvgBitmapWithAlpha(Canvas, ImageR.Left, ImageR.Top, Bmp);
+  finally
+    Bmp.Free;
+  end;
+end;
+
+function TCssVirtualStringTree.GetTextStartXBase(
+  Node: TCssVirtualNode;
+  const RowR: TRect): Integer;
+var
+  CheckR, ButtonR: TRect;
+begin
+  Result := GetColumnLeft(0) + ScalePx(2);
+
+  if FShowCheckboxes then
+  begin
+    CheckR := GetCheckRect(Node, RowR);
+    Result := CheckR.Right + ScalePx(3);
+  end;
+
+  if cvsHasChildren in Node.States then
+  begin
+    ButtonR := GetButtonRect(Node, RowR);
+    Result := ButtonR.Right + ScalePx(3);
+  end
+  else
+    Result := Result + GetNodeDepth(Node) * FIndent + ScalePx(3);
 end;
 
 // --- Visible count / header / tree rect ---
@@ -2918,7 +3214,7 @@ var
   HAlign: TCssTextAlign;
   VAlign: TCssVAlign;
   IsDisabled: Boolean;
-  TreeR: TRect;
+  TreeR, ImageR: TRect;
 begin
   if FColumns.Count = 0 then
   begin
@@ -2978,14 +3274,24 @@ begin
   HAlign := ResolveCellHAlign(Node, Column);
   VAlign := ResolveCellVAlign(Node, Column);
 
+  if FShowImages and Assigned(FImages) then
+  begin
+    ImageR := GetCellImageRect(Node, Column, CellR);
+
+    if (ImageR.Right > ClipR.Left) and (ImageR.Left < ClipR.Right) and
+       (ImageR.Bottom > ClipR.Top) and (ImageR.Top < ClipR.Bottom) then
+      DrawCellImage(Node, Column, ImageR);
+  end;
+
   if HtmlMode then
   begin
     ContentR := CellR;
 
     if Column = 0 then
-      ContentR.Left := GetTextStartX(Node, RowR);
+      ContentR.Left := GetTextStartX(Node, RowR)
+    else
+      Inc(ContentR.Left, GetCellImageShift(Node, Column));
 
-    // Clip the text area to the actual clip rect.
     ContentR := VTreeIntersect(ContentR, ClipR);
 
     if (ContentR.Right > ContentR.Left) and
@@ -3054,7 +3360,9 @@ begin
   ContentR := CellR;
 
   if Column = 0 then
-    ContentR.Left := GetTextStartX(Node, CellR);
+    ContentR.Left := GetTextStartX(Node, CellR)
+  else
+    Inc(ContentR.Left, GetCellImageShift(Node, Column));
 
   DrawR := VTreeIntersect(ContentR, ClipR);
 
@@ -3434,26 +3742,8 @@ end;
 function TCssVirtualStringTree.GetTextStartX(
   Node: TCssVirtualNode;
   const RowR: TRect): Integer;
-var
-  CheckR, ButtonR: TRect;
 begin
-  Result := GetColumnLeft(0) + ScalePx(2);
-
-  if FShowCheckboxes then
-  begin
-    CheckR := GetCheckRect(Node, RowR);
-    Result := CheckR.Right + ScalePx(3);
-  end;
-
-  if cvsHasChildren in Node.States then
-  begin
-    ButtonR := GetButtonRect(Node, RowR);
-    Result := ButtonR.Right + ScalePx(3);
-  end
-  else
-  begin
-    Result := Result + GetNodeDepth(Node) * FIndent + ScalePx(3);
-  end;
+  Result := GetTextStartXBase(Node, RowR) + GetCellImageShift(Node, 0);
 end;
 
 // --- Hit testing ---
@@ -6204,7 +6494,15 @@ begin
       W := Size.cx + ScalePx(16);
 
       if I = 0 then
+      begin
         Inc(W, LeadingExtra);
+
+        if FShowImages and Assigned(FImages) then
+        begin
+          if GetCellImageIndex(Node, 0) >= 0 then
+            Inc(W, GetImageDisplayWidth + ScalePx(FImageSpacing));
+        end;
+      end;
 
       if W > MaxW then
         MaxW := W;
@@ -6774,6 +7072,18 @@ function TCssVirtualStringTree.GetEffectiveCellVAlign(
   Column: Integer): TCssVAlign;
 begin
   Result := ResolveCellVAlign(Node, Column);
+end;
+
+function TCssVirtualStringTree.GetCellImageRectPublic(Node : TCssVirtualNode;
+  Column : Integer) : TRect;
+begin
+
+end;
+
+procedure TCssVirtualStringTree.RefreshImages;
+begin
+  if Assigned(FImages) then
+    Invalidate;
 end;
 
 // --- Alignment resolution ---

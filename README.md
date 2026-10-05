@@ -27,6 +27,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [SVG Image Lists (TCssSvgImgList)](#svg-image-lists-tcsssvgimglist)
 - [Menus (TCssMainMenu, TCssPopupMenu)](#menus-tcssmainmenu-tcsspopupmenu)
 - [Tabs (TCssTabControl, TCssPageControl)](#tabs-tcstabcontrol-tcspagecontrol)
+- [Tree Icons (TCssVirtualStringTree)](#tree-icons-tcssvirtualstringtree)
 - [Themes (Light and Dark)](#themes-light-and-dark)
 - [HTML Formatting](#html-formatting)
 - [Link Handling](#link-handling)
@@ -55,6 +56,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - **Clickable links** — `<a href="...">` inside HTML content raises `OnLinkClick`, changes the cursor, and supports `a`, `a:hover`, `a:active` CSS rules.
 - **CSS-styled tooltips** — tooltips can be styled with the `::hint` selector and rendered as HTML.
 - **Windows 11-style switches** — set `checkbox-style: toggle` / `radio-style: toggle` on a checkbox / radio button (or on a `toggle` class) to render them as pill switches with an animated thumb.
+- **Tree icons from SVG** — `TCssVirtualStringTree` accepts a `TCssSvgImgList` and requests a per-cell icon through `OnGetImageIndex`, with DPI-aware sizing, per-theme variants, and automatic `currentColor` tinting.
 - **Nested child styling** — composite controls (`TCssComboBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssListBox`, `TCssVirtualStringTree`, tabs) expose `*CssClass` / `*CssStyle` properties so you can style their internal children too.
 - **Focus-within** — a parent (`TCssPanel`, `TCssGroupBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssComboBox`, `TCssTabControl`, `TCssPageControl`) can highlight its border while a child has focus (`focus-within: true`).
 - **Standard LCL styling** — `TCssProxy` reads the active CSS variant and applies `background`, `color`, `font-*`, and `text-align` to plain LCL `TButton`, `TEdit`, `TLabel`, `TPanel`, and forms.
@@ -258,7 +260,7 @@ Switching the toggle changes the CSS theme **and** every SVG icon at the same ti
 | `TCssTabControl`          | Tab strip without pages, with optional overflow scroll buttons.              |
 | `TCssPageControl`         | Tab control with pages (`TCssTabSheet`).                                     |
 | `TCssTabSheet`            | A single page of a `TCssPageControl`.                                        |
-| `TCssVirtualStringTree`   | Virtual tree view with columns, checkboxes, editing, sorting, drag & drop, per-cell alignment, lazy loading, and incremental search. |
+| `TCssVirtualStringTree`   | Virtual tree view with columns, checkboxes, **SVG cell icons**, editing, sorting, drag & drop, per-cell alignment, lazy loading, and incremental search. |
 ---
 
 ## CSS Overview
@@ -824,6 +826,8 @@ Additional Pascal properties: `AutoSnap`, `SnapThreshold`, `HighlightAdjacentCon
 | `placeholder-text-decoration`                                              | `underline`, `line-through`, `none`.               |
 | `html-mode`                                                                | `true` / `false` — enables HTML in cells.          |
 
+Cell icons are not styled through CSS. They are configured through the Pascal properties `Images`, `ShowImages`, `ImageSize`, `ImageSpacing`, `ImageVariant`, and the `OnGetImageIndex` event — see [Tree Icons](#tree-icons-tcssvirtualstringtree).
+
 Child controls also expose `CheckBoxCssClass` / `CheckBoxCssStyle` and `EditStyleName` for the inline editor.
 
 ---
@@ -846,6 +850,7 @@ Because SVG is vector-based, a single entry can serve as a 16×16 toolbar icon, 
 - `TCssBitBtn.SvgImages` — see [TCssBitBtn](#tcssbitbtn--button-with-glyph).
 - `TCssMenuItem.SvgImages` / `TCssMenuBase.SvgImages` — see [Menus](#menus-tcssmainmenu-tcsspopupmenu).
 - `TCssTabControl.SvgImages` / `TCssPageControl.SvgImages` — see [Tabs](#tabs-tcstabcontrol-tcspagecontrol).
+- `TCssVirtualStringTree.Images` + `OnGetImageIndex` — see [Tree Icons](#tree-icons-tcssvirtualstringtree).
 - Anywhere in your own code that needs a `TBitmap` from an SVG: `TCssSvgImgList.GetBitmap`, `GetBitmapByName`, `DrawToCanvas`.
 - `TCssSvgImgList.AssignToImageList` — one-shot migration path: rasterise every SVG entry into a standard `TImageList` (for legacy controls that still require one). The alpha channel is preserved through a generated mask, so the resulting images keep their transparency.
 
@@ -1027,6 +1032,105 @@ TCssPageControl {
 ```
 
 The icon color follows the tab text color for the current state — `tab-text-color` for inactive / hovered tabs, `tab-active-text-color` for the active tab. When the CSS theme changes, the icons are re-rasterised with the new color and the new variant.
+
+---
+
+## Tree Icons (TCssVirtualStringTree)
+
+`TCssVirtualStringTree` can draw an SVG icon in any cell, sourced from a `TCssSvgImgList`. Icons are requested per-cell through an event, so the same tree can mix different icon sources, show per-row state icons (folder / file, expanded / collapsed, checked / unchecked), or return `-1` to leave a cell icon-free.
+
+### How to Attach Icons
+
+Assign a `TCssSvgImgList` to the tree's `Images` property and handle `OnGetImageIndex`:
+
+```pascal
+CssTree1.Images     := CssSvgImgList1;
+CssTree1.ShowImages := True;
+CssTree1.ImageSize  := 0;    // 0 = follow text height, like menu-icon-size / tab-icon-size
+
+procedure TForm1.CssTree1GetImageIndex(Sender: TObject;
+  Node: TCssVirtualNode; Column: Integer; var ImageIndex: Integer);
+begin
+  if Column = 0 then
+    ImageIndex := CssSvgImgList1.IndexOf(NodeFolderOrFile(Node))
+  else
+    ImageIndex := -1;       // no icons in other columns
+end;
+```
+
+The event fires once per cell on every paint, so it is also a convenient place to compute state-dependent icons. For example, return the index of `folder-open` for expanded folders and of `folder` for collapsed ones.
+
+### Pascal Properties
+
+| Property          | Type                     | Default | Notes                                                                                                                          |
+| ----------------- | ------------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Images`          | `TCssSvgImgList`         | `nil`   | Source of the per-cell icons. No icons are drawn when unset.                                                                   |
+| `ShowImages`      | `Boolean`                | `True`  | Master switch. When `False`, `OnGetImageIndex` is not called and the icon slot is not reserved.                                 |
+| `ImageSize`       | `Integer`                | `0`     | Icon size in design-time pixels; `0` means "follow the current font", like `menu-icon-size` / `tab-icon-size`.                  |
+| `ImageSpacing`    | `Integer`                | `4`     | Gap between the icon and the cell text, in design-time pixels.                                                                 |
+| `ImageVariant`    | `string`                 | `''`    | SVG variant name passed to `TCssSvgImgList.GetBitmap`. When empty, the variant is derived from the tree's `StyleName` / `StyleProvider.DefaultStyleName`, so theme switches propagate automatically. |
+| `OnGetImageIndex` | `TCssGetImageIndexEvent` | `nil`   | Called for every visible cell; return the index inside `Images`, or `-1` for "no icon".                                        |
+
+### Sizing and DPI
+
+- When `ImageSize = 0`, the icon follows the same rule as the menu and tab icons: the effective size is `Canvas.TextHeight('Mg')` on the tree canvas (with the CSS font already applied), capped by the "native" size of the `TCssSvgImgList` entry (`GetEffectiveWidth` / `GetEffectiveHeight`), and clamped to `FItemHeight - ScalePx(2)`. This keeps the icon visually in proportion with the cell text and prevents tiny SVG assets from being blown up.
+- When `ImageSize > 0`, that value is scaled by the tree's DPI factor (`ScalePx`). This mirrors `menu-icon-size` and `tab-icon-size`.
+- `TCssSvgImgList` itself is DPI-aware, so SVG artwork is rasterised at the exact device pixel size — sharp at 100 %, 125 %, 150 %, 200 % and higher.
+
+### Layout Rules
+
+- The icon is placed between the leading decorations and the caption: after the expand/collapse button and the checkbox column on the first column, or at the cell's left edge on subsequent columns.
+- The icon is vertically centred in the row (`(FItemHeight - iconHeight) div 2`).
+- The cell text is shifted to the right by `iconWidth + ImageSpacing` so the caption never overlaps the icon.
+- The tree reserves space for the icon only in rows that actually request one via `OnGetImageIndex`. Rows with `ImageIndex = -1` keep the caption aligned to the same left edge they would have without icons — icons are not forced into a fixed column the way they are in a menu.
+- `AutoSizeColumns` accounts for the icon width of the first cell when computing the column size, so calling it after loading a dataset with icons gives correct widths.
+
+### Theming and Disabled State
+
+- **`currentColor` tinting.** The icon is rasterised with the effective text color of the cell as `ACurrentColor`, so SVG paths written as `fill="currentColor"` follow the row's text color — the `:hover` color on a hovered row, the `selection-color` on a selected row, and the `disabled-color` on a disabled row.
+- **Per-theme variants.** If the SVG entry carries a `dark` variant (see [Themes / Variants](#themes--variants) under `TCssSvgImgList`), it is picked automatically when the CSS theme changes — as long as `ImageVariant` is left empty. Setting `ImageVariant` explicitly overrides this and forces a fixed variant.
+- **Disabled rows.** `IsNodeDisabled` already paints the row in `disabled-color`; the icon picks up the same color and becomes visually muted without any extra code.
+
+### Example — Folder / File Icons with State
+
+```pascal
+procedure TForm1.TreeGetImageIndex(Sender: TObject;
+  Node: TCssVirtualNode; Column: Integer; var ImageIndex: Integer);
+begin
+  if Column <> 0 then
+  begin
+    ImageIndex := -1;
+    Exit;
+  end;
+
+  if cvsHasChildren in Node.States then
+  begin
+    if cvsExpanded in Node.States then
+      ImageIndex := CssSvgImgList1.IndexOf('folder-open')
+    else
+      ImageIndex := CssSvgImgList1.IndexOf('folder');
+  end
+  else
+    ImageIndex := CssSvgImgList1.IndexOf('file');
+end;
+```
+
+```css
+/* Nothing tree-specific is required: the icon follows the CSS text color
+   of the row. Selection and disabled colors are picked up automatically. */
+TCssVirtualStringTree {
+  selection-color: #FFFFFF;
+  disabled-color:  #94A3B8;
+}
+```
+
+Switching `CssStyleProvider1.DefaultStyleName` from `light` to `dark` changes the icon tint immediately, and — if the SVG entry has a `dark` variant — swaps the artwork as well, together with the rest of the tree.
+
+### Notes and Caveats
+
+- The tree does not own the `TCssSvgImgList`: freeing the list while it is still assigned to `Images` is safe (the tree is notified via `FreeNotification` and clears the reference), but icons disappear once the list is gone.
+- Icon indexes are validated on every paint: an index that is `< 0` or `>= Images.Count` is treated as "no icon".
+- Disabled nodes never draw a hover or selected background, so the icon tint naturally follows `disabled-color` only. There is no per-node icon override — use `OnGetImageIndex` to return different indexes for `cvsDisabled` nodes if you want a dedicated "disabled" artwork.
 
 ---
 ### Themes / Variants
