@@ -36,6 +36,7 @@ type
     MenuItem2 : TCssMenuItem;
     procedure CssCheckBox1Click(Sender : TObject);
     procedure CssLabel2LinkClick(Sender : TObject; const AHref, AText: UnicodeString);
+    procedure FormCreate(Sender : TObject);
     procedure MenuItem1Click(Sender : TObject);
     procedure MenuItem2Click(Sender : TObject);
   private
@@ -48,6 +49,9 @@ var
   Form1 : TForm1;
 
 implementation
+
+uses
+  CssUtils;
 
 {$R *.lfm}
 
@@ -62,6 +66,11 @@ end;
 procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref, AText : Unicodestring);
 begin
   MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText, mtInformation, [mbOk], '');
+end;
+
+procedure TForm1.FormCreate(Sender : TObject);
+begin
+  EnableSmoothPainting(Self);
 end;
 
 procedure TForm1.MenuItem1Click(Sender : TObject);

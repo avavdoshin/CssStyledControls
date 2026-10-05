@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, Forms,
-  CssStyledControl, CssScrollControl, CssEditControl, CssCheckboxControl;
+  CssStyledControl, CssScrollControl, CssEditControl, CssCheckboxControl, CssAntiAlias;
 
 type
   TCssVirtualNodeState = (
@@ -564,7 +564,6 @@ type
 
     procedure DrawPlaceholder(const R: TRect);
     function GetHeaderHoverBackground: TColor;
-    procedure DrawHoverRoundedRect(const ARect: TRect; ARadii: TCssCornerRadii; AColor: TColor);
 
     procedure DrawInternalScrollBars;
     procedure DrawRoundedCornerMask;
@@ -962,7 +961,7 @@ type
 implementation
 
 uses
-  CssUtils, Math;
+  CssUtils;
 
 { Helper functions }
 
@@ -2601,7 +2600,7 @@ begin
        (GetCssBorderRadius > 0) then
       HoverRadii.TR := GetCssBorderRadius;
 
-    DrawHoverRoundedRect(HoverR, HoverRadii, GetHeaderHoverBackground);
+        CssAntiAlias.DrawAARoundedRectOverlay(Canvas, HoverR, HoverRadii, GetHeaderHoverBackground);
   end;
 
   Canvas.Pen.Color := GetLineColor;
@@ -3341,67 +3340,6 @@ begin
     Result := FHeaderHoverBackground
   else
     Result := GetHeaderBackground;
-end;
-
-procedure TCssVirtualStringTree.DrawHoverRoundedRect(
-  const ARect: TRect;
-  ARadii: TCssCornerRadii;
-  AColor: TColor);
-var
-  W, H, X, Y: Integer;
-  Coverage: array of Byte;
-  HW, HH, R: Double;
-  CX, CY, QX, QY, SDF, Cov: Double;
-begin
-  if AColor = clNone then
-    Exit;
-
-  W := ARect.Right - ARect.Left;
-  H := ARect.Bottom - ARect.Top;
-
-  if (W <= 0) or (H <= 0) then
-    Exit;
-
-  HW := W / 2.0;
-  HH := H / 2.0;
-
-  SetLength(Coverage, W * H);
-
-  for Y := 0 to H - 1 do
-    for X := 0 to W - 1 do
-    begin
-      CX := X + 0.5 - HW;
-      CY := Y + 0.5 - HH;
-
-      if (CX >= 0) and (CY < 0) then
-        R := ARadii.TR
-      else if (CX < 0) and (CY < 0) then
-        R := ARadii.TL
-      else if (CX < 0) and (CY >= 0) then
-        R := ARadii.BL
-      else
-        R := ARadii.BR;
-
-      if R < 0 then
-        R := 0;
-
-      QX := Abs(CX) - HW + R;
-      QY := Abs(CY) - HH + R;
-
-      SDF :=
-        Min(Max(QX, QY), 0.0) +
-        Sqrt(Sqr(Max(QX, 0.0)) + Sqr(Max(QY, 0.0))) - R;
-
-      Cov := 0.5 - SDF;
-      if Cov < 0 then
-        Cov := 0
-      else if Cov > 1 then
-        Cov := 1;
-
-      Coverage[Y * W + X] := Round(Cov * 255);
-    end;
-
-  BlendCoverageToCanvas(Canvas, ARect.Left, ARect.Top, W, H, Coverage, AColor);
 end;
 
 // --- Button/checkbox/text geometry ---

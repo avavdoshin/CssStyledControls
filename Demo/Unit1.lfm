@@ -8,6 +8,7 @@ object Form1: TForm1
   ClientWidth = 1165
   Position = poScreenCenter
   LCLVersion = '4.99.0.0'
+  OnCreate = FormCreate
   object CssPanel1: TCssPanel
     Left = 0
     Height = 41

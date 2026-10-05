@@ -105,6 +105,10 @@
         <Filename Value="..\Source\CssBitBtnControl.pas"/>
         <UnitName Value="CssBitBtnControl"/>
       </Item>
+      <Item>
+        <Filename Value="..\Source\CssAntiAlias.pas"/>
+        <UnitName Value="CssAntiAlias"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

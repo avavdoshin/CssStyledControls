@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
-  CssStyledControl, CssGroupCaptionControl;
+  CssStyledControl, CssGroupCaptionControl, CssAntiAlias;
 
 type
   TCssRadioButton = class;
@@ -300,138 +300,6 @@ begin
   finally
     Lines.Free;
   end;
-end;
-
-type
-  TCssDotMaskEntry = class
-    Size: Integer;
-    Coverage: array of Byte;  // Size * Size, 0..255
-    constructor Create;
-    function Matches(ASize: Integer): Boolean;
-  end;
-
-  TCssDotCache = class
-  private
-    FEntries: TList;
-    function IndexOfEntry(ASize: Integer): Integer;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Clear;
-    function GetMask(ASize: Integer): TCssDotMaskEntry;
-  end;
-
-const
-  CSS_DOT_CACHE_LIMIT = 48;
-
-constructor TCssDotMaskEntry.Create;
-begin
-  inherited Create;
-  SetLength(Coverage, 0);
-end;
-
-function TCssDotMaskEntry.Matches(ASize: Integer): Boolean;
-begin
-  Result := Size = ASize;
-end;
-
-constructor TCssDotCache.Create;
-begin
-  inherited Create;
-  FEntries := TList.Create;
-end;
-
-destructor TCssDotCache.Destroy;
-begin
-  Clear;
-  FEntries.Free;
-  inherited Destroy;
-end;
-
-procedure TCssDotCache.Clear;
-var
-  I: Integer;
-begin
-  for I := 0 to FEntries.Count - 1 do
-    TCssDotMaskEntry(FEntries[I]).Free;
-  FEntries.Clear;
-end;
-
-procedure BuildDotCoverage(
-  var ACoverage: array of Byte;
-  ASize: Integer);
-var
-  X, Y: Integer;
-  CX, CY, R, Dist, Cov: Double;
-  Idx: Integer;
-begin
-  for Idx := 0 to ASize * ASize - 1 do
-    ACoverage[Idx] := 0;
-
-  CX := ASize / 2.0;
-  CY := ASize / 2.0;
-  R  := ASize * 0.28;
-
-  for Y := 0 to ASize - 1 do
-    for X := 0 to ASize - 1 do
-    begin
-      Dist := Sqrt(Sqr(X + 0.5 - CX) + Sqr(Y + 0.5 - CY));
-      Cov := R + 0.5 - Dist;
-
-      if Cov <= 0 then
-        Continue;
-      if Cov > 1 then
-        Cov := 1;
-
-      ACoverage[Y * ASize + X] := Round(Cov * 255);
-    end;
-end;
-
-function TCssDotCache.IndexOfEntry(ASize: Integer): Integer;
-var
-  I: Integer;
-begin
-  for I := 0 to FEntries.Count - 1 do
-    if TCssDotMaskEntry(FEntries[I]).Matches(ASize) then
-      Exit(I);
-  Result := -1;
-end;
-
-function TCssDotCache.GetMask(ASize: Integer): TCssDotMaskEntry;
-var
-  Idx: Integer;
-  E: TCssDotMaskEntry;
-begin
-  Idx := IndexOfEntry(ASize);
-
-  if Idx >= 0 then
-  begin
-    E := TCssDotMaskEntry(FEntries[Idx]);
-    FEntries.Delete(Idx);
-    FEntries.Add(E);
-    Exit(E);
-  end;
-
-  if FEntries.Count >= CSS_DOT_CACHE_LIMIT then
-    Clear;
-
-  E := TCssDotMaskEntry.Create;
-  E.Size := ASize;
-  SetLength(E.Coverage, ASize * ASize);
-
-  BuildDotCoverage(E.Coverage, ASize);
-
-  FEntries.Add(E);
-  Result := E;
-end;
-
-var
-  GDotCache: TCssDotCache = nil;
-
-procedure EnsureDotCache;
-begin
-  if GDotCache = nil then
-    GDotCache := TCssDotCache.Create;
 end;
 
 { TCssRadioButton }
@@ -771,26 +639,16 @@ var
   DotSize: Integer;
   Mask: TCssDotMaskEntry;
 begin
-  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
-    Exit;
+  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then Exit;
 
   DotSize := R.Right - R.Left;
-  if DotSize > (R.Bottom - R.Top) then
-    DotSize := R.Bottom - R.Top;
+  if DotSize > (R.Bottom - R.Top) then DotSize := R.Bottom - R.Top;
+  if DotSize <= 0 then Exit;
 
-  if DotSize <= 0 then
-    Exit;
+  Mask := GetDotMask(DotSize);
 
-  EnsureDotCache;
-  Mask := GDotCache.GetMask(DotSize);
-
-  BlendCoverageToCanvas(
-    Canvas,
-    R.Left, R.Top,
-    DotSize, DotSize,
-    Mask.Coverage,
-    AColor
-  );
+  BlendCoverageToCanvas(Canvas, R.Left, R.Top, DotSize, DotSize,
+    Mask.Coverage, AColor);
 end;
 
 procedure TCssRadioButton.Paint;
@@ -2074,10 +1932,5 @@ begin
   if AutoSize then
     AdjustSize;
 end;
-
-initialization
-
-finalization
-  FreeAndNil(GDotCache);
 
 end.

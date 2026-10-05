@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf,
-  CssStyledControl, CssGroupCaptionControl;
+  CssStyledControl, CssGroupCaptionControl, CssAntiAlias;
 
 type
   TCssGroupBox = class(TCssGroupCaptionControl)

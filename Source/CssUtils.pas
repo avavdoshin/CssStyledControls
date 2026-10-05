@@ -35,10 +35,12 @@ function CssParseColor(const AValue: string; out AColor: TColor): Boolean;
 function CssParseLengthPx(const AValue: string; out APx: Integer;
   AScaleFactor: Double = 1.0): Boolean;
 
+procedure EnableSmoothPainting(AControl: TWinControl);
+
 implementation
 
 uses
-  Math, StrUtils;
+  StrUtils;
 
 function CssMin(A, B: Integer): Integer;
 begin
@@ -278,6 +280,18 @@ begin
       APx := Round(Num * AScaleFactor);
     Result := True;
   end;
+end;
+
+procedure EnableSmoothPainting(AControl: TWinControl);
+var
+  I: Integer;
+begin
+  AControl.DoubleBuffered := True;
+  AControl.ParentDoubleBuffered := True;
+
+  for I := 0 to AControl.ControlCount - 1 do
+    if AControl.Controls[I] is TWinControl then
+      EnableSmoothPainting(TWinControl(AControl.Controls[I]));
 end;
 
 end.

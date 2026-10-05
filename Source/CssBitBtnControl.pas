@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, Forms,
   ImgList, LCLType,
-  CssStyledControl, CssButtonControl;
+  CssStyledControl, CssButtonControl, CssAntiAlias;
 
 type
   TCssButtonLayout = (blGlyphLeft, blGlyphRight, blGlyphTop, blGlyphBottom);
@@ -768,7 +768,7 @@ end;
 procedure TCssBitBtn.DrawKindGlyph(ABmp: TBitmap; AKind: TCssBitBtnKind;
   ASize: Integer);
 var
-  S, PenW, Rad: Double;
+  S, PenW: Double;
   Green, Red, Blue, Gray: TColor;
   BgCol: TColor;
 begin

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, StdCtrls, LCLType,
-  CssStyledControl, CssGroupCaptionControl;
+  CssStyledControl, CssGroupCaptionControl, CssAntiAlias;
 
 type
   TCssCheckBox = class(TCssStyledControl)
@@ -319,126 +319,6 @@ begin
   finally
     Lines.Free;
   end;
-end;
-
-type
-  TCssCheckMarkMaskEntry = class
-    Width, Height: Integer;
-    LineWidthX10: Integer;
-    Coverage: array of Byte;   // W * H, 0..255
-    constructor Create;
-    function Matches(AW, AH: Integer; ALineWidth: Double): Boolean;
-  end;
-
-  TCssCheckMarkCache = class
-  private
-    FEntries: TList;
-    function IndexOfEntry(AW, AH: Integer; ALineWidth: Double): Integer;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Clear;
-    function GetMask(AW, AH: Integer; ALineWidth: Double): TCssCheckMarkMaskEntry;
-  end;
-
-const
-  CSS_CHECKMARK_CACHE_LIMIT = 48;
-
-constructor TCssCheckMarkMaskEntry.Create;
-begin
-  inherited Create;
-  SetLength(Coverage, 0);
-end;
-
-function TCssCheckMarkMaskEntry.Matches(AW, AH: Integer;
-  ALineWidth: Double): Boolean;
-begin
-  Result :=
-    (Width = AW) and (Height = AH) and
-    (LineWidthX10 = Round(ALineWidth * 10));
-end;
-
-constructor TCssCheckMarkCache.Create;
-begin
-  inherited Create;
-  FEntries := TList.Create;
-end;
-
-destructor TCssCheckMarkCache.Destroy;
-begin
-  Clear;
-  FEntries.Free;
-  inherited Destroy;
-end;
-
-procedure TCssCheckMarkCache.Clear;
-var
-  I: Integer;
-begin
-  for I := 0 to FEntries.Count - 1 do
-    TCssCheckMarkMaskEntry(FEntries[I]).Free;
-  FEntries.Clear;
-end;
-
-function TCssCheckMarkCache.IndexOfEntry(AW, AH: Integer;
-  ALineWidth: Double): Integer;
-var
-  I: Integer;
-begin
-  for I := 0 to FEntries.Count - 1 do
-    if TCssCheckMarkMaskEntry(FEntries[I]).Matches(AW, AH, ALineWidth) then
-      Exit(I);
-  Result := -1;
-end;
-
-function TCssCheckMarkCache.GetMask(
-  AW, AH: Integer; ALineWidth: Double): TCssCheckMarkMaskEntry;
-var
-  Idx: Integer;
-  E: TCssCheckMarkMaskEntry;
-  X1, Y1, X2, Y2, X3, Y3: Double;
-begin
-  Idx := IndexOfEntry(AW, AH, ALineWidth);
-
-  if Idx >= 0 then
-  begin
-    E := TCssCheckMarkMaskEntry(FEntries[Idx]);
-    FEntries.Delete(Idx);
-    FEntries.Add(E);
-    Exit(E);
-  end;
-
-  if FEntries.Count >= CSS_CHECKMARK_CACHE_LIMIT then
-    Clear;
-
-  E := TCssCheckMarkMaskEntry.Create;
-  E.Width := AW;
-  E.Height := AH;
-  E.LineWidthX10 := Round(ALineWidth * 10);
-
-  SetLength(E.Coverage, AW * AH);
-
-  X1 := AW * 0.20;  Y1 := AH * 0.50;
-  X2 := AW * 0.40;  Y2 := AH * 0.75;
-  X3 := AW * 0.80;  Y3 := AH * 0.22;
-
-  BuildCheckMarkCoverage(
-    E.Coverage, AW, AH,
-    X1, Y1, X2, Y2, X3, Y3,
-    ALineWidth
-  );
-
-  FEntries.Add(E);
-  Result := E;
-end;
-
-var
-  GCheckMarkCache: TCssCheckMarkCache = nil;
-
-procedure EnsureCheckMarkCache;
-begin
-  if GCheckMarkCache = nil then
-    GCheckMarkCache := TCssCheckMarkCache.Create;
 end;
 
 { TCssCheckBox }
@@ -1154,8 +1034,7 @@ end;
 procedure TCssCheckBox.DrawCheckMarkToCanvas(
   ACanvas: TCanvas;
   const R: TRect;
-  AColor: TColor
-);
+  AColor: TColor);
 var
   W, H: Integer;
   LineWidth: Double;
@@ -1165,23 +1044,15 @@ begin
 
   W := R.Right - R.Left;
   H := R.Bottom - R.Top;
-
   if (W <= 0) or (H <= 0) then Exit;
 
   if W < ScalePx(12) then LineWidth := 1.5
   else if W < ScalePx(20) then LineWidth := 2.0 * ScaleFactor
   else LineWidth := 2.5 * ScaleFactor;
 
-  EnsureCheckMarkCache;
-  Mask := GCheckMarkCache.GetMask(W, H, LineWidth);
+  Mask := GetCheckMarkMask(W, H, LineWidth);
 
-  BlendCoverageToCanvas(
-    ACanvas,
-    R.Left, R.Top,
-    W, H,
-    Mask.Coverage,
-    AColor
-  );
+  BlendCoverageToCanvas(ACanvas, R.Left, R.Top, W, H, Mask.Coverage, AColor);
 end;
 
 procedure TCssCheckBox.DrawGrayedMarkToCanvas(
@@ -2334,10 +2205,5 @@ begin
 
   NavigateFromIndex(Idx, AKey);
 end;
-
-initialization
-
-finalization
-  FreeAndNil(GCheckMarkCache);
 
 end.
