@@ -2628,10 +2628,17 @@ begin
     for I := 0 to FPages.Count - 1 do
     begin
       Sheet := TCssTabSheet(FPages[I]);
+
       if Sheet = ActiveSheet then
         Continue;
-      if Sheet.Visible then
-        Sheet.Visible := False;
+
+      Sheet.Visible := False;
+
+      if csDesigning in ComponentState then
+      begin
+        if (Sheet.Left <> -32000) or (Sheet.Top <> -32000) then
+          Sheet.SetBounds(-32000, -32000, Sheet.Width, Sheet.Height);
+      end;
     end;
 
     if ActiveSheet <> nil then
