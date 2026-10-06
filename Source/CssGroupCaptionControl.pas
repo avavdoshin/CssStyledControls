@@ -71,7 +71,7 @@ begin
 
   FCaptionMode := gcmInside;
   FCaptionBackgroundColor := clDefault;
-  FGroupCaption := 'Group';
+  FGroupCaption := '';
 end;
 
 function TCssGroupCaptionControl.GetGroupCaptionText: TCaption;
