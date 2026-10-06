@@ -117,6 +117,8 @@ type
     // Painting
     procedure Paint; override;
 
+    procedure DrawFocusRect(ACanvas: TCanvas; const ARect: TRect); override;
+
     // Sizing
     procedure Resize; override;
 
@@ -1301,6 +1303,11 @@ begin
     if ItemR.Bottom > ItemR.Top then
       DrawFocusRect(Canvas, ItemR);
   end;
+end;
+
+procedure TCssListBox.DrawFocusRect(ACanvas: TCanvas; const ARect: TRect);
+begin
+  // Do nothing
 end;
 
 end.
