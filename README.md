@@ -665,19 +665,107 @@ TCssCheckGroup  { /* ... */ }
 
 ### TCssComboBox
 
-| Property                          | Notes                                     |
-| --------------------------------- | ----------------------------------------- |
-| `combo-button-background`         | Fill of the dropdown button.              |
-| `combo-button-hover-background`   | Fill on hover.                            |
-| `combo-button-active-background`  | Fill while pressed.                       |
-| `combo-button-arrow-color`        | Color of the triangle.                    |
-| `combo-button-radius`             | Corner radius of the button.              |
+`TCssComboBox` is a dropdown combo box that supports two modes: `ccsDropDown` (with an embedded editable field) and `ccsDropDownList` (selection only). It reads its appearance from CSS and exposes child‑control styling for the embedded editor, the popup list box, and the scrollbar.
 
-Child controls have their own `*CssClass` / `*CssStyle` properties:
+#### CSS Properties
 
-- `EditCssClass`, `EditCssStyle` — the embedded editor.
-- `ListBoxCssClass`, `ListBoxCssStyle` — the popup list box.
-- `ScrollBarCssClass`, `ScrollBarCssStyle` — the popup scrollbar.
+**Dropdown button**
+
+| Property | Notes |
+| --- | --- |
+| `combo-button-background` | Fill of the dropdown button. Defaults to the control’s `background-color`, or `clBtnFace` if that is not set. |
+| `combo-button-hover-background` | Fill of the dropdown button on hover. Defaults to `rgb(230,235,240)`. |
+| `combo-button-active-background` | Fill of the dropdown button while pressed. Defaults to `rgb(210,220,230)`. |
+| `combo-button-arrow-color` | Color of the dropdown triangle. Defaults to the control’s text color. |
+| `combo-button-radius` | Corner radius of the dropdown button. Defaults to `0`. |
+| `combo-button-border-color` | Border color of the dropdown button. When omitted, no border is drawn. |
+
+**Placeholder**
+
+These properties affect the placeholder of the combo box itself. In `ccsDropDownList` the placeholder is drawn by the combo box. In `ccsDropDown` the placeholder is passed to the embedded `TCssEdit` and is styled through that editor’s CSS (`EditCssClass` / `EditCssStyle`).
+
+| Property | Notes |
+| --- | --- |
+| `placeholder-color` | Placeholder text color. Defaults to `rgb(150,150,150)`. |
+| `placeholder-align` | `left` \| `center` \| `right`. Defaults to `left`. |
+| `placeholder-font-weight` | `normal` \| `bold` \| `bolder`. |
+| `placeholder-font-style` | `normal` \| `italic` \| `oblique`. |
+| `placeholder-text-decoration` | `underline`, `line-through`, `none`. |
+
+#### Pascal Properties
+
+| Property | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `Items` | `TStrings` | — | The list of items. |
+| `ItemIndex` | `Integer` | `-1` | Index of the selected item. |
+| `Text` | `string` | — | In `ccsDropDown`: the text of the embedded editor. In `ccsDropDownList`: the text of the selected item. |
+| `SelText` | `string` | — | Read‑only. Returns the display text of the selected item. |
+| `ComboStyle` | `TCssComboStyle` | `ccsDropDown` | `ccsDropDown` or `ccsDropDownList`. |
+| `ReadOnly` | `Boolean` | `False` | In `ccsDropDown` it is forwarded to `TCssEdit.ReadOnly`. In `ccsDropDownList` it disables opening the dropdown and prevents changing the selected item with the keyboard. |
+| `DropDownCount` | `Integer` | `8` | Maximum number of visible rows in the dropdown. Minimum `1`. |
+| `ItemHeight` | `Integer` | `18` | Height of a list row. Minimum `10`. |
+| `Placeholder` | `string` | `''` | Placeholder text. |
+
+#### Child Controls CSS
+
+| Property | Default | Notes |
+| --- | --- | --- |
+| `EditCssClass` | `'combobox-edit'` | CSS class of the embedded editor. |
+| `EditCssStyle` | `'background-color: transparent; border: 0px solid transparent; padding: 0px;'` | Inline style of the embedded editor. |
+| `ListBoxCssClass` | `'combobox-list'` | CSS class of the dropdown list box. |
+| `ListBoxCssStyle` | `''` | Inline style of the dropdown list box. |
+| `ScrollBarCssClass` | `'combobox-scrollbar'` | CSS class of the dropdown scrollbar. |
+| `ScrollBarCssStyle` | `''` | Inline style of the dropdown scrollbar. |
+
+`ItemHeight` is passed to the internal `TCssListBox` as the `item-height` CSS declaration. You can override it per list box by adding `item-height` to `ListBoxCssStyle` — declarations in `ListBoxCssStyle` are appended after the base value, so they take precedence.
+
+#### Events
+
+| Event | Notes |
+| --- | --- |
+| `OnDropDown` | Fired before the dropdown is shown. |
+| `OnCloseUp` | Fired after the dropdown is closed. |
+| `OnChange` | Fired when the editor text or the selected item changes. |
+| `OnSelect` | Fired when `ItemIndex` changes. |
+
+#### Behavior Notes
+
+- In `ccsDropDown` an internal `TCssEdit` is created. The user can type into it, and the text is matched against the items to update `ItemIndex`.
+- In `ccsDropDownList` there is no editor. `Text` returns the display text of the selected item, and `Placeholder` is drawn by the combo box itself when `ItemIndex < 0` and the control is not focused.
+- `HtmlMode` affects the items in the dropdown (`TCssListBox`). The embedded editor always has `HtmlMode := False`, and the closed state shows plain text.
+- When `ReadOnly = True` and `ComboStyle = ccsDropDownList`, the dropdown cannot be opened, the up/down keys do not change the selection, and the cursor becomes `crDefault`.
+- The width of the dropdown button is derived from the content height and is clamped between `12` and `22` scaled pixels.
+- The dropdown list is displayed in a borderless popup form. Its background color is taken from the list box CSS or from the control’s own `background-color`.
+
+#### Example
+
+```css
+TCssComboBox {
+  combo-button-background:        #F8FAFC;
+  combo-button-hover-background:  #E2E8F0;
+  combo-button-active-background: #CBD5E1;
+  combo-button-arrow-color:       #0F172A;
+  combo-button-radius:            4px;
+  combo-button-border-color:      #CBD5E1;
+
+  placeholder-color:              #94A3B8;
+  placeholder-align:              left;
+  placeholder-font-style:         italic;
+  placeholder-text-decoration:    underline;
+}
+```
+
+```pascal
+CssComboBox1.ComboStyle    := ccsDropDownList;
+CssComboBox1.ReadOnly      := True;
+CssComboBox1.DropDownCount := 10;
+CssComboBox1.ItemHeight    := 22;
+CssComboBox1.Placeholder   := 'Select...';
+
+CssComboBox1.EditCssClass      := 'combobox-edit';
+CssComboBox1.ListBoxCssClass   := 'combobox-list';
+CssComboBox1.ScrollBarCssClass := 'combobox-scrollbar';
+```
 
 ### TCssEdit
 
