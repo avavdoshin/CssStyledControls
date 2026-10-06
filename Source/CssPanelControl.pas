@@ -5,7 +5,7 @@ unit CssPanelControl;
 interface
 
 uses
-  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf, CssStyledControl;
+  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf, CssStyledControl, Forms;
 
 type
   TCssPanel = class(TCssStyledControl)
@@ -25,6 +25,8 @@ type
       BorderSpacing.Top equals this value is treated as ours and may
       be updated; any other non-zero value is respected as user data. }
     FAppliedCaptionSpacing: Integer;
+
+    FResyncPending: Boolean;
 
     procedure PropagateEnabledToChildren;
     procedure ForceDesignTimeRepaint;
@@ -55,6 +57,9 @@ type
     { Runs AutoSpaceAnchoredChild for every child and remembers the
       caption height used for this pass. }
     procedure AutoSpaceAllChildren;
+
+    procedure QueueAutoSpace;
+    procedure DoQueuedAutoSpace(AData: PtrInt);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -320,7 +325,15 @@ begin
   if FSyncingCaptionSpacing then
     Exit;
 
+  { During a layout transition the panel may briefly end up with zero
+    size (e.g. while anchors are being resolved). In that state the
+    caption measurement returns 0 and any BorderSpacing assignment we
+    make would be garbage; skip until a stable size is available. }
+  if (Width <= 0) or (Height <= 0) then
+    Exit;
+
   FSyncingCaptionSpacing := True;
+  DisableAlign;
   try
     CapH := GetCaptionContentOffset;
 
@@ -329,8 +342,30 @@ begin
 
     FAppliedCaptionSpacing := CapH;
   finally
+    EnableAlign;
     FSyncingCaptionSpacing := False;
   end;
+end;
+
+procedure TCssPanel.QueueAutoSpace;
+begin
+  if FResyncPending then
+    Exit;
+  if csDestroying in ComponentState then
+    Exit;
+
+  FResyncPending := True;
+  Application.QueueAsyncCall(@DoQueuedAutoSpace, 0);
+end;
+
+procedure TCssPanel.DoQueuedAutoSpace(AData: PtrInt);
+begin
+  FResyncPending := False;
+
+  if csDestroying in ComponentState then
+    Exit;
+
+  AutoSpaceAllChildren;
 end;
 
 procedure TCssPanel.RefreshChildSpacing;
@@ -507,7 +542,7 @@ begin
     a child is added or removed. This is the point where newly added
     anchored children get their caption offset. }
   if AControl = nil then
-    AutoSpaceAllChildren;
+    QueueAutoSpace;
 end;
 
 procedure TCssPanel.AdjustClientRect(var ARect: TRect);
@@ -576,7 +611,7 @@ begin
 
   { The panel width may have changed, which can re-wrap an HTML caption
     onto more or fewer lines and change the caption height. }
-  AutoSpaceAllChildren;
+  QueueAutoSpace;
 end;
 
 procedure TCssPanel.ChangeScale(M, D : Integer);

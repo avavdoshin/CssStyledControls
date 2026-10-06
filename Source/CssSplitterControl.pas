@@ -47,6 +47,13 @@ type
     FHighlightAdjacentControls: Boolean;
     FHoverNotifyList: TList;
 
+    FResizeTimer: TTimer;
+    FPendingDelta: Integer;
+    FPendingResize: Boolean;
+
+    procedure HandleResizeTimer(Sender: TObject);
+    procedure ScheduleResize(ADelta: Integer);
+
     // Property setters
     procedure SetMinSize(AValue: Integer);
     procedure SetResizeStyle(AValue: TCssResizeStyle);
@@ -199,10 +206,17 @@ begin
   FHoverNotifyList := TList.Create;
 
   UpdateCursor;
+
+  FResizeTimer := TTimer.Create(Self);
+  FResizeTimer.Interval := 16;
+  FResizeTimer.Enabled := False;
+  FResizeTimer.OnTimer := @HandleResizeTimer;
 end;
 
 destructor TCssSplitter.Destroy;
 begin
+  FreeAndNil(FResizeTimer);
+
   HideDragLine;
 
   if Assigned(FHoverNotifyList) then
@@ -303,6 +317,31 @@ begin
 
   if not (csLoading in ComponentState) then
     UpdateCursor;
+end;
+
+procedure TCssSplitter.ScheduleResize(ADelta: Integer);
+begin
+  Inc(FPendingDelta, ADelta);
+
+  if not FPendingResize then
+  begin
+    FPendingResize := True;
+    FResizeTimer.Enabled := True;
+  end;
+end;
+
+procedure TCssSplitter.HandleResizeTimer(Sender: TObject);
+var
+  D: Integer;
+begin
+  FResizeTimer.Enabled := False;
+  FPendingResize := False;
+
+  D := FPendingDelta;
+  FPendingDelta := 0;
+
+  if D <> 0 then
+    ApplyResize(D);
 end;
 
 procedure TCssSplitter.SetMinSize(AValue: Integer);
@@ -902,8 +941,8 @@ begin
 
     if Delta <> 0 then
     begin
-      ApplyResize(Delta);
       FLastScreenPos := ScreenPos;
+      ScheduleResize(Delta);
     end;
   end;
 end;
@@ -939,6 +978,19 @@ begin
 
     if Delta <> 0 then
       ApplyResize(Delta);
+  end
+  else
+  if (FResizeStyle = crsUpdate) then
+  begin
+    FResizeTimer.Enabled := False;
+    FPendingResize := False;
+
+    if FPendingDelta <> 0 then
+    begin
+      Delta := FPendingDelta;
+      FPendingDelta := 0;
+      ApplyResize(Delta);
+    end;
   end;
 end;
 
@@ -1011,7 +1063,6 @@ begin
     Exit;
 
   C := FindResizeControl;
-
   if C = nil then
     Exit;
 
@@ -1028,26 +1079,15 @@ begin
     NewSize := FMinSize;
 
   CanR := True;
-
   if Assigned(FOnCanResize) then
     FOnCanResize(Self, NewSize, CanR);
-
   if not CanR then
     Exit;
 
   case Align of
     alLeft, alRight: C.Width := NewSize;
     alTop, alBottom: C.Height := NewSize;
-    else
   end;
-
-  if Parent <> nil then
-  begin
-    Parent.Realign;
-    Parent.Invalidate;
-  end;
-
-  Invalidate;
 
   DoMoved;
 end;

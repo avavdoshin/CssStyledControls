@@ -2623,29 +2623,30 @@ begin
   if (FActivePageIndex >= 0) and (FActivePageIndex < FPages.Count) then
     ActiveSheet := TCssTabSheet(FPages[FActivePageIndex]);
 
-  for I := 0 to FPages.Count - 1 do
-  begin
-    Sheet := TCssTabSheet(FPages[I]);
+  DisableAlign;
+  try
+    for I := 0 to FPages.Count - 1 do
+    begin
+      Sheet := TCssTabSheet(FPages[I]);
+      if Sheet = ActiveSheet then
+        Continue;
+      if Sheet.Visible then
+        Sheet.Visible := False;
+    end;
 
-    if Sheet = ActiveSheet then
-      Continue;
-
-    Sheet.Visible := False;
-
-    if (Sheet.Left <> -32000) or (Sheet.Top <> -32000) then
-      Sheet.SetBounds(-32000, -32000, 1, 1);
-  end;
-
-  if ActiveSheet <> nil then
-  begin
-    ActiveSheet.SetBounds(
-      ContentR.Left,
-      ContentR.Top,
-      ContentR.Right - ContentR.Left,
-      ContentR.Bottom - ContentR.Top
-    );
-    ActiveSheet.Visible := True;
-    ActiveSheet.BringToFront;
+    if ActiveSheet <> nil then
+    begin
+      ActiveSheet.SetBounds(
+        ContentR.Left,
+        ContentR.Top,
+        ContentR.Right - ContentR.Left,
+        ContentR.Bottom - ContentR.Top
+      );
+      ActiveSheet.Visible := True;
+      ActiveSheet.BringToFront;
+    end;
+  finally
+    EnableAlign;
   end;
 end;
 
