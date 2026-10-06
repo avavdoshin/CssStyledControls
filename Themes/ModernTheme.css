@@ -565,11 +565,6 @@ TCssVirtualStringTree {
   hover-background: #EFF6FF;
   line-color: #E2E8F0;
   button-color: #64748B;
-  checkbox-background: #FFFFFF;
-  checkbox-border-color: #CBD5E1;
-  checkbox-border-width: 1px;
-  checkbox-radius: 4px;
-  check-color: #FFFFFF;
   drop-target-background: #DBEAFE;
   sort-marker-color: #2563EB;
   disabled-background: #F8FAFC;
@@ -1165,11 +1160,6 @@ TCssVirtualStringTree {
   hover-background: #334155;
   line-color: #334155;
   button-color: #94A3B8;
-  checkbox-background: #1E293B;
-  checkbox-border-color: #475569;
-  checkbox-border-width: 1px;
-  checkbox-radius: 4px;
-  check-color: #FFFFFF;
   drop-target-background: #1E3A8A;
   sort-marker-color: #60A5FA;
   disabled-background: #0F172A;

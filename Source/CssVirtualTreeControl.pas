@@ -4478,8 +4478,13 @@ begin
      (AName = 'checkbox-radius') or
      (AName = 'check-color') then
   begin
-    FCheckBoxInlineCss := FCheckBoxInlineCss + AName + ':' + AValue + ';';
-
+    // These declarations are consumed by the child checkbox helpers.
+    // They must NOT be stored as inline style on the helper, because
+    // inline CSS has the highest specificity and would override
+    // :checked / :hover / :disabled rules coming from TCssCheckBox —
+    // a checked box could then never change its background/check color.
+    // The helpers pick their appearance up through their own CSS
+    // matching (TCssCheckBox, TCssCheckBox:checked, ...) instead.
     if AName = 'check-color' then
     begin
       if ParseCssColor(AValue, C) then
