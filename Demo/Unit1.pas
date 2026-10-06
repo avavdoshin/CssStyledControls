@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, CssStyledControl,
   CssPanelControl, CssCheckboxControl, CssRadioControl, CssProxyControl,
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
-  CssMenuControl, CssBitBtnControl, CssSvgImgList;
+  CssMenuControl, CssBitBtnControl, CssSvgImgList, CssSplitterControl;
 
 type
   TForm1 = class(TForm)
@@ -22,17 +22,43 @@ type
     CssButton4 : TCssButton;
     CssButton5 : TCssButton;
     CssCheckBox1 : TCssCheckBox;
+    CssCheckBox2 : TCssCheckBox;
+    CssCheckBox3 : TCssCheckBox;
+    CssCheckBox4 : TCssCheckBox;
+    CssCheckBox5 : TCssCheckBox;
+    CssCheckGroup1 : TCssCheckGroup;
+    CssCheckGroup2 : TCssCheckGroup;
+    CssCheckGroup3 : TCssCheckGroup;
+    CssCheckGroup4 : TCssCheckGroup;
     CssGroupBox1 : TCssGroupBox;
     CssLabel1 : TCssLabel;
     CssLabel2 : TCssLabel;
     CssPageControl1 : TCssPageControl;
     CssPanel1 : TCssPanel;
     CssPanel2 : TCssPanel;
+    CssPanel3 : TCssPanel;
+    CssPanel4 : TCssPanel;
+    CssPanel5 : TCssPanel;
+    CssPanel6 : TCssPanel;
+    CssPanel7 : TCssPanel;
+    CssPanel8 : TCssPanel;
+    CssPanel9 : TCssPanel;
     CssPopupMenu1 : TCssPopupMenu;
     CssProxy1 : TCssProxy;
+    CssRadioButton1 : TCssRadioButton;
+    CssRadioButton2 : TCssRadioButton;
+    CssRadioButton3 : TCssRadioButton;
+    CssRadioButton4 : TCssRadioButton;
+    CssRadioGroup1 : TCssRadioGroup;
+    CssRadioGroup2 : TCssRadioGroup;
+    CssRadioGroup3 : TCssRadioGroup;
+    CssRadioGroup4 : TCssRadioGroup;
+    CssSplitter1 : TCssSplitter;
+    CssSplitter2 : TCssSplitter;
     CssStyleProvider1 : TCssStyleProvider;
     CssSvgImgList1 : TCssSvgImgList;
     CssTabSheet1 : TCssTabSheet;
+    CssTabSheet2 : TCssTabSheet;
     MenuItem1 : TCssMenuItem;
     MenuItem2 : TCssMenuItem;
     procedure CssCheckBox1Click(Sender : TObject);
