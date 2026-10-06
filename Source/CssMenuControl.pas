@@ -315,6 +315,7 @@ type
     function FindPrevTopItem(StartIndex: Integer): Integer;
     procedure DropdownNavigateLeft(Sender: TObject);
     procedure DropdownNavigateRight(Sender: TObject);
+    procedure DropdownClosed(Sender: TObject);
   protected
     procedure Paint; override;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
@@ -323,6 +324,7 @@ type
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure ApplyDeclaration(const AName, AValue: string); override;
     procedure ResetStyle; override;
+    procedure DoExit; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -2113,6 +2115,26 @@ begin
     SelectTopItem(NewIndex);
 end;
 
+procedure TCssMainMenu.DropdownClosed(Sender: TObject);
+begin
+  if Sender <> FDropdown then
+    Exit;
+
+  FDropdown.FOnClosed := nil;
+  FDropdown.FOnNavigateLeft := nil;
+  FDropdown.FOnNavigateRight := nil;
+  FDropdown.OnDeactivate := nil;
+
+  FDropdown.Hide;
+  FDropdown.Release;
+  FDropdown := nil;
+
+  FOpenIndex := -1;
+  FHoverIndex := -1;
+
+  Invalidate;
+end;
+
 procedure TCssMainMenu.KeyDown(var Key: Word; Shift: TShiftState);
 var
   NewIndex: Integer;
@@ -2422,6 +2444,7 @@ begin
   FDropdown := TCssMenuPopupForm.CreateMenu(Self, Self, Item.FItems);
   FDropdown.FParentMenuItem := Item;
 
+  FDropdown.FOnClosed       := @DropdownClosed;
   FDropdown.FOnNavigateLeft := @DropdownNavigateLeft;
   FDropdown.FOnNavigateRight := @DropdownNavigateRight;
 
@@ -2483,6 +2506,7 @@ begin
 
   FDropdown := TCssMenuPopupForm.CreateMenu(Self, Self, Item.FItems);
   FDropdown.FParentMenuItem := Item;
+  FDropdown.FOnClosed       := @DropdownClosed;
   FDropdown.FOnNavigateLeft := @DropdownNavigateLeft;
   FDropdown.FOnNavigateRight := @DropdownNavigateRight;
 
@@ -2716,6 +2740,16 @@ begin
   FMenuBarBackgroundSet := False;
 
   inherited ResetStyle;
+end;
+
+procedure TCssMainMenu.DoExit;
+begin
+  inherited DoExit;
+  if FHoverIndex <> -1 then
+  begin
+    FHoverIndex := -1;
+    Invalidate;
+  end;
 end;
 
 procedure TCssMainMenu.ApplyDeclaration(const AName, AValue: string);

@@ -134,10 +134,10 @@ TCssRadioButton:disabled {
 TCssRadioButton:focus { radio-border-color: #93C5FD; }
 
 .checkbox {
-  background-color: #FFFFFF;
+  background-color: transparent;
 }
 .radio {
-  background-color: #FFFFFF;
+  background-color: transparent;
 }
 
 /* Optional Windows 11-style switches. Opt in by adding the `toggle` class.
@@ -730,10 +730,10 @@ TCssRadioButton:disabled {
 TCssRadioButton:focus { radio-border-color: #93C5FD; }
 
 .checkbox {
-  background-color: #1E293B;
+  background-color: transparent;
 }
 .radio {
-  background-color: #1E293B;
+  background-color: transparent;
 }
 
 /* Optional Windows 11-style switches for the dark variant. */
