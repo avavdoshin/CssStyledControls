@@ -590,8 +590,8 @@ type
       TextColor: TColor;
       const ClipR: TRect);
 
-    procedure DrawButton(Node: TCssVirtualNode; const RowR: TRect);
-    procedure DrawCheckBox(Node: TCssVirtualNode; const RowR: TRect);
+    procedure DrawButton(Node: TCssVirtualNode; const RowR: TRect; ARowBG: TColor);
+    procedure DrawCheckBox(Node: TCssVirtualNode; const RowR: TRect; ARowBG: TColor);
 
     procedure DrawPlaceholder(const R: TRect);
     function GetHeaderHoverBackground: TColor;
@@ -664,6 +664,9 @@ type
 
     // --- Scrollbar lookup ---
     function ScrollBarAt(X, Y: Integer): TCssScrollBar;
+
+    function GetRowBackgroundColor(
+      IsSelectedRow, IsHover, IsDropTarget, IsDisabled: Boolean): TColor;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -3048,6 +3051,7 @@ var
   IsHover: Boolean;
   IsDropTarget: Boolean;
   IsDisabled: Boolean;
+  RowBG: TColor;
 begin
   if Node = nil then
     Exit;
@@ -3080,28 +3084,31 @@ begin
     (Node = FDropTargetNode) and
     (not IsDisabled);
 
+  RowBG := GetRowBackgroundColor(
+    IsSelectedRow, IsHover, IsDropTarget, IsDisabled);
+
   if IsDisabled and FDisabledBackgroundSet then
   begin
     Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := GetDisabledBackground;
+    Canvas.Brush.Color := RowBG;
     Canvas.FillRect(RowR);
   end
   else if IsDropTarget then
   begin
     Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := GetDropTargetBackground;
+    Canvas.Brush.Color := RowBG;
     Canvas.FillRect(RowR);
   end
   else if IsSelectedRow then
   begin
     Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := GetSelectionBackground;
+    Canvas.Brush.Color := RowBG;
     Canvas.FillRect(RowR);
   end
   else if IsHover then
   begin
     Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := GetHoverBackground;
+    Canvas.Brush.Color := RowBG;
     Canvas.FillRect(RowR);
   end;
 
@@ -3117,9 +3124,9 @@ begin
     Canvas.ClipRect := ScrollR;
     try
       if FShowCheckboxes then
-        DrawCheckBox(Node, RowR);
+        DrawCheckBox(Node, RowR, RowBG);
 
-      DrawButton(Node, RowR);
+      DrawButton(Node, RowR, RowBG);
       DrawCellContent(Node, 0, RowR, IsSelectedRow);
     finally
       Canvas.ClipRect := SavedClip;
@@ -3153,9 +3160,9 @@ begin
       if FFixedColumns <= 0 then
       begin
         if FShowCheckboxes then
-          DrawCheckBox(Node, RowR);
+          DrawCheckBox(Node, RowR, RowBG);
 
-        DrawButton(Node, RowR);
+        DrawButton(Node, RowR, RowBG);
       end;
 
       for I := CssMax(0, FFixedColumns) to FColumns.Count - 1 do
@@ -3171,9 +3178,9 @@ begin
     Canvas.ClipRect := FixedR;
     try
       if FShowCheckboxes then
-        DrawCheckBox(Node, RowR);
+        DrawCheckBox(Node, RowR, RowBG);
 
-      DrawButton(Node, RowR);
+      DrawButton(Node, RowR, RowBG);
 
       for I := 0 to CssMin(FFixedColumns, FColumns.Count) - 1 do
         DrawCellContent(Node, I, RowR, IsSelectedRow);
@@ -3440,7 +3447,7 @@ end;
 
 procedure TCssVirtualStringTree.DrawButton(
   Node: TCssVirtualNode;
-  const RowR: TRect);
+  const RowR: TRect; ARowBG: TColor);
 var
   R: TRect;
   MidY, MidX, BarSize: Integer;
@@ -3470,7 +3477,7 @@ begin
     BtnColor,
     ScalePx(1),
     cbsSolid,
-    GetCssBackgroundColor
+    ARowBG
   );
 
   MidX := (R.Left + R.Right) div 2;
@@ -3496,7 +3503,7 @@ end;
 
 procedure TCssVirtualStringTree.DrawCheckBox(
   Node: TCssVirtualNode;
-  const RowR: TRect);
+  const RowR: TRect; ARowBG: TColor);
 var
   R: TRect;
   Helper: TCssCheckBox;
@@ -3536,8 +3543,15 @@ begin
       Helper := FCheckBoxNormal;
   end;
 
-  if Assigned(Helper) then
+  if not Assigned(Helper) then
+    Exit;
+
+  Helper.SetExternalBackgroundColor(ARowBG);
+  try
     Helper.DrawToCanvas(Canvas, R);
+  finally
+    Helper.SetExternalBackgroundColor(clNone);
+  end;
 end;
 
 procedure TCssVirtualStringTree.DrawPlaceholder(const R: TRect);
@@ -6054,6 +6068,12 @@ begin
   if IsNodeDisabled(Node) then
     Exit;
 
+  if not HandleAllocated then
+    HandleNeeded;
+
+  if not HandleAllocated then
+    Exit;
+
   if FEditingNode <> nil then
     EndEditing(True);
 
@@ -6077,6 +6097,13 @@ begin
   if Column = 0 then
     R.Left := GetTextStartX(Node, R);
 
+  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+  begin
+    FEditingNode := nil;
+    FEditingColumn := -1;
+    Exit;
+  end;
+
   FEdit.SetBounds(
     R.Left + 1,
     R.Top + 1,
@@ -6085,8 +6112,16 @@ begin
   );
 
   FEdit.Visible := True;
-  FEdit.SetFocus;
-  FEdit.SelectAll;
+  FEdit.BringToFront;
+
+  if CanFocus then
+    SetFocus;
+
+  if FEdit.CanFocus then
+    FEdit.SetFocus;
+
+  if FEdit.Focused then
+    FEdit.SelectAll;
 
   Invalidate;
 end;
@@ -6530,6 +6565,27 @@ begin
 
   if Assigned(FHScroll) and FHScroll.Visible and PtInRect(FHScrollRect, P) then
     Exit(FHScroll);
+end;
+
+function TCssVirtualStringTree.GetRowBackgroundColor(
+  IsSelectedRow, IsHover, IsDropTarget, IsDisabled: Boolean): TColor;
+begin
+  if IsDisabled and FDisabledBackgroundSet then
+    Exit(GetDisabledBackground);
+
+  if IsDropTarget then
+    Exit(GetDropTargetBackground);
+
+  if IsSelectedRow then
+    Exit(GetSelectionBackground);
+
+  if IsHover then
+    Exit(GetHoverBackground);
+
+  Result := GetCssBackgroundColor;
+
+  if Result = clNone then
+    Result := GetParentBackgroundColor;
 end;
 
 procedure TCssVirtualStringTree.DrawInternalScrollBars;
@@ -7369,6 +7425,9 @@ begin
 
   if Assigned(FCheckBoxCheckedHover) then
     FCheckBoxCheckedHover.Enabled := Enabled;
+
+  if Assigned(FEdit) then
+    FEdit.Enabled := Enabled;
 
   Invalidate;
 end;

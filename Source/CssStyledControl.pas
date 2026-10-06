@@ -194,6 +194,9 @@ type
     FExternalCornerBitmap: TBitmap;
     FExternalCornerOrigin: TPoint;
 
+    FExternalBgColor: TColor;
+    FExternalBgColorSet: Boolean;
+
     FScaleFactor: Double;
 
     { CSS parsing helpers }
@@ -411,6 +414,7 @@ type
     function GetDefaultCaption: string; virtual;
     procedure SetName(const NewName: TComponentName); override;
 
+    function GetCornerBackgroundColor: TColor; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -489,6 +493,8 @@ type
 
     procedure SetExternalHoverState(AHover: Boolean);
     procedure SetExternalCornerSource(ABitmap: TBitmap; const AOrigin: TPoint);
+
+    procedure SetExternalBackgroundColor(AColor: TColor);
 
     function GetScaleFactor: Double;
 
@@ -4683,6 +4689,9 @@ var
   R: TColor;
   ScreenPt, LocalPt: TPoint;
 begin
+  if FExternalBgColorSet then
+    Exit(FExternalBgColor);
+
   if Assigned(FExternalCornerBitmap) then
   begin
     ScreenPt := ClientToScreen(AClientPoint);
@@ -5709,6 +5718,14 @@ begin
   end;
 
   inherited SetName(NewName);
+end;
+
+function TCssStyledControl.GetCornerBackgroundColor: TColor;
+begin
+  if FExternalBgColorSet then
+    Result := FExternalBgColor
+  else
+    Result := GetParentBackgroundColor;
 end;
 
 { ============================================================ }
@@ -7221,6 +7238,18 @@ procedure TCssStyledControl.SetExternalCornerSource(ABitmap : TBitmap; const AOr
 begin
   FExternalCornerBitmap := ABitmap;
   FExternalCornerOrigin := AOrigin;
+end;
+
+procedure TCssStyledControl.SetExternalBackgroundColor(AColor: TColor);
+begin
+  if (AColor = clNone) or (AColor = clDefault) then
+  begin
+    FExternalBgColorSet := False;
+    Exit;
+  end;
+
+  FExternalBgColor := AColor;
+  FExternalBgColorSet := True;
 end;
 
 function TCssStyledControl.GetScaleFactor : Double;

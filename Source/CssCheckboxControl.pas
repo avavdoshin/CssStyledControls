@@ -1122,7 +1122,7 @@ begin
     Size := ARect.Bottom - ARect.Top;
     Radius := Size div 2;
     DrawAntiAliasedRoundedBox(ACanvas, ARect, Radius, BG, BorderColor,
-      LBorderWidth, cbsSolid, GetParentBackgroundColor);
+      LBorderWidth, cbsSolid, GetCornerBackgroundColor);
     Size := ARect.Bottom - ARect.Top;
     if Size > ARect.Right - ARect.Left then
       Size := ARect.Right - ARect.Left;
@@ -1153,7 +1153,7 @@ begin
   else
     ABorderStyle := cbsSolid;
 
-  ParentBG := GetParentBackgroundColor;
+  ParentBG := GetCornerBackgroundColor;
 
   DrawAntiAliasedRoundedBox(
     ACanvas,
