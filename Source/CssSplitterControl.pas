@@ -277,21 +277,28 @@ end;
 procedure TCssSplitter.SetAlign(AValue: TAlign);
 var
   OldVertical, NewVertical: Boolean;
-  Tmp: Integer;
+  OldThickness: Integer;
 begin
   if Align = AValue then
     Exit;
 
   OldVertical := IsVertical;
+
+  if OldVertical then
+    OldThickness := inherited Width
+  else
+    OldThickness := inherited Height;
+
   inherited SetAlign(AValue);
+
   NewVertical := IsVertical;
 
-  // If orientation changed, transfer thickness between Width and Height.
   if OldVertical <> NewVertical then
   begin
-    Tmp := inherited Width;
-    inherited Width := inherited Height;
-    inherited Height := Tmp;
+    if NewVertical then
+      inherited Width := OldThickness
+    else
+      inherited Height := OldThickness;
   end;
 
   if not (csLoading in ComponentState) then

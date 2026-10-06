@@ -104,6 +104,7 @@ type
     procedure MouseLeave; override;
 
     function GetDefaultCaption: string; override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1190,6 +1191,16 @@ end;
 function TCssRadioGroup.GetDefaultCaption : string;
 begin
   Result := 'CssRadioGroup';
+end;
+
+procedure TCssRadioGroup.Resize;
+begin
+  inherited Resize;
+
+  if Assigned(FRadioButtons) and (FRadioButtons.Count > 0) then
+    LayoutItems;
+
+  Invalidate;
 end;
 
 procedure TCssRadioGroup.KeyDown(var Key: Word; Shift: TShiftState);

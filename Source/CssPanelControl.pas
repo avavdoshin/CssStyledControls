@@ -267,27 +267,12 @@ begin
 end;
 
 function TCssPanel.IsAnchoredToPanelTop(AControl: TControl): Boolean;
-var
-  ASide: TAnchorSide;
 begin
   Result := False;
-
-  if AControl = nil then
-    Exit;
-
-  if not (akTop in AControl.Anchors) then
-    Exit;
-
-  ASide := AControl.AnchorSide[akTop];
-
-  if ASide.Control = nil then
-    { Default: anchored to the parent's top edge. }
-    Result := ASide.Side = asrTop
-  else
-    { Explicit target: count it as "panel top" only when the target is
-      this panel and the reference side is its top edge. Anything else
-      (a sibling, or a different edge of the panel) is out of scope. }
-    Result := (ASide.Control = Self) and (ASide.Side = asrTop);
+  if AControl = nil then Exit;
+  if not (akTop in AControl.Anchors) then Exit;
+  Result := (AControl.AnchorSide[akTop].Control = Self)
+            and (AControl.AnchorSide[akTop].Side = asrTop);
 end;
 
 procedure TCssPanel.AutoSpaceAnchoredChild(AControl: TControl; ACapH: Integer);
@@ -297,22 +282,28 @@ begin
   if AControl = nil then
     Exit;
 
-  { Aligned children get their caption offset through AdjustClientRect,
-    so BorderSpacing would shift them twice. }
-  if AControl.Align <> alNone then
-    Exit;
-
-  { Only children whose top is anchored to the panel's own top edge
-    need to move below the caption. Children anchored to a sibling
-    through AnchorSide must keep their spacing untouched. }
-  if not IsAnchoredToPanelTop(AControl) then
-    Exit;
-
   Current := AControl.BorderSpacing.Top;
 
-  { A non-zero value that does not match our own is user data and must
-    not be overwritten. Zero means "not assigned yet" and may be
-    filled in. }
+  if AControl.Align <> alNone then
+  begin
+    { Aligned children get the caption offset via AdjustClientRect.
+      If BorderSpacing.Top is our own leftover from the pass that ran
+      while the child was still alNone, clear it - otherwise the offset
+      would be applied twice. }
+    if (Current <> 0) and (Current = FAppliedCaptionSpacing) then
+      AControl.BorderSpacing.Top := 0;
+    Exit;
+  end;
+
+  if not IsAnchoredToPanelTop(AControl) then
+  begin
+    { Same idea: a child that stopped being anchored to the panel's
+      top edge must not keep our stale spacing. }
+    if (Current <> 0) and (Current = FAppliedCaptionSpacing) then
+      AControl.BorderSpacing.Top := 0;
+    Exit;
+  end;
+
   if (Current <> 0) and (Current <> FAppliedCaptionSpacing) then
     Exit;
 

@@ -240,6 +240,7 @@ type
     procedure MouseLeave; override;
 
     function GetDefaultCaption: string; override;
+    procedure Resize; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1293,6 +1294,16 @@ end;
 function TCssCheckGroup.GetDefaultCaption : string;
 begin
   Result := 'CssCheckGroup';
+end;
+
+procedure TCssCheckGroup.Resize;
+begin
+  inherited Resize;
+
+  if Assigned(FCheckBoxes) and (FCheckBoxes.Count > 0) then
+    LayoutItems;
+
+  Invalidate;
 end;
 
 procedure TCssCheckGroup.SetShowFocusRect(AValue: Boolean);
