@@ -262,13 +262,14 @@ TCssComboBox {
   combo-button-background: #F1F5F9;
   combo-button-hover-background: #E2E8F0;
   combo-button-active-background: #CBD5E1;
-  combo-button-arrow-color: #475569;
+  combo-button-border-color: #CBD5E1;
+  combo-button-arrow-color: #94A3B8; 
   combo-button-radius: 0px;
   focus-within: true;
   focus-color: #60A5FA; 
 }
-TCssComboBox:hover  { border-color: #94A3B8; }
-TCssComboBox:focus  { border-color: #2563EB; }
+TCssComboBox:hover  { border-color: #94A3B8; combo-button-arrow-color: #475569; }
+TCssComboBox:focus  { border-color: #2563EB; combo-button-arrow-color: #2563EB; }
 TCssComboBox:disabled {
   background-color: #F8FAFC;
   color: #94A3B8;
@@ -857,13 +858,14 @@ TCssComboBox {
   combo-button-background: #334155;
   combo-button-hover-background: #475569;
   combo-button-active-background: #64748B;
+  combo-button-border-color: #475569; 
   combo-button-arrow-color: #CBD5E1;
   combo-button-radius: 0px;
   focus-within: true;
   focus-color: #60A5FA;
 }
-TCssComboBox:hover  { border-color: #64748B; }
-TCssComboBox:focus  { border-color: #60A5FA; }
+TCssComboBox:hover  { border-color: #64748B; combo-button-arrow-color: #E2E8F0; }
+TCssComboBox:focus  { border-color: #60A5FA; combo-button-arrow-color: #60A5FA; }
 TCssComboBox:disabled {
   background-color: #0F172A;
   color: #64748B;

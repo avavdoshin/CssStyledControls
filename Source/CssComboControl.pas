@@ -53,6 +53,8 @@ type
     FButtonArrowColorSet: Boolean;
     FButtonRadius: Integer;
     FButtonRadiusSet: Boolean;
+    FButtonBorderColor: TColor;
+    FButtonBorderColorSet: Boolean;
 
     // Child CSS configuration
     FEditCssClass: string;
@@ -107,6 +109,7 @@ type
     function GetButtonActiveBackground: TColor;
     function GetButtonArrowColor: TColor;
     function GetButtonRadius: Integer;
+    function GetButtonBorderColor: TColor;
 
     // Child CSS setters
     procedure SetEditCssClass(const AValue: string);
@@ -1004,6 +1007,7 @@ begin
   FButtonActiveBackgroundSet := False;
   FButtonArrowColorSet := False;
   FButtonRadiusSet := False;
+  FButtonBorderColorSet := False;
 
   inherited ResetStyle;
 end;
@@ -1070,6 +1074,16 @@ begin
     Exit;
   end;
 
+  if AName = 'combo-button-border-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FButtonBorderColor := C;
+      FButtonBorderColorSet := True;
+    end;
+    Exit;
+  end;
+
   inherited ApplyDeclaration(AName, AValue);
 end;
 
@@ -1131,6 +1145,17 @@ begin
     Result := 0;
 end;
 
+function TCssComboBox.GetButtonBorderColor: TColor;
+begin
+  if FButtonBorderColorSet then
+    Exit(FButtonBorderColor);
+
+  Result := GetEffectiveBorderColor;
+
+  if (Result = clNone) or (Result = clDefault) then
+    Result := GetButtonBackground;
+end;
+
 procedure TCssComboBox.Paint;
 var
   ButtonR, EditR, TextR: TRect;
@@ -1172,14 +1197,26 @@ begin
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := BG;
 
-  Canvas.Pen.Style := psSolid;
-  Canvas.Pen.Color := ArrowColor;
-  Canvas.Pen.Width := 1;
+  if FButtonBorderColorSet then
+  begin
+    Canvas.Pen.Style := psSolid;
+    Canvas.Pen.Color := GetButtonBorderColor;
+    Canvas.Pen.Width := 1;
 
-  if Radius > 0 then
-    Canvas.RoundRect(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom, Radius, Radius)
+    if Radius > 0 then
+      Canvas.RoundRect(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom, Radius, Radius)
+    else
+      Canvas.Rectangle(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom);
+  end
   else
-    Canvas.Rectangle(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom);
+  begin
+    Canvas.Pen.Style := psClear;
+
+    if Radius > 0 then
+      Canvas.RoundRect(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom, Radius, Radius)
+    else
+      Canvas.FillRect(ButtonR);
+  end;
 
   CX := (ButtonR.Left + ButtonR.Right) div 2;
   CY := (ButtonR.Top + ButtonR.Bottom) div 2;
