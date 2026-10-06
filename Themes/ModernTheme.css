@@ -265,6 +265,9 @@ TCssComboBox {
   combo-button-border-color: #CBD5E1;
   combo-button-arrow-color: #94A3B8; 
   combo-button-radius: 0px;
+  placeholder-color: #94A3B8;
+  placeholder-align: left;
+  placeholder-font-style: italic;
   focus-within: true;
   focus-color: #60A5FA; 
 }
@@ -274,6 +277,7 @@ TCssComboBox:disabled {
   background-color: #F8FAFC;
   color: #94A3B8;
   border-color: #E2E8F0;
+  placeholder-color: #CBD5E1;
   combo-button-background: #F1F5F9;
   combo-button-arrow-color: #CBD5E1;
 }
@@ -861,6 +865,9 @@ TCssComboBox {
   combo-button-border-color: #475569; 
   combo-button-arrow-color: #CBD5E1;
   combo-button-radius: 0px;
+  placeholder-color: #64748B;
+  placeholder-align: left;
+  placeholder-font-style: italic;
   focus-within: true;
   focus-color: #60A5FA;
 }
@@ -870,6 +877,7 @@ TCssComboBox:disabled {
   background-color: #0F172A;
   color: #64748B;
   border-color: #334155;
+  placeholder-color: #475569;
   combo-button-background: #1E293B;
   combo-button-arrow-color: #475569;
 }

@@ -64,6 +64,21 @@ type
     FScrollBarCssClass: string;
     FScrollBarCssStyle: string;
 
+    // Placeholder
+    FPlaceholder: string;
+    FPlaceholderColor: TColor;
+    FPlaceholderColorSet: Boolean;
+    FPlaceholderAlign: TCssTextAlign;
+    FPlaceholderAlignSet: Boolean;
+    FPlaceholderFontBold: Boolean;
+    FPlaceholderFontBoldSet: Boolean;
+    FPlaceholderFontItalic: Boolean;
+    FPlaceholderFontItalicSet: Boolean;
+    FPlaceholderFontUnderline: Boolean;
+    FPlaceholderFontUnderlineSet: Boolean;
+    FPlaceholderFontStrikeOut: Boolean;
+    FPlaceholderFontStrikeOutSet: Boolean;
+
     // Items and text
     function GetItems: TStrings;
     procedure SetItems(AValue: TStrings);
@@ -118,6 +133,13 @@ type
     procedure SetListBoxCssStyle(const AValue: string);
     procedure SetScrollBarCssClass(const AValue: string);
     procedure SetScrollBarCssStyle(const AValue: string);
+
+    // Placeholder
+    procedure SetPlaceholder(const AValue: string);
+    function  GetPlaceholderColor: TColor;
+    function  GetPlaceholderAlign: TCssTextAlign;
+    procedure DrawPlaceholderText(ACanvas: TCanvas;
+      const ARect: TRect; const AText: string);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -168,6 +190,8 @@ type
 
     property DropDownCount: Integer read FDropDownCount write SetDropDownCount default 8;
     property ItemHeight: Integer read FItemHeight write SetItemHeight default 18;
+
+    property Placeholder: string read FPlaceholder write SetPlaceholder;
 
     // Child CSS
     property EditCssClass: string read FEditCssClass write SetEditCssClass;
@@ -535,6 +559,7 @@ begin
 
     FEdit.Enabled := Enabled;
     FEdit.ReadOnly := FReadOnly;
+    FEdit.Placeholder := FPlaceholder;
 
     // If an item is selected, insert its text.
     // If the user simply typed text without selecting, do not overwrite it.
@@ -680,6 +705,7 @@ procedure TCssComboBox.InternalShowPopup;
 var
   P: TPoint;
   PopupWidth, PopupHeight: Integer;
+  VisibleCount, ItemCount: Integer;
 begin
   if IsPopupVisible then
     Exit;
@@ -691,11 +717,22 @@ begin
 
   ApplyControlStyles;
 
-  PopupWidth := Width;
-  PopupHeight := FDropDownCount * FItemHeight + 6;
+  ItemCount := FItems.Count;
+  if ItemCount < 1 then
+    ItemCount := 1;
 
-  if PopupHeight < FItemHeight then
-    PopupHeight := FItemHeight;
+  VisibleCount := ItemCount;
+  if VisibleCount > FDropDownCount then
+    VisibleCount := FDropDownCount;
+  if VisibleCount < 1 then
+    VisibleCount := 1;
+
+  PopupWidth := Width;
+
+  if FItemHeight > 0 then
+    PopupHeight := VisibleCount * FItemHeight + 6
+  else
+    PopupHeight := 6;
 
   P := ClientToScreen(Point(0, Height));
 
@@ -1009,6 +1046,19 @@ begin
   FButtonRadiusSet := False;
   FButtonBorderColorSet := False;
 
+  FPlaceholderColorSet := False;
+  FPlaceholderColor := clNone;
+  FPlaceholderAlignSet := False;
+  FPlaceholderAlign := ctaLeft;
+  FPlaceholderFontBoldSet := False;
+  FPlaceholderFontBold := False;
+  FPlaceholderFontItalicSet := False;
+  FPlaceholderFontItalic := False;
+  FPlaceholderFontUnderlineSet := False;
+  FPlaceholderFontUnderline := False;
+  FPlaceholderFontStrikeOutSet := False;
+  FPlaceholderFontStrikeOut := False;
+
   inherited ResetStyle;
 end;
 
@@ -1023,6 +1073,7 @@ procedure TCssComboBox.ApplyDeclaration(const AName, AValue: string);
 var
   C: TColor;
   Px: Integer;
+  S: String;
 begin
   if AName = 'combo-button-background' then
   begin
@@ -1081,6 +1132,53 @@ begin
       FButtonBorderColor := C;
       FButtonBorderColorSet := True;
     end;
+    Exit;
+  end;
+
+  if AName = 'placeholder-color' then
+  begin
+    if ParseCssColor(AValue, C) then
+    begin
+      FPlaceholderColor := C;
+      FPlaceholderColorSet := True;
+    end;
+    Exit;
+  end
+  else if AName = 'placeholder-align' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderAlignSet := True;
+
+    if S = 'center' then
+      FPlaceholderAlign := ctaCenter
+    else if S = 'right' then
+      FPlaceholderAlign := ctaRight
+    else
+      FPlaceholderAlign := ctaLeft;
+
+    Exit;
+  end
+  else if AName = 'placeholder-font-weight' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderFontBoldSet := True;
+    FPlaceholderFontBold := (S = 'bold') or (S = 'bolder');
+    Exit;
+  end
+  else if AName = 'placeholder-font-style' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderFontItalicSet := True;
+    FPlaceholderFontItalic := (S = 'italic') or (S = 'oblique');
+    Exit;
+  end
+  else if AName = 'placeholder-text-decoration' then
+  begin
+    S := LowerCase(AValue);
+    FPlaceholderFontUnderlineSet := True;
+    FPlaceholderFontStrikeOutSet := True;
+    FPlaceholderFontUnderline := Pos('underline', S) > 0;
+    FPlaceholderFontStrikeOut := Pos('line-through', S) > 0;
     Exit;
   end;
 
@@ -1171,17 +1269,22 @@ begin
   if FComboStyle = ccsDropDownList then
   begin
     AssignCssFontToFont(Canvas.Font);
-    Canvas.Font.Color := GetCssTextColor;
 
     TextR := EditR;
-
     TextR.Left := TextR.Left + ScalePx(3);
     TextR.Right := TextR.Right - ScalePx(3);
 
-    if HtmlMode then
-      DrawHtmlText(TextR, GetDisplayText)
+    if (FItemIndex < 0) and (FPlaceholder <> '') and (not Focused) then
+      DrawPlaceholderText(Canvas, TextR, FPlaceholder)
     else
-      DrawStyledText(TextR, GetDisplayText);
+    begin
+      Canvas.Font.Color := GetCssTextColor;
+
+      if HtmlMode then
+        DrawHtmlText(TextR, GetDisplayText)
+      else
+        DrawStyledText(TextR, GetDisplayText);
+    end;
   end;
 
   if FButtonDown then
@@ -1290,6 +1393,105 @@ begin
   FScrollBarCssStyle := AValue;
 
   ApplyControlStyles;
+end;
+
+procedure TCssComboBox.SetPlaceholder(const AValue: string);
+begin
+  if FPlaceholder = AValue then
+    Exit;
+
+  FPlaceholder := AValue;
+
+  if Assigned(FEdit) then
+    FEdit.Placeholder := FPlaceholder;
+
+  Invalidate;
+end;
+
+function TCssComboBox.GetPlaceholderColor: TColor;
+begin
+  if FPlaceholderColorSet and (FPlaceholderColor <> clNone) then
+    Result := FPlaceholderColor
+  else
+    Result := RGBToColor(150, 150, 150);
+end;
+
+function TCssComboBox.GetPlaceholderAlign: TCssTextAlign;
+begin
+  if FPlaceholderAlignSet then
+    Result := FPlaceholderAlign
+  else
+    Result := ctaLeft;
+end;
+
+procedure TCssComboBox.DrawPlaceholderText(ACanvas: TCanvas;
+  const ARect: TRect; const AText: string);
+var
+  TS: TTextStyle;
+  SavedColor: TColor;
+  SavedStyle: TFontStyles;
+begin
+  if ACanvas = nil then Exit;
+  if AText = '' then Exit;
+  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then Exit;
+
+  SavedColor := ACanvas.Font.Color;
+  SavedStyle := ACanvas.Font.Style;
+  try
+    ACanvas.Font.Color := GetPlaceholderColor;
+
+    if FPlaceholderFontBoldSet then
+    begin
+      if FPlaceholderFontBold then
+        ACanvas.Font.Style := ACanvas.Font.Style + [fsBold]
+      else
+        ACanvas.Font.Style := ACanvas.Font.Style - [fsBold];
+    end;
+
+    if FPlaceholderFontItalicSet then
+    begin
+      if FPlaceholderFontItalic then
+        ACanvas.Font.Style := ACanvas.Font.Style + [fsItalic]
+      else
+        ACanvas.Font.Style := ACanvas.Font.Style - [fsItalic];
+    end;
+
+    if FPlaceholderFontUnderlineSet then
+    begin
+      if FPlaceholderFontUnderline then
+        ACanvas.Font.Style := ACanvas.Font.Style + [fsUnderline]
+      else
+        ACanvas.Font.Style := ACanvas.Font.Style - [fsUnderline];
+    end;
+
+    if FPlaceholderFontStrikeOutSet then
+    begin
+      if FPlaceholderFontStrikeOut then
+        ACanvas.Font.Style := ACanvas.Font.Style + [fsStrikeOut]
+      else
+        ACanvas.Font.Style := ACanvas.Font.Style - [fsStrikeOut];
+    end;
+
+    TS := ACanvas.TextStyle;
+    TS.Layout := tlCenter;
+    TS.Wordbreak := False;
+    TS.Clipping := True;
+    TS.Opaque := False;
+    TS.ShowPrefix := False;
+
+    case GetPlaceholderAlign of
+      ctaCenter: TS.Alignment := taCenter;
+      ctaRight:  TS.Alignment := taRightJustify;
+    else
+      TS.Alignment := taLeftJustify;
+    end;
+
+    ACanvas.Brush.Style := bsClear;
+    ACanvas.TextRect(ARect, ARect.Left, ARect.Top, AText, TS);
+  finally
+    ACanvas.Font.Color := SavedColor;
+    ACanvas.Font.Style := SavedStyle;
+  end;
 end;
 
 end.
