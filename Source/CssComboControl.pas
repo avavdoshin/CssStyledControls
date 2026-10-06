@@ -349,10 +349,9 @@ begin
     if (FItemIndex >= 0) and (FItemIndex < FItems.Count) then
     begin
       FUpdating := True;
-
       try
-        if FEdit.Text <> FItems[FItemIndex] then
-          FEdit.Text := FItems[FItemIndex];
+        if FEdit.Text <> GetDisplayText then
+          FEdit.Text := GetDisplayText;
       finally
         FUpdating := False;
       end;
@@ -363,9 +362,18 @@ begin
 end;
 
 function TCssComboBox.GetDisplayText: string;
+var
+  S: string;
 begin
   if (FItemIndex >= 0) and (FItemIndex < FItems.Count) then
-    Result := FItems[FItemIndex]
+  begin
+    S := FItems[FItemIndex];
+
+    if HtmlMode then
+      S := HtmlToPlainText(S);
+
+    Result := S;
+  end
   else
     Result := '';
 end;
@@ -380,7 +388,8 @@ end;
 
 procedure TCssComboBox.SetText(const AValue: string);
 var
-  Idx: Integer;
+  I, Found: Integer;
+  PlainItem: string;
 begin
   if FComboStyle = ccsDropDown then
   begin
@@ -389,10 +398,24 @@ begin
   end
   else
   begin
-    Idx := FItems.IndexOf(AValue);
+    Found := -1;
 
-    if Idx >= 0 then
-      ItemIndex := Idx
+    for I := 0 to FItems.Count - 1 do
+    begin
+      PlainItem := FItems[I];
+
+      if HtmlMode then
+        PlainItem := HtmlToPlainText(PlainItem);
+
+      if PlainItem = AValue then
+      begin
+        Found := I;
+        Break;
+      end;
+    end;
+
+    if Found >= 0 then
+      ItemIndex := Found
     else
       ItemIndex := -1;
   end;
@@ -831,7 +854,8 @@ end;
 
 procedure TCssComboBox.EditChange(Sender: TObject);
 var
-  Idx: Integer;
+  I, Found: Integer;
+  PlainItem: string;
 begin
   if FUpdating then
     Exit;
@@ -839,11 +863,25 @@ begin
   if not Assigned(FEdit) then
     Exit;
 
-  Idx := FItems.IndexOf(FEdit.Text);
+  Found := -1;
 
-  if Idx <> FItemIndex then
+  for I := 0 to FItems.Count - 1 do
   begin
-    FItemIndex := Idx;
+    PlainItem := FItems[I];
+
+    if HtmlMode then
+      PlainItem := HtmlToPlainText(PlainItem);
+
+    if PlainItem = FEdit.Text then
+    begin
+      Found := I;
+      Break;
+    end;
+  end;
+
+  if Found <> FItemIndex then
+  begin
+    FItemIndex := Found;
 
     if Assigned(FListBox) then
       FListBox.ItemIndex := FItemIndex;
@@ -1279,11 +1317,7 @@ begin
     else
     begin
       Canvas.Font.Color := GetCssTextColor;
-
-      if HtmlMode then
-        DrawHtmlText(TextR, GetDisplayText)
-      else
-        DrawStyledText(TextR, GetDisplayText);
+      DrawStyledText(TextR, GetDisplayText);
     end;
   end;
 
