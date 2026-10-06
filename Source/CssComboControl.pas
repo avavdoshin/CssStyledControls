@@ -929,38 +929,81 @@ begin
   if not Enabled then
     Exit;
 
-  if (Key = VK_DOWN) and (ssAlt in Shift) then
-  begin
-    InternalShowPopup;
-    Key := 0;
-  end
-  else if Key = VK_DOWN then
-  begin
-    if FItemIndex < FItems.Count - 1 then
-      ItemIndex := FItemIndex + 1;
-
-    Key := 0;
-  end
-  else if Key = VK_UP then
-  begin
-    if FItemIndex > 0 then
-      ItemIndex := FItemIndex - 1;
-
-    Key := 0;
-  end
-  else if Key = VK_RETURN then
+  if Key = VK_F4 then
   begin
     if IsPopupVisible then
       InternalClosePopup(True)
-    else
+    else if FItems.Count > 0 then
       InternalShowPopup;
 
     Key := 0;
-  end
-  else if Key = VK_ESCAPE then
+    Exit;
+  end;
+
+  if (Key = VK_DOWN) and (ssAlt in Shift) then
+  begin
+    if FItems.Count > 0 then
+      InternalShowPopup;
+    Key := 0;
+    Exit;
+  end;
+
+  if Key = VK_DOWN then
+  begin
+    if FComboStyle = ccsDropDownList then
+    begin
+      if not IsPopupVisible then
+      begin
+        if FItems.Count > 0 then
+          InternalShowPopup;
+      end;
+    end
+    else
+    begin
+      if FItemIndex < FItems.Count - 1 then
+        ItemIndex := FItemIndex + 1;
+    end;
+
+    Key := 0;
+    Exit;
+  end;
+
+  if Key = VK_UP then
+  begin
+    if FComboStyle = ccsDropDownList then
+    begin
+      if not IsPopupVisible then
+      begin
+        if FItems.Count > 0 then
+          InternalShowPopup;
+      end;
+    end
+    else
+    begin
+      if FItemIndex > 0 then
+        ItemIndex := FItemIndex - 1;
+    end;
+
+    Key := 0;
+    Exit;
+  end;
+
+  if Key = VK_RETURN then
+  begin
+    if IsPopupVisible then
+      InternalClosePopup(True)
+    else if FItems.Count > 0 then
+      InternalShowPopup;
+
+    Key := 0;
+    Exit;
+  end;
+
+  if Key = VK_ESCAPE then
   begin
     InternalClosePopup(True);
     Key := 0;
+    Exit;
   end;
 end;
 
