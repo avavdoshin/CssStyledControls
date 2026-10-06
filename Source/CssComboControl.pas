@@ -16,6 +16,7 @@ type
     // Data
     FItems: TStringList;
     FItemIndex: Integer;
+    FPendingItemIndex: Integer;
 
     // Behavior
     FComboStyle: TCssComboStyle;
@@ -166,6 +167,8 @@ type
 
     // State changes
     procedure EnabledChanged; override;
+
+    procedure UpdateCursor; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -252,6 +255,7 @@ begin
   FItems.OnChange := @ItemsChanged;
 
   FItemIndex := -1;
+  FPendingItemIndex := -1;
 
   FComboStyle := ccsDropDown;
   FDropDownCount := 8;
@@ -301,6 +305,15 @@ procedure TCssComboBox.Loaded;
 begin
   inherited Loaded;
 
+  if (FPendingItemIndex >= 0) and (FItems.Count > 0) then
+  begin
+    FItemIndex := FPendingItemIndex;
+    if FItemIndex >= FItems.Count then
+      FItemIndex := FItems.Count - 1;
+  end;
+
+  FPendingItemIndex := -1;
+
   UpdateEdit;
   ApplyControlStyles;
   UpdateChildBounds;
@@ -332,6 +345,14 @@ procedure TCssComboBox.ItemsChanged(Sender: TObject);
 begin
   if FUpdating then
     Exit;
+
+  if (FPendingItemIndex >= 0) and (FItems.Count > 0) then
+  begin
+    FItemIndex := FPendingItemIndex;
+    if FItemIndex >= FItems.Count then
+      FItemIndex := FItems.Count - 1;
+    FPendingItemIndex := -1;
+  end;
 
   if FItemIndex >= FItems.Count then
     FItemIndex := -1;
@@ -428,16 +449,26 @@ begin
   if AValue < -1 then
     AValue := -1;
 
+  if csLoading in ComponentState then
+  begin
+    FPendingItemIndex := AValue;
+    Exit;
+  end;
+
+  if (FItems.Count = 0) and (AValue > -1) then
+  begin
+    FPendingItemIndex := AValue;
+    Exit;
+  end;
+
   if AValue >= FItems.Count then
     AValue := FItems.Count - 1;
 
   if FItemIndex = AValue then
   begin
-    // Even if the index did not change, synchronize the text.
     if (FComboStyle = ccsDropDown) and Assigned(FEdit) then
     begin
       FUpdating := True;
-
       try
         if FEdit.Text <> GetDisplayText then
           FEdit.Text := GetDisplayText;
@@ -445,7 +476,6 @@ begin
         FUpdating := False;
       end;
     end;
-
     Exit;
   end;
 
@@ -455,7 +485,6 @@ begin
   if (FComboStyle = ccsDropDown) and Assigned(FEdit) then
   begin
     FUpdating := True;
-
     try
       FEdit.Text := GetDisplayText;
     finally
@@ -499,6 +528,9 @@ begin
 
   if Assigned(FEdit) then
     FEdit.ReadOnly := AValue;
+
+  UpdateCursor;
+  Invalidate;
 end;
 
 procedure TCssComboBox.SetDropDownCount(AValue: Integer);
@@ -730,6 +762,12 @@ var
   PopupWidth, PopupHeight: Integer;
   VisibleCount, ItemCount: Integer;
 begin
+  if not Enabled then
+    Exit;
+
+  if FReadOnly and (FComboStyle = ccsDropDownList) then
+    Exit;
+
   if IsPopupVisible then
     Exit;
 
@@ -952,6 +990,12 @@ begin
   begin
     if FComboStyle = ccsDropDownList then
     begin
+      if FReadOnly then
+      begin
+        Key := 0;
+        Exit;
+      end;
+
       if not IsPopupVisible then
       begin
         if FItems.Count > 0 then
@@ -972,6 +1016,12 @@ begin
   begin
     if FComboStyle = ccsDropDownList then
     begin
+      if FReadOnly then
+      begin
+        Key := 0;
+        Exit;
+      end;
+
       if not IsPopupVisible then
       begin
         if FItems.Count > 0 then
@@ -1098,6 +1148,18 @@ begin
     FEdit.Enabled := Enabled;
 
   Invalidate;
+end;
+
+procedure TCssComboBox.UpdateCursor;
+var
+  Blocked: Boolean;
+begin
+  Blocked := FReadOnly and (FComboStyle = ccsDropDownList);
+
+  if Blocked then
+    Cursor := crDefault
+  else
+    inherited UpdateCursor;
 end;
 
 procedure TCssComboBox.HtmlModeChanged;
