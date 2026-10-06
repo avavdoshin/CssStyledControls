@@ -26,6 +26,9 @@
     </RunParams>
     <RequiredPackages>
       <Item>
+        <PackageName Value="CssStyledControlsDesign"/>
+      </Item>
+      <Item>
         <PackageName Value="CssStyledControls"/>
       </Item>
       <Item>

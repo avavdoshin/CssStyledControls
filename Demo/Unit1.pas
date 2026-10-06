@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, CssStyledControl,
   CssPanelControl, CssCheckboxControl, CssRadioControl, CssProxyControl,
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
-  CssMenuControl, CssBitBtnControl, CssSvgImgList, CssSplitterControl;
+  CssMenuControl, CssBitBtnControl, CssSvgImgList, CssSplitterControl,
+  CssEditControl, CssComboControl, CssListboxControl, CssMemoControl;
 
 type
   TForm1 = class(TForm)
@@ -30,11 +31,27 @@ type
     CssCheckGroup2 : TCssCheckGroup;
     CssCheckGroup3 : TCssCheckGroup;
     CssCheckGroup4 : TCssCheckGroup;
+    CssComboBox1 : TCssComboBox;
+    CssComboBox2 : TCssComboBox;
+    CssComboBox3 : TCssComboBox;
+    CssComboBox4 : TCssComboBox;
+    CssEdit1 : TCssEdit;
+    CssEdit2 : TCssEdit;
+    CssEdit3 : TCssEdit;
+    CssEdit4 : TCssEdit;
     CssGroupBox1 : TCssGroupBox;
     CssLabel1 : TCssLabel;
     CssLabel2 : TCssLabel;
+    CssListBox1 : TCssListBox;
+    CssListBox2 : TCssListBox;
+    CssListBox3 : TCssListBox;
+    CssMainMenu1 : TCssMainMenu;
+    CssMemo1 : TCssMemo;
     CssPageControl1 : TCssPageControl;
     CssPanel1 : TCssPanel;
+    CssPanel10 : TCssPanel;
+    CssPanel11 : TCssPanel;
+    CssPanel12 : TCssPanel;
     CssPanel2 : TCssPanel;
     CssPanel3 : TCssPanel;
     CssPanel4 : TCssPanel;
@@ -59,13 +76,24 @@ type
     CssSvgImgList1 : TCssSvgImgList;
     CssTabSheet1 : TCssTabSheet;
     CssTabSheet2 : TCssTabSheet;
+    CssTabSheet3 : TCssTabSheet;
     MenuItem1 : TCssMenuItem;
     MenuItem2 : TCssMenuItem;
+    MenuItem3 : TCssMenuItem;
+    MenuItem4 : TCssMenuItem;
+    MenuItem5 : TCssMenuItem;
+    MenuItem6 : TCssMenuItem;
+    MenuItem7 : TCssMenuItem;
+    MenuItem8 : TCssMenuItem;
     procedure CssCheckBox1Click(Sender : TObject);
     procedure CssLabel2LinkClick(Sender : TObject; const AHref, AText: UnicodeString);
     procedure FormCreate(Sender : TObject);
+    procedure FormKeyDown(Sender : TObject; var Key : Word; Shift : TShiftState
+      );
     procedure MenuItem1Click(Sender : TObject);
     procedure MenuItem2Click(Sender : TObject);
+    procedure MenuItem5Click(Sender : TObject);
+    procedure MenuItem8Click(Sender : TObject);
   private
 
   public
@@ -100,6 +128,13 @@ begin
   EnableSmoothPainting(Self);
 end;
 
+procedure TForm1.FormKeyDown(Sender : TObject; var Key : Word;
+  Shift : TShiftState);
+begin
+  if Assigned(CssMainMenu1) and CssMainMenu1.HandleKeyDown(Key, Shift) then
+    Key := 0;
+end;
+
 procedure TForm1.MenuItem1Click(Sender : TObject);
 begin
   CssButton5.Caption := MenuItem1.Caption;
@@ -108,6 +143,17 @@ end;
 procedure TForm1.MenuItem2Click(Sender : TObject);
 begin
   CssButton5.Caption := MenuItem2.Caption;
+end;
+
+procedure TForm1.MenuItem5Click(Sender : TObject);
+begin
+  CssCheckBox1.Checked := not CssCheckBox1.Checked;
+  CssCheckBox1Click(Sender);
+end;
+
+procedure TForm1.MenuItem8Click(Sender : TObject);
+begin
+  Application.Terminate;
 end;
 
 end.
