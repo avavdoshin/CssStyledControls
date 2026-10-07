@@ -396,13 +396,27 @@ begin
 end;
 
 procedure TCssPanel.StyleChanged;
+var
+  OldCapH, NewCapH: Integer;
 begin
   inherited StyleChanged;
 
-  { Border, padding, font and other CSS-driven values may have changed,
-    so the caption height and the child layout must be recalculated. }
-  Realign;
-  AutoSpaceAllChildren;
+  if not HandleAllocated then Exit;
+  if csLoading in ComponentState then Exit;
+
+  OldCapH := FAppliedCaptionSpacing;
+  NewCapH := GetCaptionContentOffset;
+
+  if OldCapH <> NewCapH then
+  begin
+    DisableAlign;
+    try
+      Realign;
+      AutoSpaceAllChildren;
+    finally
+      EnableAlign;
+    end;
+  end;
 end;
 
 procedure TCssPanel.HtmlModeChanged;

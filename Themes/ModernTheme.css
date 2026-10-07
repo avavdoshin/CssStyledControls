@@ -566,7 +566,7 @@ TCssVirtualStringTree {
   line-color: #E2E8F0;
   button-color: #64748B;
   drop-target-background: #DBEAFE;
-  sort-marker-color: #2563EB;
+  sort-marker-color: #64748B;
   disabled-background: #F8FAFC;
   disabled-color: #94A3B8;
   header-height: 28px;
@@ -1161,7 +1161,7 @@ TCssVirtualStringTree {
   line-color: #334155;
   button-color: #94A3B8;
   drop-target-background: #1E3A8A;
-  sort-marker-color: #60A5FA;
+  sort-marker-color: #CBD5E1;
   disabled-background: #0F172A;
   disabled-color: #64748B;
   header-height: 28px;

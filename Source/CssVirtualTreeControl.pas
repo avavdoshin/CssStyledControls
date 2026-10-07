@@ -316,6 +316,7 @@ type
     FEditingColumn: Integer;
     FEdit: TCssEdit;
     FEditOldText: string;
+    FEditOpening: Boolean;
     FEditClosing: Boolean;
     FEditStyleName: string;
 
@@ -455,6 +456,8 @@ type
     FOnGetCellHint: TCssGetCellHintEvent;
     FOnNodeMoved: TCssNodeMovedEvent;
     FOnIncrementalSearch: TCssIncrementalSearchEvent;
+
+    function CellPad: Integer; inline;
 
     procedure SetImages(AValue: TCssSvgImgList);
     procedure SetImageVariant(const AValue: string);
@@ -667,6 +670,8 @@ type
 
     function GetRowBackgroundColor(
       IsSelectedRow, IsHover, IsDropTarget, IsDisabled: Boolean): TColor;
+
+    procedure RepositionEditor;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -1303,6 +1308,7 @@ begin
   FLastMouse := Point(0, 0);
 
   FEdit := TCssEdit.Create(Self);
+  FEdit.ControlStyle := FEdit.ControlStyle + [csNoDesignVisible];
   FEdit.Parent := Self;
   FEdit.Visible := False;
   FEdit.TabStop := False;
@@ -1442,6 +1448,11 @@ begin
     if Abs(X - ColRight) <= Tol then
       Exit(I);
   end;
+end;
+
+function TCssVirtualStringTree.CellPad : Integer;
+begin
+  Result := ScalePx(3);
 end;
 
 procedure TCssVirtualStringTree.SetImages(AValue: TCssSvgImgList);
@@ -1614,6 +1625,10 @@ function TCssVirtualStringTree.GetCellImageRect(
   const CellR: TRect): TRect;
 var
   Idx, W, H, X, Y: Integer;
+  HAlign: TCssTextAlign;
+  TextW, Spacing, TotalW, Padding: Integer;
+  S: string;
+  Size: TSize;
 begin
   Result := Rect(0, 0, 0, 0);
 
@@ -1627,12 +1642,46 @@ begin
     Exit;
 
   if Column = 0 then
-    X := GetTextStartXBase(Node, CellR)
+  begin
+    X := GetTextStartXBase(Node, CellR);
+  end
   else
-    X := CellR.Left + ScalePx(3);
+  begin
+    Padding := ScalePx(3);
+    Spacing := 0;
+    TextW   := 0;
+
+    S := GetCellText(Node, Column);
+    if S <> '' then
+    begin
+      UpdateCanvasFont;
+
+      if HtmlMode then
+      begin
+        Size  := MeasureHtmlTextSize(Canvas, S, CellR.Width);
+        TextW := Size.cx;
+      end
+      else
+        TextW := Canvas.TextWidth(S);
+
+      Spacing := ScalePx(FImageSpacing);
+    end;
+
+    TotalW := W + Spacing + TextW;
+    HAlign := ResolveCellHAlign(Node, Column);
+
+    case HAlign of
+      ctaCenter:
+        X := CellR.Left + CssMax(0, (CellR.Width - TotalW) div 2);
+
+      ctaRight:
+        X := CellR.Right - TotalW - Padding;
+    else
+      X := CellR.Left + Padding;
+    end;
+  end;
 
   Y := CellR.Top + (FItemHeight - H) div 2;
-
   Result := Rect(X, Y, X + W, Y + H);
 end;
 
@@ -2733,7 +2782,7 @@ begin
   if FSortMarkerColorSet then
     Exit(FSortMarkerColor);
 
-  Result := GetCssTextColor;
+  Result := GetHeaderTextColor;
 
   if Result = clDefault then
     Result := clWindowText;
@@ -3221,7 +3270,7 @@ var
   HAlign: TCssTextAlign;
   VAlign: TCssVAlign;
   IsDisabled: Boolean;
-  TreeR, ImageR: TRect;
+  TreeR, ImageR, IconR: TRect;
 begin
   if FColumns.Count = 0 then
   begin
@@ -3296,8 +3345,22 @@ begin
 
     if Column = 0 then
       ContentR.Left := GetTextStartX(Node, RowR)
+    else if GetCellImageIndex(Node, Column) >= 0 then
+    begin
+      IconR := GetCellImageRect(Node, Column, CellR);
+      ContentR.Left := IconR.Right + ScalePx(FImageSpacing);
+      HAlign := ctaLeft;
+    end
     else
-      Inc(ContentR.Left, GetCellImageShift(Node, Column));
+    begin
+      case HAlign of
+        ctaLeft:
+          Inc(ContentR.Left, CellPad);
+
+        ctaRight:
+          Dec(ContentR.Right, CellPad);
+      end;
+    end;
 
     ContentR := VTreeIntersect(ContentR, ClipR);
 
@@ -3315,16 +3378,7 @@ begin
     end;
   end
   else
-  begin
-    DrawCellText(
-      Node,
-      Column,
-      CellR,
-      S,
-      TextColor,
-      ClipR
-    );
-  end;
+    DrawCellText(Node, Column, CellR, S, TextColor, ClipR);
 
   // Vertical separator only makes sense in real-columns mode.
   if (FColumns.Count > 0) and FLineColorSet then
@@ -3350,30 +3404,17 @@ procedure TCssVirtualStringTree.DrawCellText(
   const CellR: TRect;
   const S: string;
   TextColor: TColor;
-  const ClipR: TRect
-);
+  const ClipR: TRect);
 var
-  ContentR: TRect;
-  DrawR: TRect;
+  ContentR, DrawR, IconR: TRect;
   TS: TTextStyle;
   TextW, TextH: Integer;
   X, Y: Integer;
   HAlign: TCssTextAlign;
   VAlign: TCssVAlign;
+  HasIcon: Boolean;
 begin
   if S = '' then
-    Exit;
-
-  ContentR := CellR;
-
-  if Column = 0 then
-    ContentR.Left := GetTextStartX(Node, CellR)
-  else
-    Inc(ContentR.Left, GetCellImageShift(Node, Column));
-
-  DrawR := VTreeIntersect(ContentR, ClipR);
-
-  if (DrawR.Right <= DrawR.Left) or (DrawR.Bottom <= DrawR.Top) then
     Exit;
 
   UpdateCanvasFont;
@@ -3381,63 +3422,63 @@ begin
   Canvas.Font.Color := TextColor;
   Canvas.Brush.Style := bsClear;
 
-  // If you have added per-cell alignment support,
-  // use the resolve functions.
-  // If not yet, you can temporarily use:
-  //   HAlign := GetCssTextAlign;
-  //   VAlign := cvaMiddle;
   HAlign := ResolveCellHAlign(Node, Column);
   VAlign := ResolveCellVAlign(Node, Column);
 
+  ContentR := CellR;
+
+  if Column = 0 then
+    ContentR.Left := GetTextStartX(Node, CellR);
+
   TextW := Canvas.TextWidth(S);
 
-  case HAlign of
-    ctaCenter:
-      X := ContentR.Left + CssMax(0, (ContentR.Width - TextW) div 2);
+  HasIcon := (Column > 0) and (GetCellImageIndex(Node, Column) >= 0);
 
-    ctaRight:
-      X := ContentR.Right - TextW - ScalePx(3);
-
+  if HasIcon then
+  begin
+    IconR := GetCellImageRect(Node, Column, CellR);
+    X := IconR.Right + ScalePx(FImageSpacing);
+  end
   else
-    X := ContentR.Left + ScalePx(3);
+  begin
+    case HAlign of
+      ctaCenter:
+        X := ContentR.Left + CssMax(0, (ContentR.Width - TextW) div 2);
+
+      ctaRight:
+        X := ContentR.Right - TextW - ScalePx(3);
+    else
+      X := ContentR.Left + ScalePx(3);
+    end;
   end;
 
-  // Important: do not align X by DrawR, otherwise the text will "jump"
-  // during horizontal scrolling.
-  if X < ContentR.Left then
-    X := ContentR.Left;
+  DrawR := VTreeIntersect(ContentR, ClipR);
+
+  if (DrawR.Right <= DrawR.Left) or (DrawR.Bottom <= DrawR.Top) then
+    Exit;
 
   TextH := Canvas.TextHeight('Ag');
 
   if TextH > DrawR.Height then
     Y := DrawR.Top
   else
-  begin
     case VAlign of
-      cvaTop:
-        Y := DrawR.Top + ScalePx(1);
-
-      cvaMiddle:
-        Y := DrawR.Top + ((DrawR.Height - TextH) div 2);
-
-      cvaBottom:
-        Y := DrawR.Bottom - TextH - ScalePx(1);
-
+      cvaTop:    Y := DrawR.Top + ScalePx(1);
+      cvaMiddle: Y := DrawR.Top + ((DrawR.Height - TextH) div 2);
+      cvaBottom: Y := DrawR.Bottom - TextH - ScalePx(1);
     else
       Y := DrawR.Top;
     end;
-  end;
+
+  if X < ContentR.Left then
+    X := ContentR.Left;
 
   TS := Canvas.TextStyle;
   TS.Alignment := taLeftJustify;
-
-  // Vertical alignment has already been computed manually via Y,
-  // so we keep tlTop.
-  TS.Layout := tlTop;
-
+  TS.Layout    := tlTop;
   TS.Wordbreak := False;
-  TS.Clipping := True;
-  TS.Opaque := False;
+  TS.Clipping  := True;
+  TS.Opaque    := False;
   TS.ShowPrefix := False;
 
   Canvas.TextRect(DrawR, X, Y, S, TS);
@@ -4784,11 +4825,12 @@ end;
 
 procedure TCssVirtualStringTree.Resize;
 begin
-  EndEditing(True);
-
   inherited Resize;
-
   UpdateScrollBars;
+
+  if FEditingNode <> nil then
+    RepositionEditor;
+
   Invalidate;
 end;
 
@@ -6090,45 +6132,58 @@ begin
   if not Allowed then
     Exit;
 
-  FEditingNode := Node;
-  FEditingColumn := Column;
+  FEditOpening := True;
+  try
+    S := GetCellText(Node, Column);
 
-  S := GetCellText(Node, Column);
-  FEditOldText := S;
-  FEdit.Text := S;
+    if HtmlMode then
+      S := HtmlToPlainText(S);
 
-  R := GetCellRect(Node, Column);
+    FEditOldText := S;
+    FEdit.Text := S;
 
-  if Column = 0 then
-    R.Left := GetTextStartX(Node, R);
+    R := GetCellRect(Node, Column);
 
-  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
-  begin
-    FEditingNode := nil;
-    FEditingColumn := -1;
-    Exit;
+    if Column = 0 then
+      R.Left := GetTextStartX(Node, R);
+
+    if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+    begin
+      FEditingNode := nil;
+      FEditingColumn := -1;
+      Exit;
+    end;
+
+    FEdit.SetBounds(
+      R.Left + 1,
+      R.Top + 1,
+      CssMax(1, R.Width - 2),
+      CssMax(1, R.Height - 2)
+    );
+
+    if not HandleAllocated then
+      HandleNeeded;
+
+    FEdit.HandleNeeded;
+    FEdit.Visible := True;
+    FEdit.BringToFront;
+    FEdit.Enabled := True;
+
+    if CanFocus then
+      SetFocus;
+
+    if FEdit.CanFocus then
+      FEdit.SetFocus;
+
+    if FEdit.Focused then
+      FEdit.SelectAll;
+    FEditingNode := Node;
+    FEditingColumn := Column;
+
+    Invalidate;
+  finally
+    FEditOpening := False;
   end;
-
-  FEdit.SetBounds(
-    R.Left + 1,
-    R.Top + 1,
-    CssMax(1, R.Width - 2),
-    CssMax(1, R.Height - 2)
-  );
-
-  FEdit.Visible := True;
-  FEdit.BringToFront;
-
-  if CanFocus then
-    SetFocus;
-
-  if FEdit.CanFocus then
-    FEdit.SetFocus;
-
-  if FEdit.Focused then
-    FEdit.SelectAll;
-
-  Invalidate;
 end;
 
 procedure TCssVirtualStringTree.EndEditing(Cancel: Boolean);
@@ -6591,6 +6646,29 @@ begin
 
   if Result = clNone then
     Result := GetParentBackgroundColor;
+end;
+
+procedure TCssVirtualStringTree.RepositionEditor;
+var
+  R: TRect;
+begin
+  if (FEditingNode = nil) or (FEdit = nil) then Exit;
+  if not FEdit.Visible then Exit;
+
+  R := GetCellRect(FEditingNode, FEditingColumn);
+  if FEditingColumn = 0 then
+    R.Left := GetTextStartX(FEditingNode, R);
+
+  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+  begin
+    EndEditing(True);
+    Exit;
+  end;
+
+  FEdit.SetBounds(
+    R.Left + 1, R.Top + 1,
+    CssMax(1, R.Width - 2), CssMax(1, R.Height - 2)
+  );
 end;
 
 procedure TCssVirtualStringTree.DrawInternalScrollBars;

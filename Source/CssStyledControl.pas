@@ -469,6 +469,7 @@ type
     procedure ApplyStyleSheet(const ACss: string);
     procedure ProviderStyleChanged;
     function HtmlToPlainText(const AText: string): string;
+    function PlainTextToHtml(const AText: string): string;
 
     procedure DrawStyledBackground(ACanvas: TCanvas; const ARect: TRect);
     procedure DrawStyledTextToCanvas(ACanvas: TCanvas; const ARect: TRect; const AText: string);
@@ -2751,6 +2752,14 @@ begin
     Result := StringReplace(Result, '  ', ' ', [rfReplaceAll]);
 
   Result := Trim(Result);
+end;
+
+function TCssStyledControl.PlainTextToHtml(const AText : string) : string;
+begin
+  Result := StringReplace(AText, '&', '&amp;', [rfReplaceAll]);
+  Result := StringReplace(Result, '<', '&lt;', [rfReplaceAll]);
+  Result := StringReplace(Result, '>', '&gt;', [rfReplaceAll]);
+  Result := StringReplace(Result, '"', '&quot;', [rfReplaceAll]);
 end;
 
 { ============================================================ }
