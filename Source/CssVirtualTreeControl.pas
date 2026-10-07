@@ -672,6 +672,7 @@ type
       IsSelectedRow, IsHover, IsDropTarget, IsDisabled: Boolean): TColor;
 
     procedure RepositionEditor;
+    function GetEffectiveImageVariant: string;
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -1709,7 +1710,7 @@ begin
   else
     IconColor := GetButtonColor;
 
-  Bmp := FImages.GetBitmap(Idx, W, H, IconColor, FImageVariant);
+  Bmp := FImages.GetBitmap(Idx, W, H, IconColor, GetEffectiveImageVariant);
   try
     DrawSvgBitmapWithAlpha(Canvas, ImageR.Left, ImageR.Top, Bmp);
   finally
@@ -6669,6 +6670,20 @@ begin
     R.Left + 1, R.Top + 1,
     CssMax(1, R.Width - 2), CssMax(1, R.Height - 2)
   );
+end;
+
+function TCssVirtualStringTree.GetEffectiveImageVariant: string;
+begin
+  if FImageVariant <> '' then
+    Exit(FImageVariant);
+
+  if StyleName <> '' then
+    Exit(StyleName);
+
+  if Assigned(StyleProvider) and (StyleProvider.DefaultStyleName <> '') then
+    Exit(StyleProvider.DefaultStyleName);
+
+  Result := '';
 end;
 
 procedure TCssVirtualStringTree.DrawInternalScrollBars;
