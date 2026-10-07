@@ -519,12 +519,12 @@ TCssPageControl {
   border-radius: 8px;
   padding: 0px;
 
-  tab-background: transparent;
-  tab-hover-background: #F1F5F9;
-  tab-active-background: #EFF6FF;   
+  tab-background: #F1F5F9;
+  tab-hover-background: #E2E8F0;
+  tab-active-background: #2563EB;
 
-  tab-text-color: #64748B;
-  tab-active-text-color: #1D4ED8;  
+  tab-text-color: #475569;
+  tab-active-text-color: #FFFFFF;
 
   tab-border-color: transparent;
 
@@ -1114,12 +1114,12 @@ TCssPageControl {
   border-radius: 8px;
   padding: 0px;
 
-  tab-background: transparent;
-  tab-hover-background: #334155;
-  tab-active-background: #1E3A5F;
+  tab-background: #334155;
+  tab-hover-background: #475569;
+  tab-active-background: #3B82F6;
 
-  tab-text-color: #94A3B8;
-  tab-active-text-color: #93C5FD;
+  tab-text-color: #CBD5E1;
+  tab-active-text-color: #FFFFFF;
 
   tab-border-color: transparent;
 
