@@ -2519,47 +2519,69 @@ var
   ContentR: TRect;
   Sheet: TCssTabSheet;
   ActiveSheet: TCssTabSheet;
+  W, H: Integer;
 begin
   if not Assigned(FPages) then
     Exit;
 
   ContentR := GetContentRect;
+  W := ContentR.Right - ContentR.Left;
+  H := ContentR.Bottom - ContentR.Top;
+
+  if (W <= 0) or (H <= 0) then
+    Exit;
 
   ActiveSheet := nil;
   if (FActivePageIndex >= 0) and (FActivePageIndex < FPages.Count) then
     ActiveSheet := TCssTabSheet(FPages[FActivePageIndex]);
 
+  BeginUpdateBounds;
   DisableAlign;
   try
     for I := 0 to FPages.Count - 1 do
     begin
       Sheet := TCssTabSheet(FPages[I]);
 
-      if Sheet = ActiveSheet then
-        Continue;
-
-      Sheet.Visible := False;
-
-      if csDesigning in ComponentState then
+      if (csDesigning in ComponentState) and (Sheet <> ActiveSheet) then
       begin
-        if (Sheet.Left <> -32000) or (Sheet.Top <> -32000) then
-          Sheet.SetBounds(-32000, -32000, Sheet.Width, Sheet.Height);
-      end;
-    end;
+        if (Sheet.Left <> -32000) or (Sheet.Top <> -32000) or
+           (Sheet.Width <> W) or (Sheet.Height <> H) then
+          Sheet.SetBounds(-32000, -32000, W, H);
 
-    if ActiveSheet <> nil then
-    begin
-      ActiveSheet.SetBounds(
-        ContentR.Left,
-        ContentR.Top,
-        ContentR.Right - ContentR.Left,
-        ContentR.Bottom - ContentR.Top
-      );
-      ActiveSheet.Visible := True;
-      ActiveSheet.BringToFront;
+        if Sheet.Visible then
+          Sheet.Visible := False;
+
+        Continue;
+      end;
+
+      if (Sheet.Left <> ContentR.Left) or
+         (Sheet.Top <> ContentR.Top) or
+         (Sheet.Width <> W) or
+         (Sheet.Height <> H) then
+        Sheet.SetBounds(ContentR.Left, ContentR.Top, W, H);
+
+      // Key point: force LCL to create the handle for the hidden page
+      // right now. Without this, anchor recalculation is deferred until
+      // the page is first shown — and that moment is exactly the source
+      // of the flicker.
+      Sheet.HandleNeeded;
+
+      if Sheet = ActiveSheet then
+      begin
+        if not Sheet.Visible then
+          Sheet.Visible := True;
+
+        Sheet.BringToFront;
+      end
+      else
+      begin
+        if Sheet.Visible then
+          Sheet.Visible := False;
+      end;
     end;
   finally
     EnableAlign;
+    EndUpdateBounds;
   end;
 end;
 
