@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, LCLIntf,
-  IntfGraphics, FPImage, CssStyledControl, CssSvgImgList;
+  IntfGraphics, FPImage, CssAntiAlias, CssStyledControl, CssSvgImgList;
 
 const
   CSS_TAB_SCROLL_EDGE_MARGIN = 6;
@@ -204,7 +204,6 @@ type
     procedure ScrollTabs(ADelta: Integer);
     procedure DrawScrollButton(AWhich: Integer);
     procedure DrawScrollButtons;
-    procedure DrawCornerMasks;
 
     procedure SetShowScrollButtons(AValue: Boolean);
     procedure SetScrollButtonSize(AValue: Integer);
@@ -1483,14 +1482,26 @@ begin
 
   Radius := GetScrollButtonRadius;
 
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := Bg;
-  Canvas.Pen.Style := psClear;
-
   if Radius > 0 then
-    Canvas.RoundRect(R.Left, R.Top, R.Right, R.Bottom, Radius, Radius)
+  begin
+    DrawAntiAliasedRoundedBox(
+      Canvas,
+      R,
+      Radius,
+      Bg,
+      clNone,
+      0,
+      cbsSolid,
+      GetCssBackgroundColor
+    );
+  end
   else
+  begin
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := Bg;
+    Canvas.Pen.Style := psClear;
     Canvas.FillRect(R);
+  end;
 
   CX := (R.Left + R.Right) div 2;
   CY := (R.Top + R.Bottom) div 2;
@@ -1538,121 +1549,6 @@ begin
 
   DrawScrollButton(0);
   DrawScrollButton(1);
-end;
-
-procedure TCssTabControl.DrawCornerMasks;
-var
-  R: TRect;
-  Radius, PtCount: Integer;
-  Pts: array of TPoint;
-  BgColor: TColor;
-
-  procedure AddPt(X, Y: Integer);
-  begin
-    SetLength(Pts, PtCount + 1);
-    Pts[PtCount] := Point(X, Y);
-    Inc(PtCount);
-  end;
-
-  procedure DrawCorner(Corner: Integer);
-  var
-    K, CX, CY: Integer;
-    StartAngle, EndAngle, Angle: Double;
-  begin
-    PtCount := 0;
-    SetLength(Pts, 0);
-
-    case Corner of
-      0: begin // top-left
-        AddPt(R.Left, R.Top);
-        AddPt(R.Left + Radius, R.Top);
-        CX := R.Left + Radius; CY := R.Top + Radius;
-        StartAngle := Pi * 1.5; EndAngle := Pi;
-        for K := 0 to 16 do
-        begin
-          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
-          AddPt(CX + Round(Radius * Cos(Angle)),
-                CY + Round(Radius * Sin(Angle)));
-        end;
-        AddPt(R.Left, R.Top + Radius);
-      end;
-      1: begin // top-right
-        AddPt(R.Right, R.Top);
-        AddPt(R.Right - Radius, R.Top);
-        CX := R.Right - Radius; CY := R.Top + Radius;
-        StartAngle := Pi * 1.5; EndAngle := Pi * 2;
-        for K := 0 to 16 do
-        begin
-          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
-          AddPt(CX + Round(Radius * Cos(Angle)),
-                CY + Round(Radius * Sin(Angle)));
-        end;
-        AddPt(R.Right, R.Top + Radius);
-      end;
-      2: begin // bottom-right
-        AddPt(R.Right, R.Bottom);
-        AddPt(R.Right, R.Bottom - Radius);
-        CX := R.Right - Radius; CY := R.Bottom - Radius;
-        StartAngle := 0; EndAngle := Pi * 0.5;
-        for K := 0 to 16 do
-        begin
-          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
-          AddPt(CX + Round(Radius * Cos(Angle)),
-                CY + Round(Radius * Sin(Angle)));
-        end;
-        AddPt(R.Right - Radius, R.Bottom);
-      end;
-      3: begin // bottom-left
-        AddPt(R.Left, R.Bottom);
-        AddPt(R.Left + Radius, R.Bottom);
-        CX := R.Left + Radius; CY := R.Bottom - Radius;
-        StartAngle := Pi * 0.5; EndAngle := Pi;
-        for K := 0 to 16 do
-        begin
-          Angle := StartAngle + (EndAngle - StartAngle) * (K / 16);
-          AddPt(CX + Round(Radius * Cos(Angle)),
-                CY + Round(Radius * Sin(Angle)));
-        end;
-        AddPt(R.Left, R.Bottom - Radius);
-      end;
-    end;
-
-    if PtCount > 2 then
-      Canvas.Polygon(Pts);
-  end;
-
-begin
-  Radius := GetCssBorderRadius;
-  if Radius <= 0 then Exit;
-
-  R := ClientRect;
-
-  if Radius > (R.Right - R.Left) div 2 then
-    Radius := (R.Right - R.Left) div 2;
-  if Radius > (R.Bottom - R.Top) div 2 then
-    Radius := (R.Bottom - R.Top) div 2;
-  if Radius <= 0 then Exit;
-
-  Canvas.Pen.Style := psClear;
-  Canvas.Brush.Style := bsSolid;
-
-  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Left, R.Top));
-  Canvas.Brush.Color := BgColor;
-  DrawCorner(0);
-
-  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Right - 1, R.Top));
-  Canvas.Brush.Color := BgColor;
-  DrawCorner(1);
-
-  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Right - 1, R.Bottom - 1));
-  Canvas.Brush.Color := BgColor;
-  DrawCorner(2);
-
-  BgColor := GetBackgroundBeneathAtClientPoint(Point(R.Left, R.Bottom - 1));
-  Canvas.Brush.Color := BgColor;
-  DrawCorner(3);
-
-  Canvas.Pen.Style := psSolid;
 end;
 
 procedure TCssTabControl.SetShowScrollButtons(AValue: Boolean);
@@ -1846,28 +1742,38 @@ begin
 
         BorderC := GetTabBorderColor;
 
-        if BG <> clNone then
+        if GetTabRadius > 0 then
+        begin
+          DrawAntiAliasedRoundedBox(
+            Canvas,
+            TabR,
+            GetTabRadius,
+            BG,
+            BorderC,
+            Ord(BorderC <> clNone),
+            cbsSolid,
+            GetCssBackgroundColor
+          );
+        end
+        else
         begin
           Canvas.Brush.Style := bsSolid;
-          Canvas.Brush.Color := BG;
-        end
-        else
-          Canvas.Brush.Style := bsClear;
+          if BG <> clNone then
+            Canvas.Brush.Color := BG
+          else
+            Canvas.Brush.Style := bsClear;
 
-        if BorderC <> clNone then
-        begin
-          Canvas.Pen.Style := psSolid;
-          Canvas.Pen.Color := BorderC;
-          Canvas.Pen.Width := 1;
-        end
-        else
-          Canvas.Pen.Style := psClear;
+          if BorderC <> clNone then
+          begin
+            Canvas.Pen.Style := psSolid;
+            Canvas.Pen.Color := BorderC;
+            Canvas.Pen.Width := 1;
+          end
+          else
+            Canvas.Pen.Style := psClear;
 
-        if GetTabRadius > 0 then
-          Canvas.RoundRect(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom,
-                           GetTabRadius, GetTabRadius)
-        else
           Canvas.Rectangle(TabR.Left, TabR.Top, TabR.Right, TabR.Bottom);
+        end;
 
         Canvas.Font.Color := FG;
 

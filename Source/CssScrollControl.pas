@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
-  Forms, CssStyledControl;
+  Forms, CssAntiAlias, CssStyledControl;
 
 type
   TCssScrollPart = (
@@ -909,17 +909,30 @@ begin
     ThumbBorder := GetThumbBorderColor;
     Radius := GetThumbRadius;
 
-    Canvas.Brush.Style := bsSolid;
-    Canvas.Brush.Color := ThumbBG;
-
-    Canvas.Pen.Style := psSolid;
-    Canvas.Pen.Color := ThumbBorder;
-    Canvas.Pen.Width := 1;
-
     if Radius > 0 then
-      Canvas.RoundRect(ThumbR.Left, ThumbR.Top, ThumbR.Right, ThumbR.Bottom, Radius, Radius)
+    begin
+      DrawAntiAliasedRoundedBox(
+        Canvas,
+        ThumbR,
+        Radius,
+        ThumbBG,
+        ThumbBorder,
+        1,
+        cbsSolid,
+        TrackColor
+      );
+    end
     else
+    begin
+      Canvas.Brush.Style := bsSolid;
+      Canvas.Brush.Color := ThumbBG;
+
+      Canvas.Pen.Style := psSolid;
+      Canvas.Pen.Color := ThumbBorder;
+      Canvas.Pen.Width := 1;
+
       Canvas.Rectangle(ThumbR.Left, ThumbR.Top, ThumbR.Right, ThumbR.Bottom);
+    end;
   end;
 
   if Focused and ShowFocusRect and Enabled then
@@ -1428,14 +1441,30 @@ begin
       ACanvas.Brush.Style := bsSolid;
       ACanvas.Brush.Color := ThumbBG;
 
-      ACanvas.Pen.Style := psSolid;
-      ACanvas.Pen.Color := ThumbBorder;
-      ACanvas.Pen.Width := 1;
-
       if Radius > 0 then
-        ACanvas.RoundRect(ThumbR.Left, ThumbR.Top, ThumbR.Right, ThumbR.Bottom, Radius, Radius)
+      begin
+        DrawAntiAliasedRoundedBox(
+          ACanvas,
+          ThumbR,
+          Radius,
+          ThumbBG,
+          ThumbBorder,
+          1,
+          cbsSolid,
+          TrackColor
+        );
+      end
       else
+      begin
+        ACanvas.Brush.Style := bsSolid;
+        ACanvas.Brush.Color := ThumbBG;
+
+        ACanvas.Pen.Style := psSolid;
+        ACanvas.Pen.Color := ThumbBorder;
+        ACanvas.Pen.Width := 1;
+
         ACanvas.Rectangle(ThumbR.Left, ThumbR.Top, ThumbR.Right, ThumbR.Bottom);
+      end;
     end;
   finally
     SetBounds(0, 0, OldW, OldH);

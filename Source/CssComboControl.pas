@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
-  Forms, CssStyledControl, CssListboxControl, cssEditControl;
+  Forms, CssAntiAlias, CssStyledControl, CssListboxControl, cssEditControl;
 
 type
   TCssComboStyle = (ccsDropDown, ccsDropDownList);
@@ -1436,28 +1436,36 @@ begin
   ArrowColor := GetButtonArrowColor;
   Radius := GetButtonRadius;
 
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := BG;
-
-  if FButtonBorderColorSet then
+  if Radius > 0 then
   begin
-    Canvas.Pen.Style := psSolid;
-    Canvas.Pen.Color := GetButtonBorderColor;
-    Canvas.Pen.Width := 1;
-
-    if Radius > 0 then
-      Canvas.RoundRect(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom, Radius, Radius)
-    else
-      Canvas.Rectangle(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom);
+    DrawAntiAliasedRoundedBox(
+      Canvas,
+      ButtonR,
+      Radius,
+      BG,
+      GetButtonBorderColor,
+      Ord(FButtonBorderColorSet),
+      cbsSolid,
+      GetCssBackgroundColor
+    );
   end
   else
   begin
-    Canvas.Pen.Style := psClear;
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := BG;
 
-    if Radius > 0 then
-      Canvas.RoundRect(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom, Radius, Radius)
+    if FButtonBorderColorSet then
+    begin
+      Canvas.Pen.Style := psSolid;
+      Canvas.Pen.Color := GetButtonBorderColor;
+      Canvas.Pen.Width := 1;
+      Canvas.Rectangle(ButtonR.Left, ButtonR.Top, ButtonR.Right, ButtonR.Bottom);
+    end
     else
+    begin
+      Canvas.Pen.Style := psClear;
       Canvas.FillRect(ButtonR);
+    end;
   end;
 
   CX := (ButtonR.Left + ButtonR.Right) div 2;
