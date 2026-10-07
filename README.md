@@ -67,13 +67,47 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 
 ## Screenshots
 
-Light and dark variants of the same form, switched at runtime by a single toggle:
+Each tab of the demo project is shown in both variants of the bundled
+`ModernTheme.css` — `light` and `dark`. In every pair the two screenshots
+come from the *same* running form, switched at runtime by the toggle in the
+status bar; only the active `@variant` changes.
+
+### Common controls
+
+Buttons, `TCssBitBtn`s with built-in and custom SVG glyphs, an HTML label,
+and a `TCssPopupMenu`.
 
 | Light | Dark |
 | :---: | :---: |
-| ![CssStyledControls demo — light](Screenshots/CommonControls_light.png) | ![CssStyledControls demo — dark](Screenshots/CommonControls_dark.png) |
+| ![Common controls — light](Screenshots/CommonControls_light.png) | ![Common controls — dark](Screenshots/CommonControls_dark.png) |
 
-Both screenshots come from the included demo project (see [Demo Project](#demo-project)): the same controls, the same form, the same CSS — only the active `@variant` changes.
+### Checkboxes, Radio, Splitters
+
+Standard checkboxes and radio buttons, Windows 11-style switches
+(`.toggle`), check / radio groups with `focus-within`, and a set of
+panels separated by splitters.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Checkboxes, Radio, Splitters — light](Screenshots/Checkboxes_light.png) | ![Checkboxes, Radio, Splitters — dark](Screenshots/Checkboxes_dark.png) |
+
+### Editors
+
+`TCssEdit` (plain, disabled, password, read-only), `TCssComboBox` in
+all four supported states, `TCssListBox`, and `TCssMemo`.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Editors — light](Screenshots/Editors_light.png) | ![Editors — dark](Screenshots/Editors_dark.png) |
+
+### TreeView
+
+Two `TCssVirtualStringTree`s with columns, per-cell SVG icons, checkboxes,
+inline editing, and drag & drop between the trees.
+
+| Light | Dark |
+| :---: | :---: |
+| ![TreeView — light](Screenshots/Treeview_light.png) | ![TreeView — dark](Screenshots/Treeview_dark.png) |
 ---
 
 ## Installation
@@ -183,30 +217,151 @@ Demo/Unit1.pas
 Demo/Unit1.lfm
 ```
 
-Open `CssStyledControlsDemo.lpi` in Lazarus and press **F9**.
+Open `CssStyledControlsDemo.lpi` in Lazarus and press **F9**. The demo is
+wired so that almost everything is driven by CSS and by events — Pascal
+code is only used where a demo cannot avoid it (populating the tree,
+switching the theme, copying nodes on cross-tree drops).
 
-What the demo shows:
+The form is organised as a `TCssPageControl` with four tabs, plus a
+bottom status panel and a top menu bar.
 
-- A single form with a `TCssPageControl` (`Common controls` tab) whose **tab strip is decorated with an SVG icon**. The page itself carries the icon (`CssTabSheet1.ImageIndex = 1`), so the tab automatically displays the second entry of the shared `TCssSvgImgList1` (`icons8-news`). The icon follows the tab text color in every state — plain, hovered, active — and switches to the `dark` variant of that entry together with the CSS theme.
+### Page 1 — Common controls
 
-- A `TCssGroupBox` containing several `TCssButton`s (enabled, disabled, default, cancel, and one with a `TCssPopupMenu`).
+- A `TCssPageControl` whose **tab strip is decorated with SVG icons**.
+  The page itself carries the icon (`CssTabSheet1.ImageIndex = 1`), so the
+  tab automatically displays the second entry of the shared
+  `TCssSvgImgList1` (`icons8-news`). The icon follows the tab text color
+  in every state — plain, hovered, active — and switches to the `dark`
+  variant of that entry together with the CSS theme.
 
-- Four `TCssBitBtn` controls next to those buttons, covering every glyph source the control supports:
-  - `Kind = bkCancel` with a custom caption (`UseKindCaption = False`) — a **built-in vector icon** paired with a user-supplied label.
-  - the same `Kind = bkCancel`, but `Enabled = False` — the same glyph is rendered in its **muted disabled variant**, in tone with the disabled caption.
-  - a **custom SVG glyph** (`SvgImages = CssSvgImgList1`, `ImageIndex = 0`) — a 32×32 vector icon rasterised at the current DPI and drawn next to an HTML caption (`Custom <b>SVG</b>`, `HtmlMode = True`).
-  - the same SVG glyph with `Enabled = False` — the rasteriser desaturates the RGBA image in place (transparent pixels stay transparent, anti-aliased edges are preserved) and re-tints it to match the disabled text color, so no box appears behind the icon.
+- A `TCssGroupBox` containing several `TCssButton`s (enabled, disabled,
+  default, cancel, and one with a `TCssPopupMenu`).
 
-- A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources for the demo. It is configured at `32 × 32` design-time size with `Scaled = True`, so every icon is always rendered at the current DPI, and ships with **three 48×48 icons**:
-  - `icons8-ok` — a gradient circle with a white checkmark. This entry has **per-theme variants**: its base `Svg` is the light artwork, and its `Variants` list carries an alternative `dark` body with a muted green gradient. Switching the CSS theme swaps the artwork automatically wherever this icon is used (both `TCssBitBtn3` / `TCssBitBtn4` and the shared `SvgImages` on the page control).
-  - `icons8-news` — a blue newspaper-style icon, used by the tab strip via `CssTabSheet1.ImageIndex = 1`.
-  - `icons8-edit` — a pencil-on-paper icon, used by `MenuItem1` in the popup menu via `MenuItem1.ImageIndex = 2`.
+- Four `TCssBitBtn` controls next to those buttons, covering every glyph
+  source the control supports:
+  - `Kind = bkCancel` with a custom caption (`UseKindCaption = False`) —
+    a **built-in vector icon** paired with a user-supplied label.
+  - the same `Kind = bkCancel`, but `Enabled = False` — the same glyph is
+    rendered in its **muted disabled variant**, in tone with the disabled
+    caption.
+  - a **custom SVG glyph** (`SvgImages = CssSvgImgList1`, `ImageIndex = 0`)
+    — a 32×32 vector icon rasterised at the current DPI and drawn next to
+    an HTML caption (`Custom <b>SVG</b>`, `HtmlMode = True`).
+  - the same SVG glyph with `Enabled = False` — the rasteriser desaturates
+    the RGBA image in place (transparent pixels stay transparent,
+    anti-aliased edges are preserved) and re-tints it to match the
+    disabled text color, so no box appears behind the icon.
 
-- A `TCssPopupMenu` (`CssPopupMenu1`) whose icons are sourced **once at the menu level**: `CssPopupMenu1.SvgImages := CssSvgImgList1`. Every item can then simply set its own `ImageIndex` — `MenuItem1` uses `2` (`icons8-edit`), and `MenuItem2` leaves it at `-1`, so the icon column is not reserved when no item in the menu has an icon. The item-level `SvgImages` property is available as an override but is not needed in this demo.
+- A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources
+  for the whole demo. It is configured at `32 × 32` design-time size with
+  `Scaled = True`, so every icon is always rendered at the current DPI,
+  and ships with **six 48×48 icons**:
+  - `icons8-ok` — a gradient circle with a white checkmark. This entry
+    has **per-theme variants**: its base `Svg` is the light artwork, and
+    its `Variants` list carries an alternative `dark` body with a muted
+    green gradient.
+  - `icons8-news` — a blue newspaper-style icon, used by the tab strip.
+  - `icons8-edit` — a pencil-on-paper icon, used by `MenuItem1` in the
+    popup menu.
+  - `icons8-done`, `icons8-refresh`, `icons8-share` — additional
+    entries used by the two trees on the *TreeView* tab.
 
-- A `TCssPanel` with a `TCssLabel` whose `Caption` is HTML demonstrating every supported tag: headings, bold / italic / underline / strike / code / kbd / samp / tt / sup / sub / `<q>`, alignment via both `align="…"` and `style="text-align:…"`, ordered and unordered lists, inline colors, legacy `<font color>`, spans, and clickable `<a>` links.
+- A `TCssPopupMenu` (`CssPopupMenu1`) whose icons are sourced **once at
+  the menu level**: `CssPopupMenu1.SvgImages := CssSvgImgList1`. Every
+  item can then simply set its own `ImageIndex` — `MenuItem1` uses `2`
+  (`icons8-edit`), and `MenuItem2` leaves it at `-1`, so the icon column
+  is not reserved when no item in the menu has an icon.
 
-- A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that switches the whole application between the **light** and **dark** variants by setting `CssStyleProvider1.DefaultStyleName`. Its `Hint` is itself written in HTML — `<h6>`, `<hr>` and `<li>` render through the CSS-styled hint window.
+- A `TCssPanel` with a `TCssLabel` whose `Caption` is HTML demonstrating
+  every supported tag: headings, bold / italic / underline / strike /
+  code / kbd / samp / tt / sup / sub / `<q>`, alignment via both
+  `align="…"` and `style="text-align:…"`, ordered and unordered lists,
+  inline colors, legacy `<font color>`, spans, and clickable `<a>` links.
+
+### Page 2 — Checkboxes, Radio, Splitters
+
+- Two rows of standalone controls: plain `TCssCheckBox` / `TCssRadioButton`
+  in the *Standart* panel, and the same controls with
+  `CssClass = 'toggle'` in the *Toggle* panel, which turns them into
+  Windows 11-style pill switches.
+
+- Four `TCssCheckGroup` / `TCssRadioGroup` combinations covering the two
+  visual styles side by side, plus two disabled groups without captions
+  that show how `:disabled` propagates to children.
+
+- A `TCssPanel` with **splitters**: one horizontal splitter between a
+  *Top panel* and a *Bottom panel*, and one vertical splitter between
+  a *Left panel* and a *Right panel*. The panels demonstrate
+  `focus-within: true` and the hover border transition.
+
+### Page 3 — Editors
+
+- Four `TCssEdit` controls: normal, disabled, password (`PasswordChar = '*'`,
+  `MaxLength = 10`), and read-only (`Caption` preset, all editing disabled).
+  Every one uses the `placeholder-color` / `placeholder-font-style`
+  declarations from CSS to render a muted italic placeholder.
+
+- Four `TCssComboBox` controls covering both combo styles:
+  - `ccsDropDown` — editable, HTML items, `Placeholder = 'Enter or choose value'`.
+  - `ccsDropDown` (disabled) — same, with the muted palette from `:disabled`.
+  - `ccsDropDownList` — selection-only, ten items, `Placeholder = 'Choose value'`.
+  - `ccsDropDownList` (`ReadOnly = True`) — same, but the dropdown cannot
+    be opened and the arrow keys do not change the selection.
+
+- Three `TCssListBox` controls: a short list, a long list with a custom
+  scrollbar (`.listbox-scrollbar`), and a disabled list with a
+  pre-selected item to show the disabled selection colors.
+
+- A `TCssMemo` with `ssAutoBoth` scrollbars and `.memo-scrollbar` styling,
+  filling the rest of the tab.
+
+### Page 4 — TreeView
+
+- Two `TCssVirtualStringTree`s (`LeftTree` and `RightTree`) configured
+  **identically**, so that any node can be dropped from one into the
+  other. Each tree has:
+  - **four columns** — *Name*, *Kind*, *Note*, *Size* — with HTML headers
+    (`<b>Name</b>`, `<i>Note</i>`, `<u>Size</u>`), per-column alignment
+    (`CellHAlign = thaCenter` on *Kind*, `thaRight` on *Size*), and
+    `LastColumnStretch = True` so the *Size* column fills the remaining
+    width.
+  - **per-cell SVG icons** in the *Kind* column, sourced from
+    `CssSvgImgList1` through `OnGetImageIndex`. The event returns
+    `D^.Kind` for column 1 and `-1` for the others, so the icon column
+    is reserved only where icons actually exist.
+  - **checkboxes** (`ShowCheckboxes = True`) with the
+    `.css-tree-checkbox .checkbox` class inherited from the base
+    `TCssCheckBox`.
+  - **inline editing** (`AllowEditing = True`). `OnEditing` blocks column
+    3 (*Size*) so the numeric column stays read-only;
+    `OnNewText` writes the typed value back to the correct field based
+    on `Column`, and applies `PlainTextToHtml` only to column 0.
+  - **drag & drop** (`AllowDrag = True`, `AllowDrop = True`). Dropping a
+    node (or a multi-selection) onto another tree creates a full copy of
+    the subtree in the target and deletes the original from the source,
+    preserving `cvsChecked`, `cvsExpanded`, and `cvsDisabled` states.
+    `OnDragOverNodes` prevents dropping on a disabled node, and rejects
+    dragging disabled nodes at all.
+  - a **placeholder** shown when the tree is empty
+    (`Drop items from left tree here` / `…from right tree here`).
+
+- The left tree is populated in `FormCreate` with three root groups
+  (*Fruits*, *Vegetables*, *Berries*) and a mixture of HTML captions,
+  notes, icon indexes, and sizes. One node (*Pears*) is disabled to
+  demonstrate the muted palette for `:disabled` rows.
+
+### Status bar and menu
+
+- A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that
+  switches the whole application between the **light** and **dark**
+  variants by setting `CssStyleProvider1.DefaultStyleName`. Its `Hint`
+  is itself written in HTML — `<h6>`, `<hr>` and `<li>` render through
+  the CSS-styled hint window.
+
+- A `TCssMainMenu` with *File* and *Themes* dropdowns. *Switch theme*
+  (`MenuItem5`) toggles the same switch as the status bar, and the *File*
+  menu carries a separator to show how `menu-separator-color` and
+  `menu-separator-height` are applied.
 
 - A `TCssProxy` that applies the same theme to the plain `TForm`.
 
@@ -221,14 +376,45 @@ begin
     CssStyleProvider1.DefaultStyleName := 'Light';
 end;
 
-procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref, AText : UnicodeString);
+procedure TForm1.CssLabel2LinkClick(Sender : TObject;
+  const AHref, AText : UnicodeString);
 begin
-  MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText, mtInformation, [mbOk], '');
+  MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText,
+    mtInformation, [mbOk], '');
+end;
+
+procedure TForm1.LeftTreeNewText(Sender : TObject; Node : TCssVirtualNode;
+  Column : Integer; const NewText : string);
+var
+  D: PNodeData;
+  Tree: TCssVirtualStringTree;
+begin
+  if not Assigned(Node.Data) then Exit;
+
+  D := PNodeData(Node.Data);
+  Tree := TCssVirtualStringTree(Sender);
+
+  case Column of
+    0: D^.Caption := Tree.PlainTextToHtml(NewText);
+    2: D^.Note    := Tree.PlainTextToHtml(NewText);
+    3: D^.Size    := StrToIntDef(Trim(NewText), D^.Size);
+  end;
+end;
+
+procedure TForm1.LeftTreeDropNodesEx(Sender : TObject;
+  SourceTree : TCssVirtualStringTree; Nodes : TList;
+  TargetNode : TCssVirtualNode);
+begin
+  // Cross-tree drop: copy every node into the target, then delete the
+  // originals from the source. Same-tree drops fall back to the built-in
+  // MoveNodes.
 end;
 ```
 
-Switching the toggle changes the CSS theme **and** every SVG icon at the same time — the tab-strip icon, both `TCssBitBtn` glyphs and the popup menu item icon all move to their `dark` variants in one step, without a single line of code in the form.
-
+Switching the toggle changes the CSS theme **and** every SVG icon at the
+same time — the tab-strip icon, both `TCssBitBtn` glyphs, the popup menu
+item icon, and every cell icon in both trees all move to their `dark`
+variants in one step, without a single line of code in the form.
 ---
 
 ## Included Controls
