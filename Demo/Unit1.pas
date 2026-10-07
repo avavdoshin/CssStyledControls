@@ -16,6 +16,9 @@ type
   PNodeData = ^TNodeData;
   TNodeData = record
     Caption: String;
+    Note:    String;
+    Kind:    Integer;
+    Size:    Integer;
   end;
 
   TForm1 = class(TForm)
@@ -100,7 +103,16 @@ type
     procedure FormCreate(Sender : TObject);
     procedure FormKeyDown(Sender : TObject; var Key : Word; Shift : TShiftState
       );
+    procedure LeftTreeDragOverNodes(Sender : TObject; Nodes : TList;
+      TargetNode : TCssVirtualNode; var Allowed : Boolean);
+    procedure LeftTreeDropNodesEx(Sender : TObject;
+      SourceTree : TCssVirtualStringTree; Nodes : TList;
+      TargetNode : TCssVirtualNode);
+    procedure LeftTreeEditing(Sender : TObject; Node : TCssVirtualNode;
+      Column : Integer; var Allowed : Boolean);
     procedure LeftTreeFreeNode(Sender : TObject; Node : TCssVirtualNode);
+    procedure LeftTreeGetImageIndex(Sender : TObject; Node : TCssVirtualNode;
+      Column : Integer; var ImageIndex : Integer);
     procedure LeftTreeGetNodeDataSize(
       Sender : TObject; var NodeDataSize : Integer);
     procedure LeftTreeGetText(Sender : TObject; Node : TCssVirtualNode;
@@ -114,7 +126,16 @@ type
     procedure MenuItem5Click(Sender : TObject);
     procedure MenuItem8Click(Sender : TObject);
   private
-
+    function AddTextNode(
+      Tree: TCssVirtualStringTree;
+      aParent: TCssVirtualNode;
+      const ACaption, ANote: string;
+      AKind, ASize: Integer
+    ): TCssVirtualNode;
+    function CopyNodeToTree(
+      SrcNode: TCssVirtualNode;
+      TargetTree: TCssVirtualStringTree;
+      TargetParent: TCssVirtualNode): TCssVirtualNode;
   public
 
   end;
@@ -129,6 +150,20 @@ uses
 
 {$R *.lfm}
 
+function NodeInsideAny(Node: TCssVirtualNode; List: TList): Boolean;
+var
+  P: TCssVirtualNode;
+begin
+  P := Node.Parent;
+  while P <> nil do
+  begin
+    if List.IndexOf(P) >= 0 then
+      Exit(True);
+    P := P.Parent;
+  end;
+  Result := False;
+end;
+
 procedure TForm1.CssCheckBox1Click(Sender : TObject);
 begin
   if CssCheckBox1.Checked then
@@ -137,44 +172,41 @@ begin
     CssStyleProvider1.DefaultStyleName := 'Light';
 end;
 
-procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref, AText : string);
+procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref,
+  AText : String);
 begin
   MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText, mtInformation, [mbOk], '');
 end;
 
 procedure TForm1.FormCreate(Sender : TObject);
-
-  function AddTextNode(
-  Tree: TCssVirtualStringTree;
-  Parent: TCssVirtualNode;
-  const S: String
-): TCssVirtualNode;
-begin
-  Result := Tree.AddChild(Parent);
-
-  if Assigned(Result.Data) then
-    PNodeData(Result.Data)^.Caption := S;
-end;
+const
+  SVG_OK      = 0;  // icons8-ok
+  SVG_NEWS    = 1;  // icons8-news
+  SVG_EDIT    = 2;  // icons8-edit
+  SVG_DONE    = 3;  // icons8-done
+  SVG_REFRESH = 4;  // icons8-refresh
+  SVG_SHARE   = 5;  // icons8-share
 
 var
   Root, tmpNode: TCssVirtualNode;
 begin
   EnableSmoothPainting(Self);
 
-  Root := AddTextNode(LeftTree, nil, 'Fruits');
-  AddTextNode(LeftTree, Root, '<b>Apples</b>');
-  tmpNode := AddTextNode(LeftTree, Root, '<i>Pears</i>');
+  Root := AddTextNode(LeftTree, nil, 'Fruits',   '', SVG_OK,  0);
+
+  AddTextNode(LeftTree, Root, '<b>Apples</b>',  'red',    SVG_OK,      12);
+  tmpNode := AddTextNode(LeftTree, Root, '<i>Pears</i>', 'green',  SVG_NEWS,    7);
   LeftTree.DisableNode(tmpNode);
-  AddTextNode(LeftTree, Root, 'Oranges');
+  AddTextNode(LeftTree, Root, 'Oranges',       'orange', SVG_DONE,    9);
 
-  Root := AddTextNode(LeftTree, nil, 'Vegetables');
-  AddTextNode(LeftTree, Root, 'Carrots');
-  AddTextNode(LeftTree, Root, 'Potatoes');
-  AddTextNode(LeftTree, Root, 'Cucumbers');
+  Root := AddTextNode(LeftTree, nil, 'Vegetables', '', SVG_NEWS, 0);
+  AddTextNode(LeftTree, Root, 'Carrots',   'orange', SVG_EDIT,    5);
+  AddTextNode(LeftTree, Root, 'Potatoes',  'brown',  SVG_REFRESH, 20);
+  AddTextNode(LeftTree, Root, 'Cucumbers', 'green',  SVG_SHARE,   3);
 
-  Root := AddTextNode(LeftTree, nil, 'Berries');
-  AddTextNode(LeftTree, Root, 'Raspberries');
-  AddTextNode(LeftTree, Root, 'Currants');
+  Root := AddTextNode(LeftTree, nil, 'Berries', '', SVG_DONE, 0);
+  AddTextNode(LeftTree, Root, 'Raspberries', 'red',   SVG_OK,  8);
+  AddTextNode(LeftTree, Root, 'Currants',    'black', SVG_NEWS, 6);
 
   LeftTree.FullExpand;
 end;
@@ -186,9 +218,119 @@ begin
     Key := 0;
 end;
 
+procedure TForm1.LeftTreeDragOverNodes(Sender : TObject; Nodes : TList;
+  TargetNode : TCssVirtualNode; var Allowed : Boolean);
+var
+  I: Integer;
+  SourceTree: TCssVirtualStringTree;
+begin
+  Allowed := True;
+
+  if (TargetNode <> nil) and
+     (TargetNode <> TCssVirtualStringTree(Sender).RootNode) and
+     TCssVirtualStringTree(Sender).IsNodeDisabled(TargetNode) then
+  begin
+    Allowed := False;
+    Exit;
+  end;
+
+  for I := 0 to Nodes.Count - 1 do
+    if TCssVirtualStringTree(Sender).IsNodeDisabled(
+         TCssVirtualNode(Nodes[I])) then
+    begin
+      Allowed := False;
+      Exit;
+    end;
+end;
+
+procedure TForm1.LeftTreeDropNodesEx(Sender : TObject;
+  SourceTree : TCssVirtualStringTree; Nodes : TList;
+  TargetNode : TCssVirtualNode);
+var
+  TargetTree: TCssVirtualStringTree;
+  I: Integer;
+  SrcNode: TCssVirtualNode;
+  ToDelete: TList;
+begin
+  TargetTree := TCssVirtualStringTree(Sender);
+
+  if SourceTree = TargetTree then
+  begin
+    TargetTree.MoveNodes(Nodes, TargetNode);
+    Exit;
+  end;
+
+  if TargetNode = nil then
+    TargetNode := TargetTree.RootNode;
+
+  ToDelete := TList.Create;
+  try
+    for I := 0 to Nodes.Count - 1 do
+    begin
+      SrcNode := TCssVirtualNode(Nodes[I]);
+      if SrcNode = nil then Continue;
+      if SrcNode = SourceTree.RootNode then Continue;
+      if NodeInsideAny(SrcNode, Nodes) then Continue;
+      ToDelete.Add(SrcNode);
+    end;
+
+    if ToDelete.Count = 0 then
+      Exit;
+
+    TargetTree.BeginUpdate;
+    try
+      for I := 0 to ToDelete.Count - 1 do
+        CopyNodeToTree(
+          TCssVirtualNode(ToDelete[I]),
+          TargetTree,
+          TargetNode
+        );
+    finally
+      TargetTree.EndUpdate;
+    end;
+
+    SourceTree.BeginUpdate;
+    try
+      for I := 0 to ToDelete.Count - 1 do
+        SourceTree.DeleteNode(TCssVirtualNode(ToDelete[I]));
+    finally
+      SourceTree.EndUpdate;
+    end;
+
+    if TargetNode <> TargetTree.RootNode then
+      TargetTree.ExpandNode(TargetNode);
+  finally
+    ToDelete.Free;
+  end;
+end;
+
+procedure TForm1.LeftTreeEditing(Sender : TObject; Node : TCssVirtualNode;
+  Column : Integer; var Allowed : Boolean);
+begin
+  if Column = 3 then Allowed := False;
+end;
+
 procedure TForm1.LeftTreeFreeNode(Sender : TObject; Node : TCssVirtualNode);
 begin
   Finalize(PNodeData(Node.Data)^);
+end;
+
+procedure TForm1.LeftTreeGetImageIndex(Sender : TObject;
+  Node : TCssVirtualNode; Column : Integer; var ImageIndex : Integer);
+var
+  D: PNodeData;
+begin
+  ImageIndex := -1;
+
+  if not Assigned(Node.Data) then Exit;
+
+  D := PNodeData(Node.Data);
+
+  if Column = 1 then
+  begin
+    if (D^.Kind >= 0) and (D^.Kind < CssSvgImgList1.Count) then
+      ImageIndex := D^.Kind;
+  end;
 end;
 
 procedure TForm1.LeftTreeGetNodeDataSize(
@@ -199,11 +341,23 @@ end;
 
 procedure TForm1.LeftTreeGetText(Sender : TObject; Node : TCssVirtualNode;
   Column : Integer; TextType : TCssVirtualTreeTextType; var CellText : String);
+var
+  D: PNodeData;
 begin
-  if Assigned(Node.Data) then
-    CellText := PNodeData(Node.Data)^.Caption
+  CellText := '';
+  if not Assigned(Node.Data) then Exit;
+
+  D := PNodeData(Node.Data);
+
+  case Column of
+    0: CellText := D^.Caption;
+    1: ;
+    2: CellText := D^.Note;
+    3: if D^.Size > 0 then
+         CellText := IntToStr(D^.Size) + ' KB';
   else
     CellText := '';
+  end;
 end;
 
 procedure TForm1.LeftTreeInitNode(Sender : TObject; Node : TCssVirtualNode);
@@ -213,9 +367,26 @@ end;
 
 procedure TForm1.LeftTreeNewText(Sender : TObject; Node : TCssVirtualNode;
   Column : Integer; const NewText : string);
+var
+  D: PNodeData;
+  Tree: TCssVirtualStringTree;
 begin
-  if Assigned(Node.Data) then
-    PNodeData(Node.Data)^.Caption := NewText;
+  if not Assigned(Node.Data) then
+    Exit;
+
+  D := PNodeData(Node.Data);
+  Tree := TCssVirtualStringTree(Sender);
+
+  case Column of
+    0:
+      D^.Caption := Tree.PlainTextToHtml(NewText);
+
+    2:
+      D^.Note := Tree.PlainTextToHtml(NewText);
+
+    3:
+      D^.Size := StrToIntDef(Trim(NewText), D^.Size);
+  end;
 end;
 
 
@@ -238,6 +409,42 @@ end;
 procedure TForm1.MenuItem8Click(Sender : TObject);
 begin
   Application.Terminate;
+end;
+
+function TForm1.AddTextNode(Tree : TCssVirtualStringTree;
+  aParent : TCssVirtualNode; const ACaption, ANote : string; AKind,
+  ASize : Integer) : TCssVirtualNode;
+begin
+  Result := Tree.AddChild(aParent);
+  if Assigned(Result.Data) then
+  begin
+    PNodeData(Result.Data)^.Caption := ACaption;
+    PNodeData(Result.Data)^.Note    := ANote;
+    PNodeData(Result.Data)^.Kind    := AKind;
+    PNodeData(Result.Data)^.Size    := ASize;
+  end;
+end;
+
+function TForm1.CopyNodeToTree(
+  SrcNode: TCssVirtualNode;
+  TargetTree: TCssVirtualStringTree;
+  TargetParent: TCssVirtualNode): TCssVirtualNode;
+var
+  Child: TCssVirtualNode;
+begin
+  Result := TargetTree.AddChild(TargetParent);
+
+  if Assigned(Result.Data) and Assigned(SrcNode.Data) then
+    PNodeData(Result.Data)^ := PNodeData(SrcNode.Data)^;
+
+  Result.States := SrcNode.States - [cvsSelected];
+
+  Child := SrcNode.FirstChild;
+  while Child <> nil do
+  begin
+    CopyNodeToTree(Child, TargetTree, Result);
+    Child := Child.NextSibling;
+  end;
 end;
 
 end.
