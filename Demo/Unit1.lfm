@@ -1117,7 +1117,7 @@ object Form1: TForm1
           Text = 'Some text you cannot edit'
           SelStart = 0
           SelLength = 0
-          ReadOnly = False
+          ReadOnly = True
           MaxLength = 0
           PasswordChar = #0
         end
