@@ -335,6 +335,14 @@ type
 
 implementation
 
+type
+  TControlCracker = class(TControl)
+  public
+    property OnMouseDown;
+    property OnMouseUp;
+    property OnMouseMove;
+  end;
+
 { TMenuComponentFriend }
 
 procedure TMenuComponentFriend.AddOwnedComponent(AComponent: TComponent);
@@ -2833,6 +2841,9 @@ begin
   if FPopupControl = AValue then
     Exit;
 
+  if Assigned(FPopupControl) and (FPopupControl is TWinControl) then
+    TControlCracker(FPopupControl).OnMouseDown := nil;
+
   FPopupControl := AValue;
 
   if Assigned(FPopupControl) then
@@ -2840,7 +2851,7 @@ begin
     FPopupControl.FreeNotification(Self);
 
     if FPopupControl is TWinControl then
-      TWinControl(FPopupControl).OnMouseDown := @PopupControlMouseDown;
+      TControlCracker(FPopupControl).OnMouseDown := @PopupControlMouseDown;
   end;
 end;
 

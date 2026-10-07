@@ -390,9 +390,9 @@ begin
 
   DrawKindGlyph(FKindGlyph, FKind, Size);
 
-  FKindGlyph.Transparent := True;
   FKindGlyph.TransparentMode := tmFixed;
   FKindGlyph.TransparentColor := clFuchsia;
+  FKindGlyph.Transparent := True;
 
   // ---- Disabled variant ----------------------------------------------
   FKindGlyphDisabled.PixelFormat := pf24bit;
@@ -1396,9 +1396,9 @@ begin
 
       if HasTransparency then
       begin
-        Bmp.Transparent := True;
         Bmp.TransparentMode := tmFixed;
         Bmp.TransparentColor := TransColor;
+        Bmp.Transparent := True;
       end
       else
         Bmp.Transparent := False;

@@ -1,14 +1,14 @@
 object Form1: TForm1
-  Left = 234
+  Left = 273
   Height = 737
-  Top = 250
+  Top = 152
   Width = 1155
   Caption = 'CssStyledControlsDemo'
   ClientHeight = 737
   ClientWidth = 1155
   KeyPreview = True
   Position = poScreenCenter
-  LCLVersion = '4.99.0.0'
+  LCLVersion = '4.8.0.0'
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
   object CssPanel1: TCssPanel
@@ -403,9 +403,9 @@ object Form1: TForm1
     end
     object CssTabSheet2: TCssTabSheet
       Left = -32000
-      Height = 640
+      Height = 638
       Top = -32000
-      Width = 1155
+      Width = 1153
       Caption = 'Checkboxes, Radio, Splitters'
       CssTag = 'control'
       StyleProvider = CssStyleProvider1
@@ -422,7 +422,7 @@ object Form1: TForm1
         Left = 5
         Height = 139
         Top = 5
-        Width = 1145
+        Width = 1143
         Align = alTop
         BorderSpacing.Left = 5
         BorderSpacing.Top = 5
@@ -868,7 +868,7 @@ object Form1: TForm1
         AnchorSideBottom.Control = CssTabSheet2
         AnchorSideBottom.Side = asrBottom
         Left = 5
-        Height = 334
+        Height = 332
         Top = 301
         Width = 1143
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -917,7 +917,7 @@ object Form1: TForm1
         end
         object CssPanel7: TCssPanel
           Left = 13
-          Height = 182
+          Height = 180
           Top = 139
           Width = 1117
           Align = alClient
@@ -934,7 +934,7 @@ object Form1: TForm1
           WordWrap = True
           object CssPanel8: TCssPanel
             Left = 13
-            Height = 133
+            Height = 131
             Top = 36
             Width = 315
             Align = alLeft
@@ -953,7 +953,7 @@ object Form1: TForm1
           object CssSplitter2: TCssSplitter
             Cursor = crHSplit
             Left = 328
-            Height = 133
+            Height = 131
             Top = 36
             CssTag = 'control'
             StyleProvider = CssStyleProvider1
@@ -962,7 +962,7 @@ object Form1: TForm1
           end
           object CssPanel9: TCssPanel
             Left = 333
-            Height = 133
+            Height = 131
             Top = 36
             Width = 771
             Align = alClient
@@ -983,9 +983,9 @@ object Form1: TForm1
     end
     object CssTabSheet3: TCssTabSheet
       Left = -32000
-      Height = 640
+      Height = 638
       Top = -32000
-      Width = 1155
+      Width = 1153
       Caption = 'Editors'
       CssTag = 'control'
       StyleProvider = CssStyleProvider1
@@ -1002,7 +1002,7 @@ object Form1: TForm1
         Left = 5
         Height = 115
         Top = 5
-        Width = 1145
+        Width = 1143
         Anchors = [akTop, akLeft, akRight]
         BorderSpacing.Left = 5
         BorderSpacing.Top = 5
@@ -1278,7 +1278,7 @@ object Form1: TForm1
         Left = 5
         Height = 177
         Top = 125
-        Width = 1145
+        Width = 1143
         Anchors = [akTop, akLeft, akRight]
         BorderSpacing.Top = 5
         Caption = '<h6>Listbox</h6>'
@@ -1393,9 +1393,9 @@ object Form1: TForm1
         AnchorSideBottom.Control = CssTabSheet3
         AnchorSideBottom.Side = asrBottom
         Left = 5
-        Height = 328
+        Height = 326
         Top = 307
-        Width = 1145
+        Width = 1143
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Top = 5
         BorderSpacing.Bottom = 5
@@ -1412,9 +1412,9 @@ object Form1: TForm1
         WordWrap = True
         object CssMemo1: TCssMemo
           Left = 13
-          Height = 279
+          Height = 277
           Top = 36
-          Width = 1119
+          Width = 1117
           Align = alClient
           CssTag = 'control'
           StyleProvider = CssStyleProvider1

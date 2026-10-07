@@ -12,9 +12,9 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 > may be incomplete or out of date. APIs and behavior can change without notice.
 
 > [!WARNING]
-> **Compatibility note.** The library and demo were developed and tested in
-> [Unleashed Pascal](https://unleashedpascal.org/). Functionality in other versions
-> of FreePascal / Lazarus is not guaranteed.
+> **Compatibility note.** The library and demo were developed and tested only in
+> [Unleashed Pascal](https://unleashedpascal.org/) and Lazarus stable. Functionality 
+> in other versions of FreePascal / Lazarus is not guaranteed.
 
 ---
 

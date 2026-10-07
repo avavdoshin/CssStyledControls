@@ -1115,7 +1115,7 @@ begin
   if BG = clNone then
   begin
     if (Parent <> nil) and (Parent is TCssStyledControl) then
-      BG := TCssStyledControl(Parent).GetCssBackgroundColor;
+      BG := TCssStyledControl(Parent).GetStyledBackgroundColor;
 
     if BG = clNone then
     begin
