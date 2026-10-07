@@ -12,7 +12,7 @@ type
   TCssVAlign = (cvaTop, cvaMiddle, cvaBottom);
   TCssIconLayout = (cilLeft, cilRight);
 
-  TCssLinkClickEvent = procedure(Sender: TObject; const AHref, AText: UnicodeString) of object;
+  TCssLinkClickEvent = procedure(Sender: TObject; const AHref, AText: AnsiString) of object;
 
   TCssLinkStyle = record
     Color: TColor;
@@ -3093,9 +3093,9 @@ begin
   FBoxShadow.HasColor := False;
   FBoxShadow.Used := False;
 
-  FHoverLinkId := 0;
-  FLinkAreas := nil;
-  FLinkInfos := nil;
+//  FHoverLinkId := 0;
+//  FLinkAreas := nil;
+//  FLinkInfos := nil;
 
   if HadInit then
   begin
