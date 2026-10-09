@@ -1207,6 +1207,7 @@ end;
 
 destructor TCssMenuPopupForm.Destroy;
 begin
+  OnDeactivate := nil;
   CloseSubPopup;
   FVisibleItems.Free;
 
@@ -1232,7 +1233,16 @@ begin
 end;
 
 procedure TCssMenuPopupForm.FormDeactivate(Sender: TObject);
+var
+  aActive: TCustomForm;
 begin
+  // The focus may move from one popup of the chain to another popup
+  // (opening a sub-menu, arrow-key navigation). That is not a real
+  // deactivation and must not close anything.
+  aActive := Screen.ActiveCustomForm;
+  if aActive is TCssMenuPopupForm then
+    Exit;
+
   if GetRoot.IsMouseOverTree then
     Exit;
 
@@ -1448,23 +1458,44 @@ begin
 end;
 
 procedure TCssMenuPopupForm.CloseSubPopup;
+var
+  Popup: TCssMenuPopupForm;
 begin
-  if Assigned(FSubPopup) then
-  begin
-    FSubPopup.CloseSubPopup;
-    FSubPopup.Hide;
-    FSubPopup.Free;
-    FSubPopup := nil;
-  end;
+  Popup := FSubPopup;
+  if Popup = nil then
+    Exit;
+
+  // Detach first: any reentrant call (e.g. OnDeactivate fired by Hide)
+  // will see FSubPopup = nil and become a no-op.
+  FSubPopup := nil;
+
+  // Prevent OnDeactivate from firing while we tear this popup down.
+  Popup.OnDeactivate := nil;
+
+  Popup.CloseSubPopup;   // close deeper levels
+  Popup.Hide;
+  Popup.Free;
 end;
 
 procedure TCssMenuPopupForm.CloseChain;
 var
   Root: TCssMenuPopupForm;
+  SavedOnDeactivate: TNotifyEvent;
 begin
   Root := GetRoot;
-  Root.CloseSubPopup;
-  Root.Hide;
+  if Root = nil then
+    Exit;
+
+  // Hiding the root fires its OnDeactivate, which would re-enter
+  // CloseChain and call FOnClosed twice. Disable it for the duration.
+  SavedOnDeactivate := Root.OnDeactivate;
+  Root.OnDeactivate := nil;
+  try
+    Root.CloseSubPopup;
+    Root.Hide;
+  finally
+    Root.OnDeactivate := SavedOnDeactivate;
+  end;
 
   if Assigned(Root.FOnClosed) then
     Root.FOnClosed(Root);
