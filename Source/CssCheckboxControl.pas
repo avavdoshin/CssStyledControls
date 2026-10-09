@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, StdCtrls, LCLType,
-  CssStyledControl, CssGroupCaptionControl, CssAntiAlias;
+  CssStyledControl, CssGroupCaptionControl, CssAntiAlias, CssSvgImgList;
 
 type
   TCssCheckBox = class(TCssStyledControl)
@@ -33,8 +33,20 @@ type
     FCheckColorSet: Boolean;
     FToggleStyle: Boolean;
     FToggleWidth, FToggleHeight: Integer;
+    FToggleThumbInset: Integer;
     FToggleThumbColor: TColor;
     FToggleThumbColorSet: Boolean;
+
+    // SVG images (state-based)
+    FSvgImages: TCssSvgImgList;
+    FImageIndex: Integer;
+    FImageIndexChecked: Integer;
+    FImageIndexHover: Integer;
+    FImageIndexCheckedHover: Integer;
+    FImageIndexFocused: Integer;
+    FImageIndexCheckedFocused: Integer;
+    FImageIndexDisabled: Integer;
+    FImageIndexCheckedDisabled: Integer;
 
     // Property getters
     function GetCheckBoxBackground: TColor;
@@ -61,6 +73,23 @@ type
     procedure DrawGrayedMark(const R: TRect; AColor: TColor);
     procedure DrawCheckMarkToCanvas(ACanvas: TCanvas; const R: TRect; AColor: TColor);
     procedure DrawGrayedMarkToCanvas(ACanvas: TCanvas; const R: TRect; AColor: TColor);
+
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetImageIndex(AValue: Integer);
+    procedure SetImageIndexChecked(AValue: Integer);
+    procedure SetImageIndexHover(AValue: Integer);
+    procedure SetImageIndexCheckedHover(AValue: Integer);
+    procedure SetImageIndexFocused(AValue: Integer);
+    procedure SetImageIndexCheckedFocused(AValue: Integer);
+    procedure SetImageIndexDisabled(AValue: Integer);
+    procedure SetImageIndexCheckedDisabled(AValue: Integer);
+
+    function  GetEffectiveSvgVariant: string;
+    function  GetStateImageIndex(AState: TCheckBoxState; out ANeedsDisabledTint: Boolean): Integer;
+    function  HasStateImage(AState: TCheckBoxState): Boolean;
+    procedure DrawStateImage(ACanvas: TCanvas; const ARect: TRect;
+      AState: TCheckBoxState);
+    procedure MakeDisabledBitmapAlpha(ABitmap: TBitmap; ATextColor: TColor);
   protected
     // Initialization and style
     function ShouldPaintCaption: Boolean; override;
@@ -97,8 +126,11 @@ type
     procedure NavigateStandalone(AKey: Word);
 
     function GetDefaultCaption: string; override;
+
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
 
     property ToggleStyle: Boolean read FToggleStyle;
 
@@ -118,6 +150,24 @@ type
     property Checked: Boolean read GetChecked write SetChecked;
     property State: TCheckBoxState read FState write SetState;
     property AllowGrayed: Boolean read FAllowGrayed write SetAllowGrayed;
+
+    property SvgImages: TCssSvgImgList read FSvgImages write SetSvgImages;
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
+    property ImageIndexChecked: Integer
+      read FImageIndexChecked write SetImageIndexChecked default -1;
+    property ImageIndexHover: Integer
+      read FImageIndexHover write SetImageIndexHover default -1;
+    property ImageIndexCheckedHover: Integer
+      read FImageIndexCheckedHover write SetImageIndexCheckedHover default -1;
+    property ImageIndexFocused: Integer
+      read FImageIndexFocused write SetImageIndexFocused default -1;
+    property ImageIndexCheckedFocused: Integer
+      read FImageIndexCheckedFocused write SetImageIndexCheckedFocused default -1;
+    property ImageIndexDisabled: Integer
+      read FImageIndexDisabled write SetImageIndexDisabled default -1;
+    property ImageIndexCheckedDisabled: Integer
+      read FImageIndexCheckedDisabled write SetImageIndexCheckedDisabled default -1;
 
     // Standard properties
     property AutoSize;
@@ -180,6 +230,19 @@ type
     FGroupFocusRect: Boolean;
     FChildFocused: Boolean;
 
+    // SVG images for child checkboxes
+    FSvgImages: TCssSvgImgList;
+    FItemImageIndexes: TStringList;
+
+    FImageIndex: Integer;
+    FImageIndexChecked: Integer;
+    FImageIndexHover: Integer;
+    FImageIndexCheckedHover: Integer;
+    FImageIndexFocused: Integer;
+    FImageIndexCheckedFocused: Integer;
+    FImageIndexDisabled: Integer;
+    FImageIndexCheckedDisabled: Integer;
+
     // Private helpers
     procedure ApplyChildShowFocusRect;
     procedure ItemEnter(Sender: TObject);
@@ -216,6 +279,22 @@ type
     function GetEffectiveCaptionSpacing: Integer;
     function GetEffectiveItemSpacing: Integer;
     procedure SetItemSpacing(AValue: Integer);
+
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetItemImageIndexes(AValue: TStringList);
+    procedure ItemImageIndexesChanged(Sender: TObject);
+
+    procedure SetImageIndex(AValue: Integer);
+    procedure SetImageIndexChecked(AValue: Integer);
+    procedure SetImageIndexHover(AValue: Integer);
+    procedure SetImageIndexCheckedHover(AValue: Integer);
+    procedure SetImageIndexFocused(AValue: Integer);
+    procedure SetImageIndexCheckedFocused(AValue: Integer);
+    procedure SetImageIndexDisabled(AValue: Integer);
+    procedure SetImageIndexCheckedDisabled(AValue: Integer);
+
+    function  GetItemImageIndex(AIndex: Integer): Integer;
+    procedure ApplyImagesToChild(Cb: TCssCheckBox; AIndex: Integer);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -241,6 +320,8 @@ type
 
     function GetDefaultCaption: string; override;
     procedure Resize; override;
+
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -260,6 +341,7 @@ type
     procedure NavigateFrom(AControl: TControl; AKey: Word);
 
     // Indexed properties
+    property CheckBoxes[Index: Integer]: TCssCheckBox read GetCheckBox;
     property Checked[Index: Integer]: Boolean read GetChecked write SetChecked;
     property State[Index: Integer]: TCheckBoxState read GetState write SetState;
     property ItemEnabled[Index: Integer]: Boolean read GetItemEnabled write SetItemEnabled;
@@ -275,6 +357,26 @@ type
     property CheckBoxCssClass: string read FCheckBoxCssClass write SetCheckBoxCssClass;
     property CheckBoxCssStyle: string read FCheckBoxCssStyle write SetCheckBoxCssStyle;
     property GroupFocusRect: Boolean read FGroupFocusRect write SetGroupFocusRect default True;
+
+    property SvgImages: TCssSvgImgList read FSvgImages write SetSvgImages;
+    property ItemImageIndexes: TStringList
+      read FItemImageIndexes write SetItemImageIndexes;
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
+    property ImageIndexChecked: Integer
+      read FImageIndexChecked write SetImageIndexChecked default -1;
+    property ImageIndexHover: Integer
+      read FImageIndexHover write SetImageIndexHover default -1;
+    property ImageIndexCheckedHover: Integer
+      read FImageIndexCheckedHover write SetImageIndexCheckedHover default -1;
+    property ImageIndexFocused: Integer
+      read FImageIndexFocused write SetImageIndexFocused default -1;
+    property ImageIndexCheckedFocused: Integer
+      read FImageIndexCheckedFocused write SetImageIndexCheckedFocused default -1;
+    property ImageIndexDisabled: Integer
+      read FImageIndexDisabled write SetImageIndexDisabled default -1;
+    property ImageIndexCheckedDisabled: Integer
+      read FImageIndexCheckedDisabled write SetImageIndexCheckedDisabled default -1;
 
     // Standard properties
     property AutoSize;
@@ -347,15 +449,33 @@ begin
   FToggleStyle := False;
   FToggleWidth := 40;
   FToggleHeight := 20;
+  FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
 
   FClicked := False;
   FSpacePressed := False;
   FClicking := False;
 
+  FSvgImages := nil;
+  FImageIndex := -1;
+  FImageIndexChecked := -1;
+  FImageIndexHover := -1;
+  FImageIndexCheckedHover := -1;
+  FImageIndexFocused := -1;
+  FImageIndexDisabled := -1;
+  FImageIndexCheckedDisabled := -1;
+  FImageIndexCheckedFocused := -1;
+
   ShowFocusRect := False;
 
   AutoSize := True;
+end;
+
+destructor TCssCheckBox.Destroy;
+begin
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+  inherited Destroy;
 end;
 
 function TCssCheckBox.ShouldPaintCaption: Boolean;
@@ -530,14 +650,16 @@ begin
   if AName = 'checkbox-style' then
   begin
     V := LowerCase(Trim(AValue));
-    FToggleStyle := (V = 'toggle') or (V = 'switch');
+    FToggleStyle := (V = 'toggle') or (V = 'switch') or (V = 'custom');
     if AutoSize and (not IsApplyingCss) then
       AdjustSize;
     Invalidate;
     Exit;
   end;
 
-  if (AName = 'toggle-width') or (AName = 'toggle-height') then
+  if (AName = 'toggle-width') or
+     (AName = 'toggle-height') or
+     (AName = 'toggle-thumb-inset') then
   begin
     if ParseCssLengthPx(AValue, Px) then
     begin
@@ -547,12 +669,21 @@ begin
         if FToggleWidth < 12 then FToggleWidth := 12;
         if FToggleWidth > 200 then FToggleWidth := 200;
       end
-      else
+      else if AName = 'toggle-height' then
       begin
         FToggleHeight := Px;
         if FToggleHeight < 12 then FToggleHeight := 12;
         if FToggleHeight > 80 then FToggleHeight := 80;
+      end
+      else
+      begin
+        FToggleThumbInset := Px;
+        if FToggleThumbInset < 0 then FToggleThumbInset := 0;
+        if FToggleThumbInset > FToggleHeight div 2 - 1 then
+          FToggleThumbInset := FToggleHeight div 2 - 1;
+        if FToggleThumbInset < 0 then FToggleThumbInset := 0;
       end;
+
       if AutoSize and (not IsApplyingCss) then
         AdjustSize;
       Invalidate;
@@ -719,6 +850,18 @@ begin
   Result := 'CssCheckBox';
 end;
 
+procedure TCssCheckBox.Notification(AComponent : TComponent;
+  Operation : TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    Invalidate;
+  end;
+end;
+
 procedure TCssCheckBox.ResetStyle;
 begin
   FBoxBackgroundSet := False;
@@ -729,6 +872,7 @@ begin
   FToggleStyle := False;
   FToggleWidth := 40;
   FToggleHeight := 20;
+  FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
   inherited ResetStyle;
 end;
@@ -1086,6 +1230,256 @@ begin
   end;
 end;
 
+procedure TCssCheckBox.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  if AutoSize and (not IsApplyingCss) then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndex(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndex = AValue then Exit;
+  FImageIndex := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexChecked(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexChecked = AValue then Exit;
+  FImageIndexChecked := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexHover(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexHover = AValue then Exit;
+  FImageIndexHover := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexCheckedHover(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedHover = AValue then Exit;
+  FImageIndexCheckedHover := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexFocused(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexFocused = AValue then Exit;
+  FImageIndexFocused := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexCheckedFocused(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedFocused = AValue then Exit;
+  FImageIndexCheckedFocused := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexDisabled = AValue then Exit;
+  FImageIndexDisabled := AValue;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.SetImageIndexCheckedDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedDisabled = AValue then Exit;
+  FImageIndexCheckedDisabled := AValue;
+  Invalidate;
+end;
+
+function TCssCheckBox.GetEffectiveSvgVariant: string;
+begin
+  if StyleProvider <> nil then
+  begin
+    if Trim(StyleName) <> '' then Exit(StyleName);
+    Exit(StyleProvider.DefaultStyleName);
+  end;
+
+  if FSvgImages <> nil then
+    Exit(FSvgImages.DefaultVariant);
+
+  Result := '';
+end;
+
+function TCssCheckBox.GetStateImageIndex(AState: TCheckBoxState;
+  out ANeedsDisabledTint: Boolean): Integer;
+var
+  IsChecked, IsHover, IsFocused: Boolean;
+begin
+  ANeedsDisabledTint := False;
+  IsChecked := (AState = cbChecked) or (AState = cbGrayed);
+  IsHover   := Enabled and GetEffectiveHoverState;
+  IsFocused := Focused and Enabled;
+
+  // --- Disabled ---------------------------------------------------------
+  if not Enabled then
+  begin
+    if IsChecked and (FImageIndexCheckedDisabled >= 0) then
+      Exit(FImageIndexCheckedDisabled);
+
+    if (not IsChecked) and (FImageIndexDisabled >= 0) then
+      Exit(FImageIndexDisabled);
+
+    ANeedsDisabledTint := True;
+
+    if IsChecked and (FImageIndexChecked >= 0) then
+      Exit(FImageIndexChecked);
+
+    Exit(FImageIndex);
+  end;
+
+  // --- Enabled ----------------------------------------------------------
+  if IsChecked then
+  begin
+    if IsHover and (FImageIndexCheckedHover >= 0) then
+      Exit(FImageIndexCheckedHover);
+    if FImageIndexChecked >= 0 then
+      Exit(FImageIndexChecked);
+  end
+  else
+  begin
+    if IsHover and (FImageIndexHover >= 0) then
+      Exit(FImageIndexHover);
+  end;
+
+  if IsFocused then
+  begin
+    if IsChecked and (FImageIndexCheckedFocused >= 0) then
+      Exit(FImageIndexCheckedFocused);
+    if (not IsChecked) and (FImageIndexFocused >= 0) then
+      Exit(FImageIndexFocused);
+  end;
+
+  Result := FImageIndex;
+end;
+
+function TCssCheckBox.HasStateImage(AState: TCheckBoxState): Boolean;
+var
+  Idx: Integer;
+  Dummy: Boolean;
+begin
+  if FSvgImages = nil then Exit(False);
+  Idx := GetStateImageIndex(AState, Dummy);
+  Result := (Idx >= 0) and (Idx < FSvgImages.Count);
+end;
+
+procedure TCssCheckBox.DrawStateImage(ACanvas: TCanvas;
+  const ARect: TRect; AState: TCheckBoxState);
+var
+  Idx, W, H: Integer;
+  Bmp: TBitmap;
+  NeedsDisabled: Boolean;
+begin
+  if FSvgImages = nil then Exit;
+
+  Idx := GetStateImageIndex(AState, NeedsDisabled);
+  if (Idx < 0) or (Idx >= FSvgImages.Count) then Exit;
+
+  W := ARect.Right - ARect.Left;
+  H := ARect.Bottom - ARect.Top;
+  if (W <= 0) or (H <= 0) then Exit;
+
+  if NeedsDisabled then
+  begin
+    Bmp := FSvgImages.GetBitmap(Idx, W, H, GetCssTextColor,
+      GetEffectiveSvgVariant);
+    MakeDisabledBitmapAlpha(Bmp, GetEffectiveTextColor);
+  end
+  else
+  begin
+    Bmp := FSvgImages.GetBitmap(Idx, W, H, GetEffectiveTextColor,
+      GetEffectiveSvgVariant);
+  end;
+
+  try
+    DrawSvgBitmapWithAlpha(ACanvas, ARect.Left, ARect.Top, Bmp);
+  finally
+    Bmp.Free;
+  end;
+end;
+
+procedure TCssCheckBox.MakeDisabledBitmapAlpha(ABitmap: TBitmap;
+  ATextColor: TColor);
+const
+  CONTRAST_KEEP = 70;
+  TEXT_BLEND    = 60;
+var
+  Img: TLazIntfImage;
+  X, Y: Integer;
+  Pix: TFPColor;
+  A, R, G, B, Gray, Compressed: Integer;
+  TR, TG, TB_: Integer;
+begin
+  if (ABitmap = nil) or ABitmap.Empty then Exit;
+
+  TR  :=  ATextColor         and $FF;
+  TG  := (ATextColor shr  8) and $FF;
+  TB_ := (ATextColor shr 16) and $FF;
+
+  Img := ABitmap.CreateIntfImage;
+  if Img = nil then Exit;
+  try
+    for Y := 0 to Img.Height - 1 do
+      for X := 0 to Img.Width - 1 do
+      begin
+        Pix := Img.Colors[X, Y];
+        A := Pix.Alpha shr 8;
+        if A = 0 then
+          Continue;
+
+        R := Pix.Red   shr 8;
+        G := Pix.Green shr 8;
+        B := Pix.Blue  shr 8;
+
+        Gray := (R * 30 + G * 59 + B * 11) div 100;
+
+        Compressed := 128 + ((Gray - 128) * CONTRAST_KEEP) div 100;
+        if Compressed < 0   then Compressed := 0;
+        if Compressed > 255 then Compressed := 255;
+
+        R := (Compressed * (100 - TEXT_BLEND) + TR  * TEXT_BLEND) div 100;
+        G := (Compressed * (100 - TEXT_BLEND) + TG  * TEXT_BLEND) div 100;
+        B := (Compressed * (100 - TEXT_BLEND) + TB_ * TEXT_BLEND) div 100;
+
+        if R < 0 then R := 0 else if R > 255 then R := 255;
+        if G < 0 then G := 0 else if G > 255 then G := 255;
+        if B < 0 then B := 0 else if B > 255 then B := 255;
+
+        Pix.Red   := R * 257;
+        Pix.Green := G * 257;
+        Pix.Blue  := B * 257;
+        Img.Colors[X, Y] := Pix;
+      end;
+
+    ABitmap.LoadFromIntfImage(Img);
+  finally
+    Img.Free;
+  end;
+end;
+
 procedure TCssCheckBox.SetCaption(const AValue: TCaption);
 begin
   if Caption = AValue then Exit;
@@ -1107,6 +1501,12 @@ begin
   if ACanvas = nil then Exit;
   if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then Exit;
 
+  if HasStateImage(AState) then
+  begin
+    DrawStateImage(ACanvas, ARect, AState);
+    Exit;
+  end;
+
   Size := ARect.Bottom - ARect.Top;
   if (ARect.Right - ARect.Left) < Size then
     Size := ARect.Right - ARect.Left;
@@ -1123,22 +1523,24 @@ begin
     Radius := Size div 2;
     DrawAntiAliasedRoundedBox(ACanvas, ARect, Radius, BG, BorderColor,
       LBorderWidth, cbsSolid, GetCornerBackgroundColor);
+
     Size := ARect.Bottom - ARect.Top;
     if Size > ARect.Right - ARect.Left then
       Size := ARect.Right - ARect.Left;
-    Dec(Size, ScalePx(8));
+
+    Dec(Size, 2 * FToggleThumbInset);
     if Size < ScalePx(2) then Size := ScalePx(2);
-    { DrawAntiAliasedCircle composites its rectangular bitmap using the track
-      color outside the circle. A 4px inset keeps those corners clear of the
-      AA outline at the rounded ends, while centering the thumb in each end. }
+
     if AState = cbChecked then
-      Radius := ARect.Right - ARect.Left - Size - ScalePx(4)
+      Radius := ARect.Right - ARect.Left - Size - FToggleThumbInset
     else if AState = cbGrayed then
       Radius := (ARect.Right - ARect.Left - Size) div 2
     else
-      Radius := ScalePx(4);
-    if Radius < ScalePx(4) then Radius := ScalePx(4);
-    DrawAntiAliasedCircle(ACanvas,
+      Radius := FToggleThumbInset;
+
+        if Radius < FToggleThumbInset then Radius := FToggleThumbInset;
+
+        DrawAntiAliasedCircle(ACanvas,
       Rect(ARect.Left + Radius, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2),
            ARect.Left + Radius + Size, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2) + Size),
       GetToggleThumbColor, GetToggleThumbColor, 0, BG);
@@ -1205,6 +1607,19 @@ begin
   FCheckBoxCssClass := 'checkbox';
   FCheckBoxCssStyle := '';
 
+  FSvgImages := nil;
+  FItemImageIndexes := TStringList.Create;
+  FItemImageIndexes.OnChange := @ItemImageIndexesChanged;
+
+  FImageIndex := -1;
+  FImageIndexChecked := -1;
+  FImageIndexHover := -1;
+  FImageIndexCheckedHover := -1;
+  FImageIndexFocused := -1;
+  FImageIndexCheckedFocused := -1;
+  FImageIndexDisabled := -1;
+  FImageIndexCheckedDisabled := -1;
+
   TCssStyledControl(Self).Caption := '';
 
   FFocusIndex := -1;
@@ -1220,6 +1635,12 @@ begin
   FCheckBoxes.Clear;
 
   FreeAndNil(FItems);
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FreeAndNil(FItemImageIndexes);
+
   FreeAndNil(FCheckBoxes);
 
   inherited Destroy;
@@ -1304,6 +1725,19 @@ begin
     LayoutItems;
 
   Invalidate;
+end;
+
+procedure TCssCheckGroup.Notification(AComponent : TComponent;
+  Operation : TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    UpdateChildStyles;
+    Invalidate;
+  end;
 end;
 
 procedure TCssCheckGroup.SetShowFocusRect(AValue: Boolean);
@@ -1506,6 +1940,7 @@ begin
       Cb.CssTag := 'checkbox';
       Cb.CssClass := FCheckBoxCssClass;
       Cb.CssStyle := FCheckBoxCssStyle;
+      ApplyImagesToChild(Cb, I);
 
       Cb.StyleProvider := StyleProvider;
       Cb.StyleName := StyleName;
@@ -1558,6 +1993,8 @@ begin
       Cb.Enabled := Enabled and FItemEnabled[I]
     else
       Cb.Enabled := Enabled;
+
+    ApplyImagesToChild(Cb, I);
   end;
 
   ApplyChildShowFocusRect;
@@ -1920,6 +2357,144 @@ begin
     AdjustSize;
 
   Invalidate;
+end;
+
+procedure TCssCheckGroup.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  UpdateChildStyles;
+  if AutoSize then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetItemImageIndexes(AValue: TStringList);
+begin
+  FItemImageIndexes.Assign(AValue);
+end;
+
+procedure TCssCheckGroup.ItemImageIndexesChanged(Sender: TObject);
+begin
+  if FUpdating then Exit;
+  if (csLoading in ComponentState) or (csDestroying in ComponentState) then Exit;
+
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndex(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndex = AValue then Exit;
+  FImageIndex := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexChecked(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexChecked = AValue then Exit;
+  FImageIndexChecked := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexHover(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexHover = AValue then Exit;
+  FImageIndexHover := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexCheckedHover(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedHover = AValue then Exit;
+  FImageIndexCheckedHover := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexFocused(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexFocused = AValue then Exit;
+  FImageIndexFocused := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexCheckedFocused(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedFocused = AValue then Exit;
+  FImageIndexCheckedFocused := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexDisabled(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexDisabled = AValue then Exit;
+  FImageIndexDisabled := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssCheckGroup.SetImageIndexCheckedDisabled(AValue : Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedDisabled = AValue then Exit;
+  FImageIndexCheckedDisabled := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+function TCssCheckGroup.GetItemImageIndex(AIndex: Integer): Integer;
+begin
+  if (AIndex >= 0) and (AIndex < FItemImageIndexes.Count) then
+    Result := StrToIntDef(Trim(FItemImageIndexes[AIndex]), -1)
+  else
+    Result := -1;
+
+  if Result < -1 then Result := -1;
+end;
+
+procedure TCssCheckGroup.ApplyImagesToChild(Cb: TCssCheckBox; AIndex: Integer);
+var
+  PerItemIndex: Integer;
+  EffectiveBaseIndex: Integer;
+begin
+  if Cb = nil then Exit;
+
+  PerItemIndex := GetItemImageIndex(AIndex);
+
+  if PerItemIndex >= 0 then
+    EffectiveBaseIndex := PerItemIndex
+  else
+    EffectiveBaseIndex := FImageIndex;
+
+  Cb.SvgImages := FSvgImages;
+  Cb.ImageIndex := EffectiveBaseIndex;
+  Cb.ImageIndexChecked := FImageIndexChecked;
+  Cb.ImageIndexHover := FImageIndexHover;
+  Cb.ImageIndexCheckedHover := FImageIndexCheckedHover;
+  Cb.ImageIndexFocused := FImageIndexFocused;
+  Cb.ImageIndexCheckedFocused := FImageIndexCheckedFocused;
+  Cb.ImageIndexDisabled := FImageIndexDisabled;
+  Cb.ImageIndexCheckedDisabled := FImageIndexCheckedDisabled;
 end;
 
 procedure TCssCheckGroup.Clear;

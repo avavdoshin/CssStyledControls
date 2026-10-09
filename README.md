@@ -61,7 +61,8 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - **HTML text rendering** — `HtmlMode` renders captions, list items, menu items, tree cells, and hints as HTML with inline styles, lists, headings, code blocks, links, etc.
 - **Clickable links** — `<a href="...">` inside HTML content raises `OnLinkClick`, changes the cursor, and supports `a`, `a:hover`, `a:active` CSS rules.
 - **CSS-styled tooltips** — tooltips can be styled with the `::hint` selector and rendered as HTML.
-- **Windows 11-style switches** — set `checkbox-style: toggle` / `radio-style: toggle` on a checkbox / radio button (or on a `toggle` class) to render them as pill switches with an animated thumb.
+- **Windows 11-style switches** — set `checkbox-style: toggle` / `radio-style: toggle` on a checkbox / radio button (or on a `toggle` class) to render them as pill switches with an animated thumb. A third synonym, `custom`, reuses the same toggle renderer but tunes the thumb inset independently through `toggle-thumb-inset`.
+- **SVG check / radio icons** — `TCssCheckBox`, `TCssRadioButton`, `TCssCheckGroup`, and `TCssRadioGroup` accept a `TCssSvgImgList` and draw per-state icons for every combination of checked / hovered / focused / disabled. When a dedicated disabled icon is not provided, the enabled artwork is desaturated and re-tinted to match the CSS `:disabled` text colour, exactly like `TCssBitBtn`.
 - **Tree icons from SVG** — `TCssVirtualStringTree` accepts a `TCssSvgImgList` and requests a per-cell icon through `OnGetImageIndex`, with DPI-aware sizing, per-theme variants, and automatic `currentColor` tinting.
 - **Nested child styling** — composite controls (`TCssComboBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssListBox`, `TCssVirtualStringTree`, tabs) expose `*CssClass` / `*CssStyle` properties so you can style their internal children too.
 - **Focus-within** — a parent (`TCssPanel`, `TCssGroupBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssComboBox`, `TCssTabControl`, `TCssPageControl`) can highlight its border while a child has focus (`focus-within: true`).
@@ -91,8 +92,9 @@ and a `TCssPopupMenu`.
 ### Checkboxes, Radio, Splitters
 
 Standard checkboxes and radio buttons, Windows 11-style switches
-(`.toggle`), check / radio groups with `focus-within`, and a set of
-panels separated by splitters.
+(`.toggle` and `.custom`), check / radio groups with `focus-within`,
+per-state SVG icons on every control and every group item, and a set
+of panels separated by splitters.
 
 | Light | Dark |
 | :---: | :---: |
@@ -305,7 +307,11 @@ native LCL dialog anywhere on screen.
 - A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources
   for the whole demo. It is configured at `32 × 32` design-time size with
   `Scaled = True`, so every icon is always rendered at the current DPI,
-  and ships with **six 48×48 icons**:
+  and ships with **six 48×48 general-purpose icons** plus **sixteen
+  24×24 state icons** for the checkbox and radio demos:
+
+  **General icons (indices 0–5, used by buttons, tabs, menus, and trees):**
+
   - `icons8-ok` — a gradient circle with a white checkmark. This entry
     has **per-theme variants**: its base `Svg` is the light artwork, and
     its `Variants` list carries an alternative `dark` body with a muted
@@ -315,6 +321,30 @@ native LCL dialog anywhere on screen.
     popup menu.
   - `icons8-done`, `icons8-refresh`, `icons8-share` — additional
     entries used by the two trees on the *TreeView* tab.
+
+  **Checkbox state icons (indices 6–13, used by the *Custom* panel on
+  the *Checkboxes, Radio, Splitters* tab):**
+
+  - `check_unchecked` — plain rounded square.
+  - `check_checked` — square with a white checkmark.
+  - `check_unchecked_hover` / `check_checked_hover` — same two shapes
+    in the darker hover tint.
+  - `check_unchecked_focused` / `check_checked_focused` — same two
+    shapes wrapped in the focus ring.
+  - `check_unchecked_disabled` / `check_checked_disabled` — muted grey
+    variants for the `:disabled` state.
+
+  **Radio state icons (indices 14–21, used by the same *Custom* panel):**
+
+  - `radio_unchecked`, `radio_checked`, `radio_unchecked_hover`,
+    `radio_checked_hover`, `radio_unchecked_focus`, `radio_checked_focus`,
+    `radio_unchecked_disabled`, `radio_checked_disabled` — the eight
+    circle-based counterparts of the checkbox set, keeping the same
+    state coverage (normal, hover, focus, disabled).
+
+  The state icons are all pure-`fill` SVG (no `stroke`) with integer
+  coordinates, so they rasterise cleanly at every DPI without the
+  smearing that thin strokes would produce at 22-pixel sizes.
 
 - A `TCssPopupMenu` (`CssPopupMenu1`) whose icons are sourced **once at
   the menu level**: `CssPopupMenu1.SvgImages := CssSvgImgList1`. Every
@@ -330,19 +360,47 @@ native LCL dialog anywhere on screen.
 
 ### Page 2 — Checkboxes, Radio, Splitters
 
-- Two rows of standalone controls: plain `TCssCheckBox` / `TCssRadioButton`
-  in the *Standart* panel, and the same controls with
-  `CssClass = 'toggle'` in the *Toggle* panel, which turns them into
-  Windows 11-style pill switches.
+The tab is organised as four `TCssPanel`s stacked top-to-bottom, each
+demonstrating one visual style, followed by a fifth panel that shows
+the splitters.
 
-- Four `TCssCheckGroup` / `TCssRadioGroup` combinations covering the two
-  visual styles side by side, plus two disabled groups without captions
-  that show how `:disabled` propagates to children.
+- **Standart** panel — plain `TCssCheckBox` / `TCssRadioButton` with the
+  default box-and-check-mark renderer, and a `TCssCheckGroup` /
+  `TCssRadioGroup` pair with the same style. Two more groups
+  (`CssCheckGroup3`, `CssRadioGroup3`) are disabled and carry no caption,
+  demonstrating how `:disabled` propagates to the children.
 
-- A `TCssPanel` with **splitters**: one horizontal splitter between a
+- **Toggle** panel — the same six controls, but every one has
+  `CssClass = 'toggle'` (standalone) or `CheckBoxCssClass` /
+  `RadioCssClass = 'toggle'` (groups). This is the Windows 11-style pill
+  switch, driven by the `.toggle` rules in the theme. The disabled groups
+  at the right show the muted palette in that style as well.
+
+- **Custom** panel — the visual counterpart of *Toggle*, but every
+  control draws its glyph from `CssSvgImgList1` instead of the built-in
+  renderer. The standalone checkboxes (`CssCheckBox6`, `CssCheckBox7`)
+  and the checkbox groups (`CssCheckGroup5`, `CssCheckGroup6`) use
+  indices 6–13; the standalone radios (`CssRadioButton5`,
+  `CssRadioButton6`) and the radio groups (`CssRadioGroup5`,
+  `CssRadioGroup6`) use indices 14–21. Every control wires all eight
+  image indexes — `ImageIndex`, `ImageIndexChecked`, `ImageIndexHover`,
+  `ImageIndexCheckedHover`, `ImageIndexFocused`,
+  `ImageIndexCheckedFocused`, `ImageIndexDisabled`,
+  `ImageIndexCheckedDisabled` — so hovering, focusing, and disabling
+  each swap the glyph through the SVG list. The two disabled groups on
+  the right use the same `*Disabled` indexes, so their artwork is
+  muted without any per-control desaturation code.
+
+- **Panels and splitters** panel — one horizontal splitter between a
   *Top panel* and a *Bottom panel*, and one vertical splitter between
   a *Left panel* and a *Right panel*. The panels demonstrate
   `focus-within: true` and the hover border transition.
+
+Because the *Custom* panel is driven entirely by `TCssSvgImgList` and
+CSS classes, switching the active CSS variant from `Light` to `Dark`
+also swaps the checkbox / radio glyphs to their per-theme variants when
+the corresponding SVG entries define them — no Pascal code runs during
+the switch.
 
 ### Page 3 — Editors
 
@@ -857,23 +915,27 @@ CssBitBtn4.ImageIndex := 3;
 
 ### TCssCheckBox
 
-| Property                  | Notes                                              |
-| ------------------------- | -------------------------------------------------- |
-| `checkbox-background`     | Fill color of the box.                             |
-| `checkbox-border-color`   | Border color of the box.                           |
-| `checkbox-border-width`   | Border width of the box.                           |
-| `checkbox-radius`         | Corner radius of the box.                          |
-| `check-color`             | Color of the check mark.                           |
-| `checkbox-style`          | `toggle` / `switch` turns the box into a pill switch. |
-| `toggle-width`            | Width of the switch track (default 40 px).         |
-| `toggle-height`           | Height of the switch track (default 20 px).        |
-| `toggle-thumb-color`      | Thumb color of the switch (defaults to `check-color`). |
+#### CSS Properties
+
+| Property                  | Notes                                                                    |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `checkbox-background`     | Fill color of the box.                                                   |
+| `checkbox-border-color`   | Border color of the box.                                                 |
+| `checkbox-border-width`   | Border width of the box.                                                 |
+| `checkbox-radius`         | Corner radius of the box.                                                |
+| `check-color`             | Color of the check mark.                                                 |
+| `checkbox-style`          | `toggle` / `switch` turns the box into a pill switch; `custom` is a synonym with an independently tunable thumb inset. |
+| `toggle-width`            | Width of the switch track (default 40 px).                               |
+| `toggle-height`           | Height of the switch track (default 20 px).                              |
+| `toggle-thumb-inset`      | Gap between the thumb and the track edge, per side (default 4 px). Clamped to `[0, toggle-height/2 - 1]`. Used by both `toggle` and `custom`. |
+| `toggle-thumb-color`      | Thumb color of the switch (defaults to `check-color`).                   |
 
 ```css
 TCssCheckBox.toggle {
   checkbox-style: toggle;
   toggle-width: 40px;
   toggle-height: 20px;
+  toggle-thumb-inset: 4px;
   checkbox-background: #F1F5F9;
   toggle-thumb-color: #64748B;
 }
@@ -881,21 +943,126 @@ TCssCheckBox.toggle:checked {
   checkbox-background: #2563EB;
   toggle-thumb-color: #FFFFFF;
 }
+
+/* `custom` looks identical to `toggle` unless you override its values —
+   which is exactly the point: it lets a theme tune the thumb inset
+   for one switch style without affecting the other. */
+TCssCheckBox.custom {
+  checkbox-style: custom;
+  toggle-width: 48px;
+  toggle-height: 24px;
+  toggle-thumb-inset: 3px;
+  checkbox-background: #F1F5F9;
+  toggle-thumb-color: #64748B;
+}
+```
+
+#### Pascal Properties
+
+| Property                       | Type               | Default | Notes                                                                                                                   |
+| ------------------------------ | ------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `Checked`                      | `Boolean`          | `False` | Convenience wrapper over `State`.                                                                                       |
+| `State`                        | `TCheckBoxState`   | `cbUnchecked` | Tri-state value.                                                                                                        |
+| `AllowGrayed`                  | `Boolean`          | `False` | Enables `cbGrayed`.                                                                                                     |
+| `ToggleStyle`                  | `Boolean`          | —       | Read-only. `True` when the effective CSS `checkbox-style` is `toggle` / `switch` / `custom`.                            |
+| `SvgImages`                    | `TCssSvgImgList`   | `nil`   | Per-state SVG source.                                                                                                   |
+| `ImageIndex`                   | `Integer`          | `-1`    | Unchecked, normal.                                                                                                      |
+| `ImageIndexChecked`            | `Integer`          | `-1`    | Checked / grayed, normal.                                                                                               |
+| `ImageIndexHover`              | `Integer`          | `-1`    | Unchecked, hover.                                                                                                       |
+| `ImageIndexCheckedHover`       | `Integer`          | `-1`    | Checked, hover.                                                                                                         |
+| `ImageIndexFocused`            | `Integer`          | `-1`    | Unchecked, focused.                                                                                                     |
+| `ImageIndexCheckedFocused`     | `Integer`          | `-1`    | Checked, focused.                                                                                                       |
+| `ImageIndexDisabled`           | `Integer`          | `-1`    | Unchecked, disabled. When `-1`, the control auto-generates a muted variant of `ImageIndex`.                             |
+| `ImageIndexCheckedDisabled`    | `Integer`          | `-1`    | Checked, disabled. When `-1`, auto-generates from `ImageIndexChecked`.                                                  |
+
+#### Per-State SVG Icons
+
+`TCssCheckBox` can draw its glyph from a `TCssSvgImgList` instead of the built-in box / switch renderer. As soon as any state resolves to a valid index, the SVG is used for that state; the built-in renderer is skipped. The lookup order matches the CSS state machine — disabled → checked-hover → checked → hover → base — with an extra focus layer between hover and base:
+
+| State                          | Index used                                                       |
+| ------------------------------ | ---------------------------------------------------------------- |
+| Unchecked, normal              | `ImageIndex`                                                     |
+| Unchecked, hover               | `ImageIndexHover`, else `ImageIndex`                             |
+| Unchecked, focus               | `ImageIndexFocused`, else `ImageIndex`                           |
+| Unchecked, disabled            | `ImageIndexDisabled`, else auto-tinted `ImageIndex`              |
+| Checked / grayed, normal       | `ImageIndexChecked`                                              |
+| Checked / grayed, hover        | `ImageIndexCheckedHover`, else `ImageIndexChecked`               |
+| Checked / grayed, focus        | `ImageIndexCheckedFocused`, else `ImageIndexChecked`             |
+| Checked / grayed, disabled     | `ImageIndexCheckedDisabled`, else auto-tinted `ImageIndexChecked`|
+
+The auto-tinted fallback is the same algorithm used by `TCssBitBtn`: the enabled artwork is desaturated, its contrast is compressed toward mid-gray, and the result is blended with the effective `:disabled` text colour from CSS. Transparent pixels stay transparent and the anti-aliased edges survive, so no box appears behind the icon.
+
+```pascal
+CssCheckBox1.SvgImages                 := CssSvgImgList1;
+CssCheckBox1.ImageIndex                := 0;   // unchecked
+CssCheckBox1.ImageIndexChecked         := 1;
+CssCheckBox1.ImageIndexHover           := 2;
+CssCheckBox1.ImageIndexCheckedHover    := 3;
+CssCheckBox1.ImageIndexFocused         := 4;
+CssCheckBox1.ImageIndexCheckedFocused  := 7;
+CssCheckBox1.ImageIndexDisabled        := 6;
+CssCheckBox1.ImageIndexCheckedDisabled := 5;
 ```
 
 ### TCssRadioButton
 
-| Property               | Notes                                              |
-| ---------------------- | -------------------------------------------------- |
-| `radio-background`     | Fill color of the circle.                          |
-| `radio-border-color`   | Border color of the circle.                        |
-| `radio-border-width`   | Border width of the circle.                        |
-| `radio-radius`         | Corner radius (when < half of the box).            |
-| `dot-color`            | Color of the inner dot.                            |
-| `radio-style`          | `toggle` / `switch` turns the radio into a pill switch. |
-| `toggle-width`         | Width of the switch track (default 40 px).         |
-| `toggle-height`        | Height of the switch track (default 20 px).        |
-| `toggle-thumb-color`   | Thumb color of the switch (defaults to `dot-color`). |
+#### CSS Properties
+
+| Property               | Notes                                                                    |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `radio-background`     | Fill color of the circle.                                                |
+| `radio-border-color`   | Border color of the circle.                                              |
+| `radio-border-width`   | Border width of the circle.                                              |
+| `radio-radius`         | Corner radius (when < half of the box).                                  |
+| `dot-color`            | Color of the inner dot.                                                  |
+| `radio-style`          | `toggle` / `switch` turns the radio into a pill switch; `custom` is a synonym with an independently tunable thumb inset. |
+| `toggle-width`         | Width of the switch track (default 40 px).                               |
+| `toggle-height`        | Height of the switch track (default 20 px).                              |
+| `toggle-thumb-inset`   | Gap between the thumb and the track edge, per side (default 4 px).       |
+| `toggle-thumb-color`   | Thumb color of the switch (defaults to `dot-color`).                     |
+
+#### Pascal Properties
+
+| Property                       | Type               | Default | Notes                                                                                                                   |
+| ------------------------------ | ------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `Checked`                      | `Boolean`          | `False` |                                                                                                                          |
+| `ToggleStyle`                  | `Boolean`          | —       | Read-only. `True` when the effective CSS `radio-style` is `toggle` / `switch` / `custom`.                               |
+| `SvgImages`                    | `TCssSvgImgList`   | `nil`   | Per-state SVG source.                                                                                                   |
+| `ImageIndex`                   | `Integer`          | `-1`    | Unchecked, normal.                                                                                                      |
+| `ImageIndexChecked`            | `Integer`          | `-1`    | Checked, normal.                                                                                                        |
+| `ImageIndexHover`              | `Integer`          | `-1`    | Unchecked, hover.                                                                                                       |
+| `ImageIndexCheckedHover`       | `Integer`          | `-1`    | Checked, hover.                                                                                                         |
+| `ImageIndexFocused`            | `Integer`          | `-1`    | Unchecked, focused.                                                                                                     |
+| `ImageIndexCheckedFocused`     | `Integer`          | `-1`    | Checked, focused.                                                                                                       |
+| `ImageIndexDisabled`           | `Integer`          | `-1`    | Unchecked, disabled. `-1` falls back to auto-tinted `ImageIndex`.                                                       |
+| `ImageIndexCheckedDisabled`    | `Integer`          | `-1`    | Checked, disabled. `-1` falls back to auto-tinted `ImageIndexChecked`.                                                  |
+
+#### Per-State SVG Icons
+
+Identical to `TCssCheckBox`, with `Checked` (a `Boolean`) replacing `TCheckBoxState` in the lookup:
+
+| State                       | Index used                                                       |
+| --------------------------- | ---------------------------------------------------------------- |
+| Unchecked, normal           | `ImageIndex`                                                     |
+| Unchecked, hover            | `ImageIndexHover`, else `ImageIndex`                             |
+| Unchecked, focus            | `ImageIndexFocused`, else `ImageIndex`                           |
+| Unchecked, disabled         | `ImageIndexDisabled`, else auto-tinted `ImageIndex`              |
+| Checked, normal             | `ImageIndexChecked`                                              |
+| Checked, hover              | `ImageIndexCheckedHover`, else `ImageIndexChecked`               |
+| Checked, focus              | `ImageIndexCheckedFocused`, else `ImageIndexChecked`             |
+| Checked, disabled           | `ImageIndexCheckedDisabled`, else auto-tinted `ImageIndexChecked`|
+
+```pascal
+CssRadioButton1.SvgImages                 := CssSvgImgList1;
+CssRadioButton1.ImageIndex                := 0;
+CssRadioButton1.ImageIndexChecked         := 1;
+CssRadioButton1.ImageIndexHover           := 2;
+CssRadioButton1.ImageIndexCheckedHover    := 3;
+CssRadioButton1.ImageIndexFocused         := 4;
+CssRadioButton1.ImageIndexCheckedFocused  := 5;
+CssRadioButton1.ImageIndexDisabled        := 6;
+CssRadioButton1.ImageIndexCheckedDisabled := 7;
+```
 
 ### TCssCheckGroup / TCssRadioGroup
 
@@ -907,7 +1074,56 @@ They expose `CheckBoxCssClass` / `CheckBoxCssStyle` (resp. `RadioCssClass` / `Ra
 TCssCheckGroup  { /* ... */ }
 .checkbox       { /* applied to the child checkboxes */ }
 .toggle         { /* switch appearance for the children */ }
+.custom         { /* switch appearance with a different thumb inset */ }
 ```
+
+#### Per-Item SVG Icons
+
+Both groups can push a shared set of SVG icons down to every child control, and let individual children override the unchecked / normal icon:
+
+| Property                       | Type               | Default | Notes                                                                                                                   |
+| ------------------------------ | ------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `SvgImages`                    | `TCssSvgImgList`   | `nil`   | Per-state SVG source for every child.                                                                                   |
+| `ItemImageIndexes`             | `TStringList`      | —       | One line per item; each line is the **unchecked base index** for that item. Empty / `-1` falls back to the group-level `ImageIndex`. |
+| `ImageIndex`                   | `Integer`          | `-1`    | Fallback unchecked index for items not covered by `ItemImageIndexes`.                                                   |
+| `ImageIndexChecked`            | `Integer`          | `-1`    | Checked index, shared by every child.                                                                                   |
+| `ImageIndexHover`              | `Integer`          | `-1`    | Unchecked hover index, shared.                                                                                          |
+| `ImageIndexCheckedHover`       | `Integer`          | `-1`    | Checked hover index, shared.                                                                                            |
+| `ImageIndexFocused`            | `Integer`          | `-1`    | Unchecked focus index, shared.                                                                                          |
+| `ImageIndexCheckedFocused`     | `Integer`          | `-1`    | Checked focus index, shared.                                                                                            |
+| `ImageIndexDisabled`           | `Integer`          | `-1`    | Unchecked disabled index. `-1` lets each child auto-tint its own unchecked index.                                        |
+| `ImageIndexCheckedDisabled`    | `Integer`          | `-1`    | Checked disabled index. `-1` lets each child auto-tint.                                                                 |
+
+The group owns `SvgImages`, so it is enough to assign the list and the shared indexes once — every child receives them through `ApplyImagesToChild` in both `RebuildItems` and `UpdateChildStyles`.
+
+Priority for the **unchecked base index**:
+
+1. `ItemImageIndexes[Index]`, when it parses to a value `>= 0`.
+2. `ImageIndex` of the group, otherwise.
+3. `-1` — the child falls back to whatever it has locally (typically `-1`).
+
+```pascal
+CssCheckGroup1.SvgImages                 := CssSvgImgList1;
+CssCheckGroup1.ImageIndex                := 0;   // fallback for all items
+CssCheckGroup1.ImageIndexChecked         := 1;
+CssCheckGroup1.ImageIndexHover           := 2;
+CssCheckGroup1.ImageIndexCheckedHover    := 3;
+CssCheckGroup1.ImageIndexFocused         := 4;
+CssCheckGroup1.ImageIndexCheckedFocused  := 7;
+CssCheckGroup1.ImageIndexDisabled        := 6;
+CssCheckGroup1.ImageIndexCheckedDisabled := 5;
+
+// Per-item unchecked icons — item 1 and 2 use different artwork:
+CssCheckGroup1.ItemImageIndexes.Clear;
+CssCheckGroup1.ItemImageIndexes.Add('');       // item 0: falls back to ImageIndex = 0
+CssCheckGroup1.ItemImageIndexes.Add('10');     // item 1: custom unchecked index
+CssCheckGroup1.ItemImageIndexes.Add('11');     // item 2: custom unchecked index
+```
+
+`TCssRadioGroup` exposes the same properties under the `RadioButtons[Index]` accessor (equivalent to `CheckBoxes[Index]` on `TCssCheckGroup`).
+
+The group-level `CheckBoxCssClass` / `RadioCssClass` (`'toggle'`, `'custom'`, …) still applies on top of the per-item SVG icons: a child rendered as a switch uses the switch track, and the SVG is drawn over it when its index resolves. In practice you pick one — SVG icons **or** the built-in renderer — for a given group.
+
 
 ### TCssComboBox
 
@@ -2453,6 +2669,14 @@ CssStyleProvider1.DefaultStyleName := 'light';   // or 'dark'
 ```
 
 The file contains rules for every control in the library, so simply dropping a `TCssButton`, `TCssEdit`, `TCssVirtualStringTree`, etc., and assigning the provider gives you a consistent modern look immediately.
+
+For the check and radio controls the theme ships three visual styles in each variant:
+
+- the default box / circle,
+- `.toggle` — the Windows 11-style pill switch,
+- `.custom` — the same pill switch with a different thumb inset.
+
+`TCssCheckBox` / `TCssRadioButton` can additionally draw their glyph from a `TCssSvgImgList` (see their Pascal property tables above), in which case the CSS box / switch renderer is bypassed for that control and the SVG icon for the current state is drawn instead.
 
 ---
 

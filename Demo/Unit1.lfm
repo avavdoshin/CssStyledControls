@@ -424,7 +424,7 @@ object Form1: TForm1
         AnchorSideRight.Control = CssTabSheet2
         AnchorSideRight.Side = asrBottom
         Left = 5
-        Height = 139
+        Height = 131
         Top = 5
         Width = 1143
         Align = alTop
@@ -449,7 +449,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 70
           Height = 19
-          Top = 74
+          Top = 69
           Width = 80
           BorderSpacing.Left = 70
           Caption = 'Checkbox'
@@ -470,7 +470,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 70
           Height = 19
-          Top = 98
+          Top = 93
           Width = 124
           BorderSpacing.Top = 5
           Caption = '<i>Another checkbox'
@@ -492,7 +492,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 209
           Height = 19
-          Top = 74
+          Top = 69
           Width = 64
           BorderSpacing.Left = 15
           Caption = 'Option'
@@ -510,7 +510,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 209
           Height = 19
-          Top = 98
+          Top = 93
           Width = 107
           Caption = '<i>Another</i> option'
           CssTag = 'control'
@@ -528,10 +528,10 @@ object Form1: TForm1
           AnchorSideTop.Control = CssPanel3
           Left = 336
           Height = 90
-          Top = 38
+          Top = 33
           Width = 185
           BorderSpacing.Left = 20
-          BorderSpacing.Top = 15
+          BorderSpacing.Top = 10
           Caption = '<h6 align="center">Check group</h6>'
           CssTag = 'control'
           HtmlMode = True
@@ -557,7 +557,7 @@ object Form1: TForm1
           AnchorSideBottom.Side = asrBottom
           Left = 707
           Height = 90
-          Top = 38
+          Top = 33
           Width = 185
           Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 20
@@ -584,7 +584,7 @@ object Form1: TForm1
           Left = 541
           Height = 66
           Hint = 'Disabled check group without caption'
-          Top = 62
+          Top = 57
           Width = 146
           Anchors = [akLeft, akBottom]
           BorderSpacing.Left = 20
@@ -616,7 +616,7 @@ object Form1: TForm1
           Left = 912
           Height = 66
           Hint = 'Disabled radio group without caption'
-          Top = 62
+          Top = 57
           Width = 131
           Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 20
@@ -645,8 +645,8 @@ object Form1: TForm1
         AnchorSideRight.Control = CssTabSheet2
         AnchorSideRight.Side = asrBottom
         Left = 5
-        Height = 147
-        Top = 149
+        Height = 139
+        Top = 141
         Width = 1143
         Align = alCustom
         BorderSpacing.Left = 5
@@ -670,7 +670,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 50
           Height = 20
-          Top = 77
+          Top = 72
           Width = 97
           BorderSpacing.Left = 50
           Caption = 'Checkbox'
@@ -692,7 +692,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 50
           Height = 20
-          Top = 102
+          Top = 97
           Width = 141
           BorderSpacing.Top = 5
           Caption = '<i>Another checkbox'
@@ -715,7 +715,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 206
           Height = 20
-          Top = 77
+          Top = 72
           Width = 81
           BorderSpacing.Left = 15
           Caption = 'Option'
@@ -734,7 +734,7 @@ object Form1: TForm1
           Cursor = crHandPoint
           Left = 206
           Height = 20
-          Top = 102
+          Top = 97
           Width = 124
           Caption = '<i>Another</i> option'
           CssTag = 'control'
@@ -753,10 +753,10 @@ object Form1: TForm1
           AnchorSideTop.Control = CssPanel4
           Left = 350
           Height = 98
-          Top = 38
+          Top = 33
           Width = 185
           BorderSpacing.Left = 20
-          BorderSpacing.Top = 15
+          BorderSpacing.Top = 10
           Caption = '<h6 align="center">Check group</h6>'
           CssTag = 'control'
           HtmlMode = True
@@ -782,7 +782,7 @@ object Form1: TForm1
           AnchorSideBottom.Side = asrBottom
           Left = 744
           Height = 98
-          Top = 38
+          Top = 33
           Width = 185
           Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 20
@@ -809,7 +809,7 @@ object Form1: TForm1
           Left = 555
           Height = 66
           Hint = 'Disabled check group without caption'
-          Top = 70
+          Top = 65
           Width = 169
           Anchors = [akLeft, akBottom]
           BorderSpacing.Left = 20
@@ -841,7 +841,7 @@ object Form1: TForm1
           Left = 949
           Height = 66
           Hint = 'Disabled radio group without caption'
-          Top = 70
+          Top = 65
           Width = 151
           Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 20
@@ -865,15 +865,15 @@ object Form1: TForm1
       end
       object CssPanel5: TCssPanel
         AnchorSideLeft.Control = CssPanel4
-        AnchorSideTop.Control = CssPanel4
+        AnchorSideTop.Control = CssPanel14
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = CssPanel4
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = CssTabSheet2
         AnchorSideBottom.Side = asrBottom
         Left = 5
-        Height = 332
-        Top = 301
+        Height = 204
+        Top = 429
         Width = 1143
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Top = 5
@@ -891,7 +891,7 @@ object Form1: TForm1
         WordWrap = True
         object CssPanel6: TCssPanel
           Left = 13
-          Height = 93
+          Height = 52
           Top = 41
           Width = 1117
           Align = alTop
@@ -912,7 +912,7 @@ object Form1: TForm1
           Cursor = crVSplit
           Left = 13
           Height = 1117
-          Top = 134
+          Top = 93
           Align = alTop
           CssTag = 'control'
           StyleProvider = CssStyleProvider1
@@ -921,8 +921,8 @@ object Form1: TForm1
         end
         object CssPanel7: TCssPanel
           Left = 13
-          Height = 180
-          Top = 139
+          Height = 93
+          Top = 98
           Width = 1117
           Align = alClient
           Caption = '<h6>Bottom panel</h6>'
@@ -938,7 +938,7 @@ object Form1: TForm1
           WordWrap = True
           object CssPanel8: TCssPanel
             Left = 13
-            Height = 131
+            Height = 44
             Top = 36
             Width = 315
             Align = alLeft
@@ -957,7 +957,7 @@ object Form1: TForm1
           object CssSplitter2: TCssSplitter
             Cursor = crHSplit
             Left = 328
-            Height = 131
+            Height = 44
             Top = 36
             CssTag = 'control'
             StyleProvider = CssStyleProvider1
@@ -966,7 +966,7 @@ object Form1: TForm1
           end
           object CssPanel9: TCssPanel
             Left = 333
-            Height = 131
+            Height = 44
             Top = 36
             Width = 771
             Align = alClient
@@ -982,6 +982,303 @@ object Form1: TForm1
             Layout = tlTop
             WordWrap = True
           end
+        end
+      end
+      object CssPanel14: TCssPanel
+        AnchorSideLeft.Control = CssTabSheet2
+        AnchorSideTop.Control = CssPanel4
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = CssTabSheet2
+        AnchorSideRight.Side = asrBottom
+        Left = 5
+        Height = 139
+        Top = 285
+        Width = 1143
+        Align = alCustom
+        BorderSpacing.Left = 5
+        BorderSpacing.Top = 5
+        BorderSpacing.Right = 5
+        Caption = '<h6>Custom</h6>'
+        CssTag = 'control'
+        HtmlMode = True
+        StyleProvider = CssStyleProvider1
+        FocusColor = 16426336
+        MonospaceFontName = 'Courier New'
+        TabOrder = 3
+        TabStop = True
+        Alignment = taLeftJustify
+        Layout = tlTop
+        WordWrap = True
+        object CssCheckBox6: TCssCheckBox
+          AnchorSideLeft.Control = CssPanel14
+          AnchorSideTop.Control = CssCheckGroup5
+          AnchorSideTop.Side = asrCenter
+          Cursor = crHandPoint
+          Left = 50
+          Height = 20
+          Top = 72
+          Width = 97
+          BorderSpacing.Left = 50
+          Caption = 'Checkbox'
+          CssTag = 'control'
+          CssClass = 'custom'
+          Checked = False
+          StyleProvider = CssStyleProvider1
+          MonospaceFontName = 'Courier New'
+          TabOrder = 0
+          TabStop = True
+          State = cbUnchecked
+          AllowGrayed = False
+          SvgImages = CssSvgImgList1
+          ImageIndex = 6
+          ImageIndexChecked = 7
+          ImageIndexHover = 8
+          ImageIndexCheckedHover = 9
+          ImageIndexFocused = 10
+          ImageIndexCheckedFocused = 13
+          ImageIndexDisabled = 12
+          ImageIndexCheckedDisabled = 11
+          AutoSize = True
+        end
+        object CssCheckBox7: TCssCheckBox
+          AnchorSideLeft.Control = CssCheckBox6
+          AnchorSideTop.Control = CssCheckBox6
+          AnchorSideTop.Side = asrBottom
+          Cursor = crHandPoint
+          Left = 50
+          Height = 20
+          Top = 97
+          Width = 141
+          BorderSpacing.Top = 5
+          Caption = '<i>Another checkbox'
+          CssTag = 'control'
+          CssClass = 'custom'
+          Checked = False
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          MonospaceFontName = 'Courier New'
+          TabOrder = 1
+          TabStop = True
+          State = cbUnchecked
+          AllowGrayed = False
+          SvgImages = CssSvgImgList1
+          ImageIndex = 6
+          ImageIndexChecked = 7
+          ImageIndexHover = 8
+          ImageIndexCheckedHover = 9
+          ImageIndexFocused = 10
+          ImageIndexCheckedFocused = 13
+          ImageIndexDisabled = 12
+          ImageIndexCheckedDisabled = 11
+          AutoSize = True
+        end
+        object CssRadioButton5: TCssRadioButton
+          AnchorSideLeft.Control = CssCheckBox7
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssCheckBox6
+          Cursor = crHandPoint
+          Left = 206
+          Height = 20
+          Top = 72
+          Width = 81
+          BorderSpacing.Left = 15
+          Caption = 'Option'
+          CssTag = 'control'
+          CssClass = 'custom'
+          Checked = False
+          StyleProvider = CssStyleProvider1
+          MonospaceFontName = 'Courier New'
+          TabOrder = 2
+          TabStop = True
+          SvgImages = CssSvgImgList1
+          ImageIndex = 14
+          ImageIndexChecked = 15
+          ImageIndexHover = 16
+          ImageIndexCheckedHover = 17
+          ImageIndexFocused = 18
+          ImageIndexCheckedFocused = 19
+          ImageIndexDisabled = 20
+          ImageIndexCheckedDisabled = 21
+          AutoSize = True
+        end
+        object CssRadioButton6: TCssRadioButton
+          AnchorSideLeft.Control = CssRadioButton5
+          AnchorSideTop.Control = CssCheckBox7
+          Cursor = crHandPoint
+          Left = 206
+          Height = 20
+          Top = 97
+          Width = 124
+          Caption = '<i>Another</i> option'
+          CssTag = 'control'
+          CssClass = 'custom'
+          Checked = False
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          MonospaceFontName = 'Courier New'
+          TabOrder = 3
+          TabStop = True
+          SvgImages = CssSvgImgList1
+          ImageIndex = 14
+          ImageIndexChecked = 15
+          ImageIndexHover = 16
+          ImageIndexCheckedHover = 17
+          ImageIndexFocused = 18
+          ImageIndexCheckedFocused = 19
+          ImageIndexDisabled = 20
+          ImageIndexCheckedDisabled = 21
+          AutoSize = True
+        end
+        object CssCheckGroup5: TCssCheckGroup
+          AnchorSideLeft.Control = CssRadioButton6
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssPanel14
+          Left = 350
+          Height = 98
+          Top = 33
+          Width = 185
+          BorderSpacing.Left = 20
+          BorderSpacing.Top = 10
+          Caption = '<h6 align="center">Check group</h6>'
+          CssTag = 'control'
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          ShowFocusRect = False
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 4
+          Items.Strings = (
+            'Checkbox'
+            '<i>Another</i> checkbox'
+          )
+          AllowGrayed = False
+          Columns = 1
+          ItemHeight = 0
+          CheckBoxCssClass = 'custom'
+          SvgImages = CssSvgImgList1
+          ImageIndex = 6
+          ImageIndexChecked = 7
+          ImageIndexHover = 8
+          ImageIndexCheckedHover = 9
+          ImageIndexFocused = 10
+          ImageIndexCheckedFocused = 13
+          ImageIndexDisabled = 12
+          ImageIndexCheckedDisabled = 11
+        end
+        object CssRadioGroup5: TCssRadioGroup
+          AnchorSideLeft.Control = CssCheckGroup6
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssCheckGroup5
+          AnchorSideBottom.Control = CssCheckGroup5
+          AnchorSideBottom.Side = asrBottom
+          Left = 744
+          Height = 98
+          Top = 33
+          Width = 185
+          Anchors = [akTop, akLeft, akBottom]
+          BorderSpacing.Left = 20
+          Caption = '<h6 align="center">Radio group</h6>'
+          CssTag = 'control'
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 5
+          Items.Strings = (
+            'Option'
+            '<i>Another</i> option'
+          )
+          Columns = 1
+          ItemHeight = 0
+          RadioCssClass = 'custom'
+          SvgImages = CssSvgImgList1
+          ImageIndex = 14
+          ImageIndexChecked = 15
+          ImageIndexHover = 16
+          ImageIndexCheckedHover = 17
+          ImageIndexFocused = 18
+          ImageIndexCheckedFocused = 19
+          ImageIndexDisabled = 20
+          ImageIndexCheckedDisabled = 21
+        end
+        object CssCheckGroup6: TCssCheckGroup
+          AnchorSideLeft.Control = CssCheckGroup5
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideBottom.Control = CssCheckGroup5
+          AnchorSideBottom.Side = asrBottom
+          Left = 555
+          Height = 66
+          Hint = 'Disabled check group without caption'
+          Top = 65
+          Width = 169
+          Anchors = [akLeft, akBottom]
+          BorderSpacing.Left = 20
+          CssTag = 'control'
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          ShowFocusRect = False
+          FocusColor = 16426336
+          ShowHint = True
+          MonospaceFontName = 'Courier New'
+          Enabled = False
+          ParentShowHint = False
+          TabOrder = 6
+          Items.Strings = (
+            'Checkbox'
+            '<i>Another</i> checkbox'
+          )
+          AllowGrayed = False
+          Columns = 1
+          ItemHeight = 0
+          CheckBoxCssClass = 'custom'
+          SvgImages = CssSvgImgList1
+          ImageIndex = 6
+          ImageIndexChecked = 7
+          ImageIndexHover = 8
+          ImageIndexCheckedHover = 9
+          ImageIndexFocused = 10
+          ImageIndexCheckedFocused = 13
+          ImageIndexDisabled = 12
+          ImageIndexCheckedDisabled = 11
+        end
+        object CssRadioGroup6: TCssRadioGroup
+          AnchorSideLeft.Control = CssRadioGroup5
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssCheckGroup6
+          AnchorSideBottom.Control = CssCheckGroup5
+          AnchorSideBottom.Side = asrBottom
+          Left = 949
+          Height = 66
+          Hint = 'Disabled radio group without caption'
+          Top = 65
+          Width = 151
+          Anchors = [akTop, akLeft, akBottom]
+          BorderSpacing.Left = 20
+          CssTag = 'control'
+          HtmlMode = True
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          ShowHint = True
+          MonospaceFontName = 'Courier New'
+          Enabled = False
+          ParentShowHint = False
+          TabOrder = 7
+          Items.Strings = (
+            'Option'
+            '<i>Another</i> option'
+          )
+          Columns = 1
+          ItemHeight = 0
+          RadioCssClass = 'custom'
+          SvgImages = CssSvgImgList1
+          ImageIndex = 14
+          ImageIndexChecked = 15
+          ImageIndexHover = 16
+          ImageIndexCheckedHover = 17
+          ImageIndexFocused = 18
+          ImageIndexCheckedFocused = 19
+          ImageIndexDisabled = 20
+          ImageIndexCheckedDisabled = 21
         end
       end
     end
@@ -1621,7 +1918,7 @@ object Form1: TForm1
   end
   object CssStyleProvider1: TCssStyleProvider
     DefaultStyleName = 'Light'
-    CssText = '@variant light'#13#10'{'#13#10'  .standart-form { background-color: #ffffff; color: #000000; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #eeeeee; font-weight: bold; }'#13#10'  .standart-edit { background: #f9f9f9; text-align: left; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #1E293B;'#13#10'  background-color: #F8FAFC;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #2563EB;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #0F172A;'#13#10'  border: 1px solid #94A3B8;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #2563EB; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #1D4ED8; }'#13#10'a:active { color: #1E40AF; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #F1F5F9;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #E2E8F0; border-color: #94A3B8; }'#13#10'TCssButton:active { background-color: #CBD5E1; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #CBD5E1;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #FEF2F2;'#13#10'  color: #B91C1C;'#13#10'  border: 1px solid #FCA5A5;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #FEE2E2; border-color: #F87171; }'#13#10'TCssButton:cancel:active { background-color: #FECACA; border-color: #EF4444; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #FEF2F2;'#13#10'  border-color: #FEE2E2;'#13#10'  color: #FECACA;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #2563EB;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #2563EB;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #1D4ED8; border-color: #1D4ED8; }'#13#10'TCssButton:default:active { background-color: #1E40AF; border-color: #1E40AF; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #F1F5F9;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #94A3B8;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #FFFFFF;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #2563EB; }'#13#10'TCssCheckBox:checked        { checkbox-background: #2563EB; checkbox-border-color: #2563EB; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #1D4ED8; checkbox-border-color: #1D4ED8; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #94A3B8;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  check-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #FFFFFF;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #2563EB;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #2563EB; }'#13#10'TCssRadioButton:checked        { radio-background: #2563EB; radio-border-color: #2563EB; dot-color: #2563EB; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #1D4ED8; radio-border-color: #1D4ED8; dot-color: #1D4ED8; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #94A3B8;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  dot-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches. Opt in by adding the `toggle` class.'#13#10'   For groups set CheckBoxCssClass / RadioCssClass to `toggle`. */'#13#10'/* Light: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #94A3B8; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-hover-background: #E2E8F0;'#13#10'  combo-button-active-background: #CBD5E1;'#13#10'  combo-button-border-color: #CBD5E1;'#13#10'  combo-button-arrow-color: #94A3B8; '#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssComboBox:hover  { border-color: #94A3B8; combo-button-arrow-color: #475569; }'#13#10'TCssComboBox:focus  { border-color: #2563EB; combo-button-arrow-color: #2563EB; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #DBEAFE;'#13#10'  item-selected-color: #1E40AF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #F8FAFC;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #94A3B8;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #94A3B8; }'#13#10'TCssEdit:focus { border-color: #2563EB; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #94A3B8; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #2563EB;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #94A3B8; }'#13#10'TCssListBox:focus { border-color: #2563EB; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  item-color: #94A3B8;'#13#10'  item-selected-background: #CBD5E1;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #1E293B;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #94A3B8; }'#13#10'TCssMemo:focus { border-color: #2563EB; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  caret-color: #94A3B8;'#13#10'  selection-background: #CBD5E1;'#13#10'  selection-color: #475569;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #94A3B8; }'#13#10'TCssPanel {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #94A3B8; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #CBD5E1; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'/* Icon canvas inside the dialog. */'#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #F8FAFC;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #2563EB; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  menu-background: #FFFFFF;'#13#10'  menu-border-color: #E2E8F0;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #F8FAFC;'#13#10'  border: none;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #F1F5F9;'#13#10'  border: none;'#13#10'  grip-color: #CBD5E1;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #E2E8F0;'#13#10'  grip-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #F1F5F9;'#13#10'  tab-hover-background: #E2E8F0;'#13#10'  tab-active-background: #2563EB;'#13#10#13#10'  tab-text-color: #475569;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #F1F5F9;'#13#10'  tab-scroll-button-hover-background: #E2E8F0;'#13#10'  tab-scroll-button-active-background: #CBD5E1;'#13#10'  tab-scroll-button-disabled-background: #F8FAFC;'#13#10'  tab-scroll-arrow-color: #475569;'#13#10'  tab-scroll-arrow-disabled-color: #CBD5E1;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #2563EB;   '#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #F8FAFC;'#13#10'  header-color: #475569;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #EFF6FF;'#13#10'  line-color: #E2E8F0;'#13#10'  button-color: #64748B;'#13#10'  drop-target-background: #DBEAFE;'#13#10'  sort-marker-color: #64748B;'#13#10'  disabled-background: #F8FAFC;'#13#10'  disabled-color: #94A3B8;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #E2E8F0;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #2563EB; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #2563EB;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10#13#10#13#10'@variant dark'#13#10'{'#13#10'  .standart-form { background-color: #1E293B; color: #ffffff; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #333333; color: #cccccc; }'#13#10'  .standart-edit { background: #222222; color: #ffffff; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #E2E8F0;'#13#10'  background-color: #1E293B;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #334155;'#13#10'  color: #F1F5F9;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #60A5FA; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #93C5FD; }'#13#10'a:active { color: #3B82F6; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #334155;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #475569; border-color: #64748B; }'#13#10'TCssButton:active { background-color: #64748B; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #475569;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #450A0A;'#13#10'  color: #FCA5A5;'#13#10'  border: 1px solid #7F1D1D;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #7F1D1D; border-color: #B91C1C; }'#13#10'TCssButton:cancel:active { background-color: #991B1B; border-color: #DC2626; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #7F1D1D;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #3B82F6;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #3B82F6;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #60A5FA; border-color: #60A5FA; }'#13#10'TCssButton:default:active { background-color: #2563EB; border-color: #2563EB; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #334155;'#13#10'  border-color: #334155;'#13#10'  color: #64748B;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:checked        { checkbox-background: #3B82F6; checkbox-border-color: #3B82F6; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #60A5FA; checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #64748B;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  check-color: #475569;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #3B82F6;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #60A5FA; }'#13#10'TCssRadioButton:checked        { radio-background: #3B82F6; radio-border-color: #3B82F6; dot-color: #3B82F6; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #60A5FA; radio-border-color: #60A5FA; dot-color: #60A5FA; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #64748B;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  dot-color: #475569;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches for the dark variant. */'#13#10'/* Dark: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #64748B; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #334155;'#13#10'  combo-button-hover-background: #475569;'#13#10'  combo-button-active-background: #64748B;'#13#10'  combo-button-border-color: #475569; '#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssComboBox:hover  { border-color: #64748B; combo-button-arrow-color: #E2E8F0; }'#13#10'TCssComboBox:focus  { border-color: #60A5FA; combo-button-arrow-color: #60A5FA; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'  combo-button-background: #1E293B;'#13#10'  combo-button-arrow-color: #475569;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #0F172A;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #64748B;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #64748B; }'#13#10'TCssEdit:focus { border-color: #60A5FA; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #64748B; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #64748B; }'#13#10'TCssListBox:focus { border-color: #60A5FA; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  item-color: #64748B;'#13#10'  item-selected-background: #334155;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #E2E8F0;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #64748B; }'#13#10'TCssMemo:focus { border-color: #60A5FA; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  caret-color: #64748B;'#13#10'  selection-background: #334155;'#13#10'  selection-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #64748B; }'#13#10'TCssPanel {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #64748B; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #475569; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #334155;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #0F172A;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #60A5FA; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  menu-background: #1E293B;'#13#10'  menu-border-color: #334155;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  grip-color: #475569;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #1E293B;'#13#10'  grip-color: #60A5FA;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #334155;'#13#10'  tab-hover-background: #475569;'#13#10'  tab-active-background: #3B82F6;'#13#10#13#10'  tab-text-color: #CBD5E1;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #334155;'#13#10'  tab-scroll-button-hover-background: #475569;'#13#10'  tab-scroll-button-active-background: #64748B;'#13#10'  tab-scroll-button-disabled-background: #1E293B;'#13#10'  tab-scroll-arrow-color: #CBD5E1;'#13#10'  tab-scroll-arrow-disabled-color: #475569;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #0F172A;'#13#10'  header-color: #94A3B8;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #334155;'#13#10'  line-color: #334155;'#13#10'  button-color: #94A3B8;'#13#10'  drop-target-background: #1E3A8A;'#13#10'  sort-marker-color: #CBD5E1;'#13#10'  disabled-background: #0F172A;'#13#10'  disabled-color: #64748B;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #334155;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #60A5FA; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #60A5FA;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10
+    CssText = '@variant light'#13#10'{'#13#10'  .standart-form { background-color: #ffffff; color: #000000; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #eeeeee; font-weight: bold; }'#13#10'  .standart-edit { background: #f9f9f9; text-align: left; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #1E293B;'#13#10'  background-color: #F8FAFC;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #2563EB;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #0F172A;'#13#10'  border: 1px solid #94A3B8;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #2563EB; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #1D4ED8; }'#13#10'a:active { color: #1E40AF; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #F1F5F9;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #E2E8F0; border-color: #94A3B8; }'#13#10'TCssButton:active { background-color: #CBD5E1; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #CBD5E1;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #FEF2F2;'#13#10'  color: #B91C1C;'#13#10'  border: 1px solid #FCA5A5;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #FEE2E2; border-color: #F87171; }'#13#10'TCssButton:cancel:active { background-color: #FECACA; border-color: #EF4444; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #FEF2F2;'#13#10'  border-color: #FEE2E2;'#13#10'  color: #FECACA;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #2563EB;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #2563EB;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #1D4ED8; border-color: #1D4ED8; }'#13#10'TCssButton:default:active { background-color: #1E40AF; border-color: #1E40AF; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #F1F5F9;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #94A3B8;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #FFFFFF;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #2563EB; }'#13#10'TCssCheckBox:checked        { checkbox-background: #2563EB; checkbox-border-color: #2563EB; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #1D4ED8; checkbox-border-color: #1D4ED8; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #94A3B8;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  check-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #FFFFFF;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #2563EB;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #2563EB; }'#13#10'TCssRadioButton:checked        { radio-background: #2563EB; radio-border-color: #2563EB; dot-color: #2563EB; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #1D4ED8; radio-border-color: #1D4ED8; dot-color: #1D4ED8; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #94A3B8;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  dot-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches. Opt in by adding the `toggle` class.'#13#10'   For groups set CheckBoxCssClass / RadioCssClass to `toggle`. */'#13#10'/* Light: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckBox.custom,'#13#10'checkbox.custom {'#13#10'  checkbox-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'  toggle-thumb-inset: 4px;     '#13#10'}'#13#10'TCssCheckBox.custom:hover,'#13#10'checkbox.custom:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.custom:checked,'#13#10'checkbox.custom:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.custom:checked:hover,'#13#10'checkbox.custom:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.custom:disabled,'#13#10'checkbox.custom:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.custom:checked:disabled,'#13#10'checkbox.custom:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.custom:focus,'#13#10'checkbox.custom:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.custom,'#13#10'radio.custom {'#13#10'  radio-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  toggle-thumb-inset: 4px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.custom:hover,'#13#10'radio.custom:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:checked,'#13#10'radio.custom:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.custom:checked:hover,'#13#10'radio.custom:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.custom:disabled,'#13#10'radio.custom:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:checked:disabled,'#13#10'radio.custom:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.custom:focus,'#13#10'radio.custom:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #94A3B8; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-hover-background: #E2E8F0;'#13#10'  combo-button-active-background: #CBD5E1;'#13#10'  combo-button-border-color: #CBD5E1;'#13#10'  combo-button-arrow-color: #94A3B8; '#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssComboBox:hover  { border-color: #94A3B8; combo-button-arrow-color: #475569; }'#13#10'TCssComboBox:focus  { border-color: #2563EB; combo-button-arrow-color: #2563EB; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #DBEAFE;'#13#10'  item-selected-color: #1E40AF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #F8FAFC;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #94A3B8;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #94A3B8; }'#13#10'TCssEdit:focus { border-color: #2563EB; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #94A3B8; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #2563EB;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #94A3B8; }'#13#10'TCssListBox:focus { border-color: #2563EB; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  item-color: #94A3B8;'#13#10'  item-selected-background: #CBD5E1;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #1E293B;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #94A3B8; }'#13#10'TCssMemo:focus { border-color: #2563EB; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  caret-color: #94A3B8;'#13#10'  selection-background: #CBD5E1;'#13#10'  selection-color: #475569;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #94A3B8; }'#13#10'TCssPanel {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #94A3B8; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #CBD5E1; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'/* Icon canvas inside the dialog. */'#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #F8FAFC;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #2563EB; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  menu-background: #FFFFFF;'#13#10'  menu-border-color: #E2E8F0;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #F8FAFC;'#13#10'  border: none;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #F1F5F9;'#13#10'  border: none;'#13#10'  grip-color: #CBD5E1;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #E2E8F0;'#13#10'  grip-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #F1F5F9;'#13#10'  tab-hover-background: #E2E8F0;'#13#10'  tab-active-background: #2563EB;'#13#10#13#10'  tab-text-color: #475569;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #F1F5F9;'#13#10'  tab-scroll-button-hover-background: #E2E8F0;'#13#10'  tab-scroll-button-active-background: #CBD5E1;'#13#10'  tab-scroll-button-disabled-background: #F8FAFC;'#13#10'  tab-scroll-arrow-color: #475569;'#13#10'  tab-scroll-arrow-disabled-color: #CBD5E1;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #2563EB;   '#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #F8FAFC;'#13#10'  header-color: #475569;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #EFF6FF;'#13#10'  line-color: #E2E8F0;'#13#10'  button-color: #64748B;'#13#10'  drop-target-background: #DBEAFE;'#13#10'  sort-marker-color: #64748B;'#13#10'  disabled-background: #F8FAFC;'#13#10'  disabled-color: #94A3B8;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #E2E8F0;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #2563EB; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #2563EB;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10#13#10#13#10'@variant dark'#13#10'{'#13#10'  .standart-form { background-color: #1E293B; color: #ffffff; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #333333; color: #cccccc; }'#13#10'  .standart-edit { background: #222222; color: #ffffff; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #E2E8F0;'#13#10'  background-color: #1E293B;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #334155;'#13#10'  color: #F1F5F9;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #60A5FA; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #93C5FD; }'#13#10'a:active { color: #3B82F6; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #334155;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #475569; border-color: #64748B; }'#13#10'TCssButton:active { background-color: #64748B; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #475569;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #450A0A;'#13#10'  color: #FCA5A5;'#13#10'  border: 1px solid #7F1D1D;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #7F1D1D; border-color: #B91C1C; }'#13#10'TCssButton:cancel:active { background-color: #991B1B; border-color: #DC2626; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #7F1D1D;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #3B82F6;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #3B82F6;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #60A5FA; border-color: #60A5FA; }'#13#10'TCssButton:default:active { background-color: #2563EB; border-color: #2563EB; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #334155;'#13#10'  border-color: #334155;'#13#10'  color: #64748B;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:checked        { checkbox-background: #3B82F6; checkbox-border-color: #3B82F6; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #60A5FA; checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #64748B;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  check-color: #475569;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #3B82F6;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #60A5FA; }'#13#10'TCssRadioButton:checked        { radio-background: #3B82F6; radio-border-color: #3B82F6; dot-color: #3B82F6; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #60A5FA; radio-border-color: #60A5FA; dot-color: #60A5FA; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #64748B;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  dot-color: #475569;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches for the dark variant. */'#13#10'/* Dark: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckBox.custom,'#13#10'checkbox.custom {'#13#10'  checkbox-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'  toggle-thumb-inset: 4px;'#13#10'}'#13#10'TCssCheckBox.custom:hover,'#13#10'checkbox.custom:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.custom:checked,'#13#10'checkbox.custom:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.custom:checked:hover,'#13#10'checkbox.custom:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.custom:disabled,'#13#10'checkbox.custom:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.custom:checked:disabled,'#13#10'checkbox.custom:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.custom:focus,'#13#10'checkbox.custom:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.custom,'#13#10'radio.custom {'#13#10'  radio-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  toggle-thumb-inset: 4px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:hover,'#13#10'radio.custom:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.custom:checked,'#13#10'radio.custom:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.custom:checked:hover,'#13#10'radio.custom:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.custom:disabled,'#13#10'radio.custom:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.custom:checked:disabled,'#13#10'radio.custom:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.custom:focus,'#13#10'radio.custom:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #64748B; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #334155;'#13#10'  combo-button-hover-background: #475569;'#13#10'  combo-button-active-background: #64748B;'#13#10'  combo-button-border-color: #475569; '#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssComboBox:hover  { border-color: #64748B; combo-button-arrow-color: #E2E8F0; }'#13#10'TCssComboBox:focus  { border-color: #60A5FA; combo-button-arrow-color: #60A5FA; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'  combo-button-background: #1E293B;'#13#10'  combo-button-arrow-color: #475569;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #0F172A;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #64748B;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #64748B; }'#13#10'TCssEdit:focus { border-color: #60A5FA; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #64748B; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #64748B; }'#13#10'TCssListBox:focus { border-color: #60A5FA; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  item-color: #64748B;'#13#10'  item-selected-background: #334155;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #E2E8F0;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #64748B; }'#13#10'TCssMemo:focus { border-color: #60A5FA; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  caret-color: #64748B;'#13#10'  selection-background: #334155;'#13#10'  selection-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #64748B; }'#13#10'TCssPanel {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #64748B; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #475569; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #334155;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #0F172A;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #60A5FA; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  menu-background: #1E293B;'#13#10'  menu-border-color: #334155;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  grip-color: #475569;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #1E293B;'#13#10'  grip-color: #60A5FA;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #334155;'#13#10'  tab-hover-background: #475569;'#13#10'  tab-active-background: #3B82F6;'#13#10#13#10'  tab-text-color: #CBD5E1;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #334155;'#13#10'  tab-scroll-button-hover-background: #475569;'#13#10'  tab-scroll-button-active-background: #64748B;'#13#10'  tab-scroll-button-disabled-background: #1E293B;'#13#10'  tab-scroll-arrow-color: #CBD5E1;'#13#10'  tab-scroll-arrow-disabled-color: #475569;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #0F172A;'#13#10'  header-color: #94A3B8;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #334155;'#13#10'  line-color: #334155;'#13#10'  button-color: #94A3B8;'#13#10'  drop-target-background: #1E3A8A;'#13#10'  sort-marker-color: #CBD5E1;'#13#10'  disabled-background: #0F172A;'#13#10'  disabled-color: #64748B;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #334155;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #60A5FA; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #60A5FA;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10
     Left = 744
     Top = 336
   end
@@ -1662,6 +1959,70 @@ object Form1: TForm1
       item
         Name = 'icons8-share'
         Svg = '<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 25.2.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" baseProfile="basic" id="win10" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"'#13#10#9' x="0px" y="0px" viewBox="0 0 48 48" xml:space="preserve">'#13#10'<path style="fill:#64717C;" d="M35.85,40.219l-27-14C8.021,25.79,7.5,24.934,7.5,24s0.521-1.79,1.35-2.219l27-14l2.301,4.438'#13#10#9'L15.431,24l22.72,11.781L35.85,40.219z"/>'#13#10'<path style="opacity:0.05;" d="M38.15,12.22l-6.27,3.25l-0.47,0.24c-1.2-1.17-2.03-2.71-2.31-4.43l0.48-0.25l6.27-3.25L38.15,12.22z'#13#10#9'"/>'#13#10'<path style="opacity:0.07;" d="M38.15,12.22l-6.27,3.25c-1.23-1.14-2.07-2.7-2.3-4.44l6.27-3.25L38.15,12.22z"/>'#13#10'<path style="opacity:0.05;" d="M38.15,35.78l-6.27-3.25l-0.47-0.24c-1.2,1.17-2.03,2.71-2.31,4.43l0.48,0.25l6.27,3.25L38.15,35.78z'#13#10#9'"/>'#13#10'<path style="opacity:0.07;" d="M38.15,35.78l-6.27-3.25c-1.23,1.14-2.07,2.7-2.3,4.44l6.27,3.25L38.15,35.78z"/>'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="32.0503" y1="5.0503" x2="41.9497" y2="14.9497">'#13#10#9'<stop  offset="0" style="stop-color:#33BEF0"/>'#13#10#9'<stop  offset="1" style="stop-color:#0A85D9"/>'#13#10'</linearGradient>'#13#10'<circle style="fill:url(#SVGID_1_);" cx="37" cy="10" r="7"/>'#13#10'<linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="32.0503" y1="33.0503" x2="41.9497" y2="42.9497">'#13#10#9'<stop  offset="0" style="stop-color:#33BEF0"/>'#13#10#9'<stop  offset="1" style="stop-color:#0A85D9"/>'#13#10'</linearGradient>'#13#10'<circle style="fill:url(#SVGID_2_);" cx="37" cy="38" r="7"/>'#13#10'<path style="opacity:0.05;" d="M18.35,25.51l0.46,0.24c-0.38,1.7-1.3,3.19-2.58,4.29l-0.47-0.24l-6.91-3.58'#13#10#9'C8.02,25.79,7.5,24.93,7.5,24s0.52-1.79,1.35-2.22l6.91-3.58l0.47-0.24c1.28,1.1,2.2,2.59,2.58,4.29l-0.46,0.24L15.43,24'#13#10#9'L18.35,25.51z"/>'#13#10'<path style="opacity:0.07;" d="M15.43,24l2.92,1.51c-0.35,1.71-1.29,3.21-2.59,4.29l-6.91-3.58C8.02,25.79,7.5,24.93,7.5,24'#13#10#9's0.52-1.79,1.35-2.22l6.91-3.58c1.3,1.08,2.24,2.58,2.59,4.29L15.43,24z"/>'#13#10'<linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="6.0503" y1="19.0503" x2="15.9497" y2="28.9497">'#13#10#9'<stop  offset="0" style="stop-color:#33BEF0"/>'#13#10#9'<stop  offset="1" style="stop-color:#0A85D9"/>'#13#10'</linearGradient>'#13#10'<circle style="fill:url(#SVGID_3_);" cx="11" cy="24" r="7"/>'#13#10'</svg>'#13#10
+      end    
+      item
+        Name = 'check_unchecked'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#A855F7"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'check_checked'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#A855F7"/>'#13#10'  <path d="M6 12.5 L10 16.5 L18 7.5"'#13#10'        fill="none"'#13#10'        stroke="#FFFFFF"'#13#10'        stroke-width="2.6"'#13#10'        stroke-linecap="round"'#13#10'        stroke-linejoin="round"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'check_unchecked_hover'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#9333EA"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'check_checked_hover'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#9333EA"/>'#13#10'  <path d="M6 12.5 L10 16.5 L18 7.5"'#13#10'        fill="none"'#13#10'        stroke="#FFFFFF"'#13#10'        stroke-width="2.6"'#13#10'        stroke-linecap="round"'#13#10'        stroke-linejoin="round"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'check_unchecked_focused'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="0" y="0" width="24" height="24" rx="6" fill="#D8B4FE"/>'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#A855F7"/>'#13#10'</svg>'#9
+      end    
+      item
+        Name = 'check_checked_disabled'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#C9CDD4"/>'#13#10'  <path d="M6 12.5 L10 16.5 L18 7.5"'#13#10'        fill="none"'#13#10'        stroke="#F1F2F4"'#13#10'        stroke-width="2.6"'#13#10'        stroke-linecap="round"'#13#10'        stroke-linejoin="round"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'check_unchecked_disabled'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="1" y="1" width="22" height="22" rx="5" fill="#C9CDD4"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'check_checked_focused'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <rect x="0.75" y="0.75" width="22.5" height="22.5" rx="5.25"'#13#10'        fill="none" stroke="#D8B4FE" stroke-width="1.5"/>'#13#10'  <rect x="1.75" y="1.75" width="20.5" height="20.5" rx="4.25"'#13#10'        fill="#A855F7"/>'#13#10'  <path d="M6 12.5 L10 16.5 L18 7.5"'#13#10'        fill="none"'#13#10'        stroke="#FFFFFF"'#13#10'        stroke-width="2.6"'#13#10'        stroke-linecap="round"'#13#10'        stroke-linejoin="round"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_unchecked'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="10" fill="#A855F7"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_checked'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="10" fill="#A855F7"/>'#13#10'  <circle cx="12" cy="12" r="4" fill="#FFFFFF"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_unchecked_hover'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="10" fill="#9333EA"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_checked_hover'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="10" fill="#9333EA"/>'#13#10'  <circle cx="12" cy="12" r="4" fill="#FFFFFF"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_unchecked_focus'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="12" fill="#D8B4FE"/>'#13#10'  <circle cx="12" cy="12" r="10" fill="#A855F7"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_checked_focus'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="12" fill="#D8B4FE"/>'#13#10'  <circle cx="12" cy="12" r="10" fill="#A855F7"/>'#13#10'  <circle cx="12" cy="12" r="4" fill="#FFFFFF"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_unchecked_disabled'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="10" fill="#C9CDD4"/>'#13#10'</svg>'
+      end    
+      item
+        Name = 'radio_checked_disabled'
+        Svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'#13#10'  <circle cx="12" cy="12" r="10" fill="#C9CDD4"/>'#13#10'  <circle cx="12" cy="12" r="4" fill="#F1F2F4"/>'#13#10'</svg>'
       end>
     Left = 933
     Top = 145

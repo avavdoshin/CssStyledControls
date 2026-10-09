@@ -6,12 +6,185 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
-  CssStyledControl, CssGroupCaptionControl, CssAntiAlias;
+  CssStyledControl, CssGroupCaptionControl, CssAntiAlias, CssSvgImgList;
 
 type
   TCssRadioButton = class;
+  TCssRadioGroup = class;
 
   TRadioGroupItemClickEvent = procedure(Sender: TObject; ItemIndex: Integer) of object;
+
+  TCssRadioButton = class(TCssStyledControl)
+  private
+    // State
+    FChecked: Boolean;
+
+    // Interaction flags
+    FClicked: Boolean;
+    FSpacePressed: Boolean;
+
+    // Box appearance
+    FBoxBackground: TColor;
+    FBoxBackgroundSet: Boolean;
+    FBoxBorderColor: TColor;
+    FBoxBorderColorSet: Boolean;
+    FBoxBorderWidth: Integer;
+    FBoxBorderWidthSet: Boolean;
+    FBoxRadius: Integer;
+    FBoxRadiusSet: Boolean;
+    FDotColor: TColor;
+    FDotColorSet: Boolean;
+    FToggleStyle: Boolean;
+    FToggleWidth, FToggleHeight: Integer;
+    FToggleThumbInset: Integer;
+    FToggleThumbColor: TColor;
+    FToggleThumbColorSet: Boolean;
+
+    // SVG images (state-based)
+    FSvgImages: TCssSvgImgList;
+    FImageIndex: Integer;
+    FImageIndexChecked: Integer;
+    FImageIndexHover: Integer;
+    FImageIndexCheckedHover: Integer;
+    FImageIndexFocused: Integer;
+    FImageIndexCheckedFocused: Integer;
+    FImageIndexDisabled: Integer;
+    FImageIndexCheckedDisabled: Integer;
+
+    // Events
+    FOnChange: TNotifyEvent;
+
+    // State setters
+    procedure SetChecked(AValue: Boolean);
+    procedure UncheckSiblingRadios;
+
+    // Appearance getters
+    function GetBoxSize: Integer;
+    function GetBoxWidth: Integer;
+    function GetBoxHeight: Integer;
+    function GetToggleThumbColor: TColor;
+    function GetRadioBackground: TColor;
+    function GetRadioBorderColor: TColor;
+    function GetRadioBorderWidth: Integer;
+    function GetRadioRadius(ABoxSize: Integer): Integer;
+    function GetDotColor: TColor;
+
+    // Drawing helpers
+    procedure DrawDot(const R: TRect; AColor: TColor);
+
+    // SVG images
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetImageIndex(AValue: Integer);
+    procedure SetImageIndexChecked(AValue: Integer);
+    procedure SetImageIndexHover(AValue: Integer);
+    procedure SetImageIndexCheckedHover(AValue: Integer);
+    procedure SetImageIndexFocused(AValue: Integer);
+    procedure SetImageIndexCheckedFocused(AValue: Integer);
+    procedure SetImageIndexDisabled(AValue: Integer);
+    procedure SetImageIndexCheckedDisabled(AValue: Integer);
+
+    function  GetEffectiveSvgVariant: string;
+    function  GetStateImageIndex(AChecked: Boolean;
+      out ANeedsDisabledTint: Boolean): Integer;
+    function  HasStateImage(AChecked: Boolean): Boolean;
+    procedure DrawStateImage(ACanvas: TCanvas; const ARect: TRect;
+      AChecked: Boolean);
+    procedure MakeDisabledBitmapAlpha(ABitmap: TBitmap; ATextColor: TColor);
+  protected
+    // Initialization and style
+    function ShouldPaintCaption: Boolean; override;
+    procedure Loaded; override;
+    procedure InitTextProps; override;
+    procedure StyleChanged; override;
+    procedure HtmlModeChanged; override;
+    procedure ResetStyle; override;
+    procedure ApplyDeclaration(const AName, AValue: string); override;
+
+    // Caption
+    procedure SetCaption(const AValue: TCaption); override;
+
+    // Painting
+    procedure Paint; override;
+
+    // Mouse events
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseLeave; override;
+
+    // Keyboard events
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+    procedure KeyUp(var Key: Word; Shift: TShiftState); override;
+
+    // Focus
+    procedure DoEnter; override;
+    procedure DoExit; override;
+
+    // Click
+    procedure Click; override;
+
+    // Navigation
+    procedure NavigateStandalone(AKey: Word);
+
+    function GetDefaultCaption: string; override;
+
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    property ToggleStyle: Boolean read FToggleStyle;
+
+    // Sizing
+    procedure AdjustSize; override;
+
+    // Silent state change (no OnChange)
+    procedure SetCheckedSilent(AValue: Boolean);
+  published
+    property Checked: Boolean read FChecked write SetChecked;
+
+    property SvgImages: TCssSvgImgList read FSvgImages write SetSvgImages;
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
+    property ImageIndexChecked: Integer
+      read FImageIndexChecked write SetImageIndexChecked default -1;
+    property ImageIndexHover: Integer
+      read FImageIndexHover write SetImageIndexHover default -1;
+    property ImageIndexCheckedHover: Integer
+      read FImageIndexCheckedHover write SetImageIndexCheckedHover default -1;
+    property ImageIndexFocused: Integer
+      read FImageIndexFocused write SetImageIndexFocused default -1;
+    property ImageIndexCheckedFocused: Integer
+      read FImageIndexCheckedFocused write SetImageIndexCheckedFocused default -1;
+    property ImageIndexDisabled: Integer
+      read FImageIndexDisabled write SetImageIndexDisabled default -1;
+    property ImageIndexCheckedDisabled: Integer
+      read FImageIndexCheckedDisabled write SetImageIndexCheckedDisabled default -1;
+
+    // Standard properties
+    property AutoSize;
+    property Align;
+    property Anchors;
+    property Enabled;
+    property Font;
+    property ParentColor;
+    property ParentFont;
+    property ParentShowHint;
+    property PopupMenu;
+    property ShowHint;
+    property ShowFocusRect default False;
+    property TabOrder;
+    property TabStop;
+    property Visible;
+
+    // Events
+    property OnChange: TNotifyEvent read FOnChange write FOnChange;
+    property OnClick;
+    property OnMouseDown;
+    property OnMouseEnter;
+    property OnMouseLeave;
+    property OnMouseMove;
+    property OnMouseUp;
+  end;
 
   TCssRadioGroup = class(TCssGroupCaptionControl)
   private
@@ -43,6 +216,19 @@ type
     // Focus tracking
     FGroupFocusRect: Boolean;
     FChildFocused: Boolean;
+
+    // SVG images for child radio buttons
+    FSvgImages: TCssSvgImgList;
+    FItemImageIndexes: TStringList;
+
+    FImageIndex: Integer;
+    FImageIndexChecked: Integer;
+    FImageIndexHover: Integer;
+    FImageIndexCheckedHover: Integer;
+    FImageIndexFocused: Integer;
+    FImageIndexCheckedFocused: Integer;
+    FImageIndexDisabled: Integer;
+    FImageIndexCheckedDisabled: Integer;
 
     // Items
     function GetItems: TStrings;
@@ -81,6 +267,23 @@ type
     function GetEffectiveItemSpacing: Integer;
     function GetEffectiveCaptionSpacing: Integer;
     procedure SetItemSpacing(AValue: Integer);
+
+    // SVG images
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetItemImageIndexes(AValue: TStringList);
+    procedure ItemImageIndexesChanged(Sender: TObject);
+
+    procedure SetImageIndex(AValue: Integer);
+    procedure SetImageIndexChecked(AValue: Integer);
+    procedure SetImageIndexHover(AValue: Integer);
+    procedure SetImageIndexCheckedHover(AValue: Integer);
+    procedure SetImageIndexFocused(AValue: Integer);
+    procedure SetImageIndexCheckedFocused(AValue: Integer);
+    procedure SetImageIndexDisabled(AValue: Integer);
+    procedure SetImageIndexCheckedDisabled(AValue: Integer);
+
+    function  GetItemImageIndex(AIndex: Integer): Integer;
+    procedure ApplyImagesToChild(Rb: TCssRadioButton; AIndex: Integer);
   protected
     // Initialization and style
     procedure Loaded; override;
@@ -105,6 +308,8 @@ type
 
     function GetDefaultCaption: string; override;
     procedure Resize; override;
+
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -122,6 +327,7 @@ type
     procedure SelectItemByUser(Index: Integer);
 
     // Indexed property
+    property RadioButtons[Index: Integer]: TCssRadioButton read GetRadio;
     property ItemEnabled[Index: Integer]: Boolean read GetItemEnabled write SetItemEnabled;
   published
     // Items and state
@@ -136,6 +342,27 @@ type
     // Child CSS
     property RadioCssClass: string read FRadioCssClass write SetRadioCssClass;
     property RadioCssStyle: string read FRadioCssStyle write SetRadioCssStyle;
+
+    // SVG images for children
+    property SvgImages: TCssSvgImgList read FSvgImages write SetSvgImages;
+    property ItemImageIndexes: TStringList
+      read FItemImageIndexes write SetItemImageIndexes;
+    property ImageIndex: Integer
+      read FImageIndex write SetImageIndex default -1;
+    property ImageIndexChecked: Integer
+      read FImageIndexChecked write SetImageIndexChecked default -1;
+    property ImageIndexHover: Integer
+      read FImageIndexHover write SetImageIndexHover default -1;
+    property ImageIndexCheckedHover: Integer
+      read FImageIndexCheckedHover write SetImageIndexCheckedHover default -1;
+    property ImageIndexFocused: Integer
+      read FImageIndexFocused write SetImageIndexFocused default -1;
+    property ImageIndexCheckedFocused: Integer
+      read FImageIndexCheckedFocused write SetImageIndexCheckedFocused default -1;
+    property ImageIndexDisabled: Integer
+      read FImageIndexDisabled write SetImageIndexDisabled default -1;
+    property ImageIndexCheckedDisabled: Integer
+      read FImageIndexCheckedDisabled write SetImageIndexCheckedDisabled default -1;
 
     // Standard properties
     property AutoSize;
@@ -153,125 +380,6 @@ type
     property GroupFocusRect: Boolean read FGroupFocusRect write SetGroupFocusRect default True;
   end;
 
-  TCssRadioButton = class(TCssStyledControl)
-  private
-    // State
-    FChecked: Boolean;
-
-    // Interaction flags
-    FClicked: Boolean;
-    FSpacePressed: Boolean;
-
-    // Box appearance
-    FBoxBackground: TColor;
-    FBoxBackgroundSet: Boolean;
-    FBoxBorderColor: TColor;
-    FBoxBorderColorSet: Boolean;
-    FBoxBorderWidth: Integer;
-    FBoxBorderWidthSet: Boolean;
-    FBoxRadius: Integer;
-    FBoxRadiusSet: Boolean;
-    FDotColor: TColor;
-    FDotColorSet: Boolean;
-    FToggleStyle: Boolean;
-    FToggleWidth, FToggleHeight: Integer;
-    FToggleThumbColor: TColor;
-    FToggleThumbColorSet: Boolean;
-
-    // Events
-    FOnChange: TNotifyEvent;
-
-    // State setters
-    procedure SetChecked(AValue: Boolean);
-    procedure UncheckSiblingRadios;
-
-    // Appearance getters
-    function GetBoxSize: Integer;
-    function GetBoxWidth: Integer;
-    function GetBoxHeight: Integer;
-    function GetToggleThumbColor: TColor;
-    function GetRadioBackground: TColor;
-    function GetRadioBorderColor: TColor;
-    function GetRadioBorderWidth: Integer;
-    function GetRadioRadius(ABoxSize: Integer): Integer;
-    function GetDotColor: TColor;
-
-    // Drawing helpers
-    procedure DrawDot(const R: TRect; AColor: TColor);
-  protected
-    // Initialization and style
-    function ShouldPaintCaption: Boolean; override;
-    procedure Loaded; override;
-    procedure InitTextProps; override;
-    procedure StyleChanged; override;
-    procedure HtmlModeChanged; override;
-    procedure ResetStyle; override;
-    procedure ApplyDeclaration(const AName, AValue: string); override;
-
-    // Caption
-    procedure SetCaption(const AValue: TCaption); override;
-
-    // Painting
-    procedure Paint; override;
-
-    // Mouse events
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseLeave; override;
-
-    // Keyboard events
-    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    procedure KeyUp(var Key: Word; Shift: TShiftState); override;
-
-    // Focus
-    procedure DoEnter; override;
-    procedure DoExit; override;
-
-    // Click
-    procedure Click; override;
-
-    // Navigation
-    procedure NavigateStandalone(AKey: Word);
-
-    function GetDefaultCaption: string; override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    property ToggleStyle: Boolean read FToggleStyle;
-
-    // Sizing
-    procedure AdjustSize; override;
-
-    // Silent state change (no OnChange)
-    procedure SetCheckedSilent(AValue: Boolean);
-  published
-    property Checked: Boolean read FChecked write SetChecked;
-
-    // Standard properties
-    property AutoSize;
-    property Align;
-    property Anchors;
-    property Enabled;
-    property Font;
-    property ParentColor;
-    property ParentFont;
-    property ParentShowHint;
-    property PopupMenu;
-    property ShowHint;
-    property ShowFocusRect default False;
-    property TabOrder;
-    property TabStop;
-    property Visible;
-
-    // Events
-    property OnChange: TNotifyEvent read FOnChange write FOnChange;
-    property OnClick;
-    property OnMouseDown;
-    property OnMouseEnter;
-    property OnMouseLeave;
-    property OnMouseMove;
-    property OnMouseUp;
-  end;
-
 implementation
 
 uses
@@ -287,7 +395,6 @@ begin
   Result.cy := 0;
 
   Lines := TStringList.Create;
-
   try
     Lines.Text := AText;
 
@@ -299,7 +406,6 @@ begin
     for I := 0 to Lines.Count - 1 do
     begin
       W := ACanvas.TextWidth(Lines[I]);
-
       if W > Result.cx then
         Result.cx := W;
     end;
@@ -328,11 +434,42 @@ begin
   FToggleStyle := False;
   FToggleWidth := 40;
   FToggleHeight := 20;
+  FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
+
+  FSvgImages := nil;
+  FImageIndex := -1;
+  FImageIndexChecked := -1;
+  FImageIndexHover := -1;
+  FImageIndexCheckedHover := -1;
+  FImageIndexFocused := -1;
+  FImageIndexCheckedFocused := -1;
+  FImageIndexDisabled := -1;
+  FImageIndexCheckedDisabled := -1;
 
   FClicked := False;
   FSpacePressed := False;
   ShowFocusRect := False;
+end;
+
+destructor TCssRadioButton.Destroy;
+begin
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  inherited Destroy;
+end;
+
+procedure TCssRadioButton.Notification(AComponent: TComponent;
+  Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    Invalidate;
+  end;
 end;
 
 procedure TCssRadioButton.Loaded;
@@ -380,6 +517,7 @@ begin
   FToggleStyle := False;
   FToggleWidth := 40;
   FToggleHeight := 20;
+  FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
 
   inherited ResetStyle;
@@ -394,14 +532,16 @@ begin
   if AName = 'radio-style' then
   begin
     V := LowerCase(Trim(AValue));
-    FToggleStyle := (V = 'toggle') or (V = 'switch');
+    FToggleStyle := (V = 'toggle') or (V = 'switch') or (V = 'custom');
     if AutoSize and (not IsApplyingCss) then
       AdjustSize;
     Invalidate;
     Exit;
   end;
 
-  if (AName = 'toggle-width') or (AName = 'toggle-height') then
+  if (AName = 'toggle-width') or
+     (AName = 'toggle-height') or
+     (AName = 'toggle-thumb-inset') then
   begin
     if ParseCssLengthPx(AValue, Px) then
     begin
@@ -411,12 +551,21 @@ begin
         if FToggleWidth < 12 then FToggleWidth := 12;
         if FToggleWidth > 200 then FToggleWidth := 200;
       end
-      else
+      else if AName = 'toggle-height' then
       begin
         FToggleHeight := Px;
         if FToggleHeight < 12 then FToggleHeight := 12;
         if FToggleHeight > 80 then FToggleHeight := 80;
+      end
+      else
+      begin
+        FToggleThumbInset := Px;
+        if FToggleThumbInset < 0 then FToggleThumbInset := 0;
+        if FToggleThumbInset > FToggleHeight div 2 - 1 then
+          FToggleThumbInset := FToggleHeight div 2 - 1;
+        if FToggleThumbInset < 0 then FToggleThumbInset := 0;
       end;
+
       if AutoSize and (not IsApplyingCss) then
         AdjustSize;
       Invalidate;
@@ -427,7 +576,10 @@ begin
   if AName = 'toggle-thumb-color' then
   begin
     if ParseCssColor(AValue, C) then
-    begin FToggleThumbColor := C; FToggleThumbColorSet := True; end;
+    begin
+      FToggleThumbColor := C;
+      FToggleThumbColorSet := True;
+    end;
     Exit;
   end;
 
@@ -661,6 +813,259 @@ begin
     Mask.Coverage, AColor);
 end;
 
+{ ---- SVG images ---- }
+
+procedure TCssRadioButton.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  if AutoSize and (not IsApplyingCss) then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndex(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndex = AValue then Exit;
+  FImageIndex := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexChecked(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexChecked = AValue then Exit;
+  FImageIndexChecked := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexHover(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexHover = AValue then Exit;
+  FImageIndexHover := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexCheckedHover(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedHover = AValue then Exit;
+  FImageIndexCheckedHover := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexFocused(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexFocused = AValue then Exit;
+  FImageIndexFocused := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexCheckedFocused(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedFocused = AValue then Exit;
+  FImageIndexCheckedFocused := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexDisabled = AValue then Exit;
+  FImageIndexDisabled := AValue;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.SetImageIndexCheckedDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedDisabled = AValue then Exit;
+  FImageIndexCheckedDisabled := AValue;
+  Invalidate;
+end;
+
+function TCssRadioButton.GetEffectiveSvgVariant: string;
+begin
+  if StyleProvider <> nil then
+  begin
+    if Trim(StyleName) <> '' then Exit(StyleName);
+    Exit(StyleProvider.DefaultStyleName);
+  end;
+
+  if FSvgImages <> nil then
+    Exit(FSvgImages.DefaultVariant);
+
+  Result := '';
+end;
+
+function TCssRadioButton.GetStateImageIndex(AChecked: Boolean;
+  out ANeedsDisabledTint: Boolean): Integer;
+var
+  IsHover, IsFocused: Boolean;
+begin
+  ANeedsDisabledTint := False;
+  IsHover   := Enabled and GetEffectiveHoverState;
+  IsFocused := Focused and Enabled;
+
+  // --- Disabled ---------------------------------------------------------
+  if not Enabled then
+  begin
+    if AChecked and (FImageIndexCheckedDisabled >= 0) then
+      Exit(FImageIndexCheckedDisabled);
+
+    if (not AChecked) and (FImageIndexDisabled >= 0) then
+      Exit(FImageIndexDisabled);
+
+    ANeedsDisabledTint := True;
+
+    if AChecked and (FImageIndexChecked >= 0) then
+      Exit(FImageIndexChecked);
+
+    Exit(FImageIndex);
+  end;
+
+  // --- Enabled ----------------------------------------------------------
+  if AChecked then
+  begin
+    if IsHover and (FImageIndexCheckedHover >= 0) then
+      Exit(FImageIndexCheckedHover);
+    if FImageIndexChecked >= 0 then
+      Exit(FImageIndexChecked);
+  end
+  else
+  begin
+    if IsHover and (FImageIndexHover >= 0) then
+      Exit(FImageIndexHover);
+  end;
+
+  if IsFocused then
+  begin
+    if AChecked and (FImageIndexCheckedFocused >= 0) then
+      Exit(FImageIndexCheckedFocused);
+    if (not AChecked) and (FImageIndexFocused >= 0) then
+      Exit(FImageIndexFocused);
+  end;
+
+  Result := FImageIndex;
+end;
+
+function TCssRadioButton.HasStateImage(AChecked: Boolean): Boolean;
+var
+  Idx: Integer;
+  Dummy: Boolean;
+begin
+  if FSvgImages = nil then Exit(False);
+  Idx := GetStateImageIndex(AChecked, Dummy);
+  Result := (Idx >= 0) and (Idx < FSvgImages.Count);
+end;
+
+procedure TCssRadioButton.DrawStateImage(ACanvas: TCanvas;
+  const ARect: TRect; AChecked: Boolean);
+var
+  Idx, W, H: Integer;
+  Bmp: TBitmap;
+  NeedsDisabled: Boolean;
+begin
+  if FSvgImages = nil then Exit;
+
+  Idx := GetStateImageIndex(AChecked, NeedsDisabled);
+  if (Idx < 0) or (Idx >= FSvgImages.Count) then Exit;
+
+  W := ARect.Right - ARect.Left;
+  H := ARect.Bottom - ARect.Top;
+  if (W <= 0) or (H <= 0) then Exit;
+
+  if NeedsDisabled then
+  begin
+    Bmp := FSvgImages.GetBitmap(Idx, W, H, GetCssTextColor,
+      GetEffectiveSvgVariant);
+    MakeDisabledBitmapAlpha(Bmp, GetEffectiveTextColor);
+  end
+  else
+  begin
+    Bmp := FSvgImages.GetBitmap(Idx, W, H, GetEffectiveTextColor,
+      GetEffectiveSvgVariant);
+  end;
+
+  try
+    DrawSvgBitmapWithAlpha(ACanvas, ARect.Left, ARect.Top, Bmp);
+  finally
+    Bmp.Free;
+  end;
+end;
+
+procedure TCssRadioButton.MakeDisabledBitmapAlpha(ABitmap: TBitmap;
+  ATextColor: TColor);
+const
+  CONTRAST_KEEP = 70;
+  TEXT_BLEND    = 60;
+var
+  Img: TLazIntfImage;
+  X, Y: Integer;
+  Pix: TFPColor;
+  A, R, G, B, Gray, Compressed: Integer;
+  TR, TG, TB_: Integer;
+begin
+  if (ABitmap = nil) or ABitmap.Empty then Exit;
+
+  TR  :=  ATextColor         and $FF;
+  TG  := (ATextColor shr  8) and $FF;
+  TB_ := (ATextColor shr 16) and $FF;
+
+  Img := ABitmap.CreateIntfImage;
+  if Img = nil then Exit;
+  try
+    for Y := 0 to Img.Height - 1 do
+      for X := 0 to Img.Width - 1 do
+      begin
+        Pix := Img.Colors[X, Y];
+        A := Pix.Alpha shr 8;
+        if A = 0 then
+          Continue;
+
+        R := Pix.Red   shr 8;
+        G := Pix.Green shr 8;
+        B := Pix.Blue  shr 8;
+
+        Gray := (R * 30 + G * 59 + B * 11) div 100;
+
+        Compressed := 128 + ((Gray - 128) * CONTRAST_KEEP) div 100;
+        if Compressed < 0   then Compressed := 0;
+        if Compressed > 255 then Compressed := 255;
+
+        R := (Compressed * (100 - TEXT_BLEND) + TR  * TEXT_BLEND) div 100;
+        G := (Compressed * (100 - TEXT_BLEND) + TG  * TEXT_BLEND) div 100;
+        B := (Compressed * (100 - TEXT_BLEND) + TB_ * TEXT_BLEND) div 100;
+
+        if R < 0 then R := 0 else if R > 255 then R := 255;
+        if G < 0 then G := 0 else if G > 255 then G := 255;
+        if B < 0 then B := 0 else if B > 255 then B := 255;
+
+        Pix.Red   := R * 257;
+        Pix.Green := G * 257;
+        Pix.Blue  := B * 257;
+        Img.Colors[X, Y] := Pix;
+      end;
+
+    ABitmap.LoadFromIntfImage(Img);
+  finally
+    Img.Free;
+  end;
+end;
+
+{ ---- Paint ---- }
+
 procedure TCssRadioButton.Paint;
 var
   R, Box, TextR: TRect;
@@ -703,70 +1108,82 @@ begin
   TextColor := GetCssTextColor;
   DotColor := GetDotColor;
 
-  Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := BG;
-
-  if LBorderWidth <= 0 then
+  // SVG path takes precedence over built-in rendering.
+  if HasStateImage(FChecked) then
   begin
-    Canvas.Pen.Width := 1;
-    Canvas.Pen.Color := BG;
+    DrawStateImage(Canvas, Box, FChecked);
   end
   else
   begin
-    Canvas.Pen.Width := LBorderWidth;
-    Canvas.Pen.Color := BorderColor;
-  end;
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Brush.Color := BG;
 
-  Canvas.Pen.Style := psSolid;
-
-  if FToggleStyle then
-  begin
-    Radius := BoxHeight div 2;
-    DrawAntiAliasedRoundedBox(Canvas, Box, Radius, BG, BorderColor,
-      LBorderWidth, cbsSolid, GetParentBackgroundColor);
-    BoxHeight := Box.Bottom - Box.Top;
-    if BoxHeight > Box.Right - Box.Left then
-      BoxHeight := Box.Right - Box.Left;
-    Dec(BoxHeight, ScalePx(8));
-    if BoxHeight < ScalePx(2) then BoxHeight := ScalePx(2);
-    { Keep the circular thumb's opaque bitmap corners clear of the track rim. }
-    if FChecked then
-      Radius := Box.Right - Box.Left - BoxHeight - ScalePx(4)
+    if LBorderWidth <= 0 then
+    begin
+      Canvas.Pen.Width := 1;
+      Canvas.Pen.Color := BG;
+    end
     else
-      Radius := ScalePx(4);
-    if Radius < ScalePx(4) then Radius := ScalePx(4);
-    DrawAntiAliasedCircle(Canvas,
-      Rect(Box.Left + Radius, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
-           Box.Left + Radius + BoxHeight, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
-      GetToggleThumbColor, GetToggleThumbColor, 0, BG);
-  end
-  else if FBoxRadiusSet and (Radius < (BoxSize div 2)) then
-  begin
-    DrawAntiAliasedRoundedBox(
-      Canvas,
-      Box,
-      Radius,
-      BG,
-      BorderColor,
-      LBorderWidth,
-      cbsSolid,
-      GetParentBackgroundColor
-    );
-  end
-  else
-  begin
-    DrawAntiAliasedCircle(
-      Canvas,
-      Box,
-      BG,
-      BorderColor,
-      LBorderWidth,
-      GetParentBackgroundColor
-    );
-  end;
+    begin
+      Canvas.Pen.Width := LBorderWidth;
+      Canvas.Pen.Color := BorderColor;
+    end;
 
-  if FChecked and (not FToggleStyle) then
-    DrawDot(Box, DotColor);
+    Canvas.Pen.Style := psSolid;
+
+    if FToggleStyle then
+    begin
+      Radius := BoxHeight div 2;
+      DrawAntiAliasedRoundedBox(Canvas, Box, Radius, BG, BorderColor,
+        LBorderWidth, cbsSolid, GetParentBackgroundColor);
+
+      BoxHeight := Box.Bottom - Box.Top;
+      if BoxHeight > Box.Right - Box.Left then
+        BoxHeight := Box.Right - Box.Left;
+
+      Dec(BoxHeight, 2 * FToggleThumbInset);
+      if BoxHeight < ScalePx(2) then BoxHeight := ScalePx(2);
+
+      if FChecked then
+        Radius := Box.Right - Box.Left - BoxHeight - FToggleThumbInset
+      else
+        Radius := FToggleThumbInset;
+
+      if Radius < FToggleThumbInset then Radius := FToggleThumbInset;
+
+      DrawAntiAliasedCircle(Canvas,
+        Rect(Box.Left + Radius, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
+             Box.Left + Radius + BoxHeight, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
+        GetToggleThumbColor, GetToggleThumbColor, 0, BG);
+    end
+    else if FBoxRadiusSet and (Radius < (BoxSize div 2)) then
+    begin
+      DrawAntiAliasedRoundedBox(
+        Canvas,
+        Box,
+        Radius,
+        BG,
+        BorderColor,
+        LBorderWidth,
+        cbsSolid,
+        GetParentBackgroundColor
+      );
+    end
+    else
+    begin
+      DrawAntiAliasedCircle(
+        Canvas,
+        Box,
+        BG,
+        BorderColor,
+        LBorderWidth,
+        GetParentBackgroundColor
+      );
+    end;
+
+    if FChecked and (not FToggleStyle) then
+      DrawDot(Box, DotColor);
+  end;
 
   TextR := Rect(Box.Right + ScalePx(4), R.Top, R.Right, R.Bottom);
 
@@ -968,8 +1385,6 @@ begin
     if List.Count <= 1 then
       Exit;
 
-    // Sort radio buttons by visual position:
-    // top to bottom, then left to right.
     for I := 0 to List.Count - 2 do
     begin
       for J := I + 1 to List.Count - 1 do
@@ -1036,6 +1451,11 @@ begin
   Result := 'CssRadioButton';
 end;
 
+function TCssRadioButton.ShouldPaintCaption: Boolean;
+begin
+  Result := False;
+end;
+
 { TCssRadioGroup }
 
 constructor TCssRadioGroup.Create(AOwner: TComponent);
@@ -1061,6 +1481,19 @@ begin
 
   FRadioCssClass := 'radio';
   FRadioCssStyle := '';
+
+  FSvgImages := nil;
+  FItemImageIndexes := TStringList.Create;
+  FItemImageIndexes.OnChange := @ItemImageIndexesChanged;
+
+  FImageIndex := -1;
+  FImageIndexChecked := -1;
+  FImageIndexHover := -1;
+  FImageIndexCheckedHover := -1;
+  FImageIndexFocused := -1;
+  FImageIndexCheckedFocused := -1;
+  FImageIndexDisabled := -1;
+  FImageIndexCheckedDisabled := -1;
 end;
 
 destructor TCssRadioGroup.Destroy;
@@ -1070,14 +1503,28 @@ begin
   FRadioButtons.Clear;
 
   FreeAndNil(FItems);
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FreeAndNil(FItemImageIndexes);
+
   FreeAndNil(FRadioButtons);
 
   inherited Destroy;
 end;
 
-function TCssRadioButton.ShouldPaintCaption: Boolean;
+procedure TCssRadioGroup.Notification(AComponent: TComponent;
+  Operation: TOperation);
 begin
-  Result := False;
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    UpdateChildStyles;
+    Invalidate;
+  end;
 end;
 
 procedure TCssRadioGroup.Loaded;
@@ -1112,8 +1559,6 @@ begin
 
   if FInMouseStateChange then
   begin
-    // On mouse enter/leave only :hover usually changes.
-    // Full rebuild of child radio buttons and layout is not needed here.
     Invalidate;
     Exit;
   end;
@@ -1517,6 +1962,7 @@ begin
       Rb.CssTag := 'radio';
       Rb.CssClass := FRadioCssClass;
       Rb.CssStyle := FRadioCssStyle;
+      ApplyImagesToChild(Rb, I);
 
       Rb.StyleProvider := StyleProvider;
       Rb.StyleName := StyleName;
@@ -1651,6 +2097,8 @@ begin
       Rb.Enabled := Enabled and FItemEnabled[I]
     else
       Rb.Enabled := Enabled;
+
+    ApplyImagesToChild(Rb, I);
   end;
 
   LayoutItems;
@@ -1881,6 +2329,146 @@ begin
   Invalidate;
 end;
 
+{ ---- SVG images in group ---- }
+
+procedure TCssRadioGroup.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  UpdateChildStyles;
+  if AutoSize then AdjustSize;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetItemImageIndexes(AValue: TStringList);
+begin
+  FItemImageIndexes.Assign(AValue);
+end;
+
+procedure TCssRadioGroup.ItemImageIndexesChanged(Sender: TObject);
+begin
+  if FUpdating then Exit;
+  if (csLoading in ComponentState) or (csDestroying in ComponentState) then Exit;
+
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndex(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndex = AValue then Exit;
+  FImageIndex := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexChecked(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexChecked = AValue then Exit;
+  FImageIndexChecked := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexHover(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexHover = AValue then Exit;
+  FImageIndexHover := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexCheckedHover(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedHover = AValue then Exit;
+  FImageIndexCheckedHover := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexFocused(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexFocused = AValue then Exit;
+  FImageIndexFocused := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexCheckedFocused(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedFocused = AValue then Exit;
+  FImageIndexCheckedFocused := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexDisabled = AValue then Exit;
+  FImageIndexDisabled := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+procedure TCssRadioGroup.SetImageIndexCheckedDisabled(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FImageIndexCheckedDisabled = AValue then Exit;
+  FImageIndexCheckedDisabled := AValue;
+  UpdateChildStyles;
+  Invalidate;
+end;
+
+function TCssRadioGroup.GetItemImageIndex(AIndex: Integer): Integer;
+begin
+  if (AIndex >= 0) and (AIndex < FItemImageIndexes.Count) then
+    Result := StrToIntDef(Trim(FItemImageIndexes[AIndex]), -1)
+  else
+    Result := -1;
+
+  if Result < -1 then Result := -1;
+end;
+
+procedure TCssRadioGroup.ApplyImagesToChild(Rb: TCssRadioButton; AIndex: Integer);
+var
+  PerItemIndex: Integer;
+  EffectiveBaseIndex: Integer;
+begin
+  if Rb = nil then Exit;
+
+  PerItemIndex := GetItemImageIndex(AIndex);
+
+  if PerItemIndex >= 0 then
+    EffectiveBaseIndex := PerItemIndex
+  else
+    EffectiveBaseIndex := FImageIndex;
+
+  Rb.SvgImages := FSvgImages;
+  Rb.ImageIndex := EffectiveBaseIndex;
+  Rb.ImageIndexChecked := FImageIndexChecked;
+  Rb.ImageIndexHover := FImageIndexHover;
+  Rb.ImageIndexCheckedHover := FImageIndexCheckedHover;
+  Rb.ImageIndexFocused := FImageIndexFocused;
+  Rb.ImageIndexCheckedFocused := FImageIndexCheckedFocused;
+  Rb.ImageIndexDisabled := FImageIndexDisabled;
+  Rb.ImageIndexCheckedDisabled := FImageIndexCheckedDisabled;
+end;
+
 function TCssRadioGroup.FindEnabledItem(AStart, ADelta: Integer;
   AWrap: Boolean): Integer;
 var
@@ -1966,8 +2554,6 @@ begin
     Exit;
   end;
 
-  // If grid vertical movement gave no result,
-  // fall back to linear navigation.
   if Target = ItemIndex then
   begin
     if AKey = VK_UP then

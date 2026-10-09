@@ -36,10 +36,14 @@ type
     CssCheckBox3 : TCssCheckBox;
     CssCheckBox4 : TCssCheckBox;
     CssCheckBox5 : TCssCheckBox;
+    CssCheckBox6 : TCssCheckBox;
+    CssCheckBox7 : TCssCheckBox;
     CssCheckGroup1 : TCssCheckGroup;
     CssCheckGroup2 : TCssCheckGroup;
     CssCheckGroup3 : TCssCheckGroup;
     CssCheckGroup4 : TCssCheckGroup;
+    CssCheckGroup5 : TCssCheckGroup;
+    CssCheckGroup6 : TCssCheckGroup;
     CssComboBox1 : TCssComboBox;
     CssComboBox2 : TCssComboBox;
     CssComboBox3 : TCssComboBox;
@@ -62,6 +66,7 @@ type
     CssPanel11 : TCssPanel;
     CssPanel12 : TCssPanel;
     CssPanel13 : TCssPanel;
+    CssPanel14 : TCssPanel;
     CssPanel2 : TCssPanel;
     CssPanel3 : TCssPanel;
     CssPanel4 : TCssPanel;
@@ -76,10 +81,14 @@ type
     CssRadioButton2 : TCssRadioButton;
     CssRadioButton3 : TCssRadioButton;
     CssRadioButton4 : TCssRadioButton;
+    CssRadioButton5 : TCssRadioButton;
+    CssRadioButton6 : TCssRadioButton;
     CssRadioGroup1 : TCssRadioGroup;
     CssRadioGroup2 : TCssRadioGroup;
     CssRadioGroup3 : TCssRadioGroup;
     CssRadioGroup4 : TCssRadioGroup;
+    CssRadioGroup5 : TCssRadioGroup;
+    CssRadioGroup6 : TCssRadioGroup;
     CssSplitter1 : TCssSplitter;
     CssSplitter2 : TCssSplitter;
     CssStyleProvider1 : TCssStyleProvider;
