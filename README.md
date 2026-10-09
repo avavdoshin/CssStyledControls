@@ -37,6 +37,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [HTML Formatting](#html-formatting)
 - [Link Handling](#link-handling)
 - [Tooltips with CSS and HTML](#tooltips-with-css-and-html)
+- [Message Dialogs (CssMessageDialogs)](#message-dialogs-cssmessagedialogs)
 - [Style Provider API](#style-provider-api)
 - [Proxy Styling for Standard LCL Controls](#proxy-styling-for-standard-lcl-controls)
 - [High DPI Support](#high-dpi-support)
@@ -66,6 +67,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - **Focus-within** — a parent (`TCssPanel`, `TCssGroupBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssComboBox`, `TCssTabControl`, `TCssPageControl`) can highlight its border while a child has focus (`focus-within: true`).
 - **Standard LCL styling** — `TCssProxy` reads the active CSS variant and applies `background`, `color`, `font-*`, and `text-align` to plain LCL `TButton`, `TEdit`, `TLabel`, `TPanel`, and forms.
 - **Anti-aliased rendering** — rounded boxes, circles, triangles, check marks, and focus rings are drawn with sub-pixel coverage and cached bitmaps.
+- **CSS-styled message dialogs** — the `CssMessageDialogs` unit replaces `ShowMessage`, `MessageDlg`, `MessageBox`, `InputBox`, `InputQuery`, and `PasswordBox` with dialogs built entirely from `TCssStyledControl` descendants, skinned by the same theme and honouring HTML text.
 - **No external dependencies** — pure LCL, works on Windows, Linux, and macOS.
 
 ---
@@ -228,19 +230,62 @@ code is only used where a demo cannot avoid it (populating the tree,
 switching the theme, copying nodes on cross-tree drops).
 
 The form is organised as a `TCssPageControl` with four tabs, plus a
-bottom status panel and a top menu bar.
+bottom status panel and a top menu bar. All dialogs shown during the
+demo are produced by the `TCssMessageDialogs` unit, so they are styled
+by the same `TCssStyleProvider` that skins the main form — there is no
+native LCL dialog anywhere on screen.
 
 ### Page 1 — Common controls
 
 - A `TCssPageControl` whose **tab strip is decorated with SVG icons**.
   The page itself carries the icon (`CssTabSheet1.ImageIndex = 1`), so the
   tab automatically displays the second entry of the shared
-  `TCssSvgImgList1` (`icons8-news`). The icon follows the tab text color
+  `CssSvgImgList1` (`icons8-news`). The icon follows the tab text color
   in every state — plain, hovered, active — and switches to the `dark`
   variant of that entry together with the CSS theme.
 
 - A `TCssGroupBox` containing several `TCssButton`s (enabled, disabled,
   default, cancel, and one with a `TCssPopupMenu`).
+
+- The first button in that group (`CssButton1`, the one labelled
+  *Enabled button*) opens a step-by-step demonstration of the
+  **`TCssMessageDialogs`** unit. Its hint reads
+  *"Click to see all CssMessageDlg functions"*; the handler walks through
+  thirteen consecutive dialogs, one per click, closing each one to see
+  the next:
+
+  1. Inline formatting (`<b>`, `<i>`, `<u>`, `<s>`, `<code>`).
+  2. Inline colors via `<span style="color:...">` and the legacy
+     `<font color="...">`.
+  3. Headings `<h1>`..`<h3>` with the icon centred against the first
+     line of text.
+  4. Paragraphs, automatic word wrapping and explicit `<br>`.
+  5. Ordered and unordered lists.
+  6. Preformatted code in `<pre>`, preserving spaces and `#10`.
+  7. `<hr>` combined with `<center>` and `align="right"`.
+  8. Subscript, superscript and `<q>` inline quotes.
+  9. Hyperlink styling for `<a href="...">`.
+
+  10. A confirmation dialog mixing a heading, a list and a colored
+      warning paragraph, with `mbNo` as the safe default.
+  11. A long wrapped HTML paragraph with mixed inline runs.
+  12. A release-notes style combination ending with a centred
+      `<hr>` and an italic footer.
+  13. An HTML prompt rendered through `CssInputBox`, showing that the
+      same parser drives the input-dialog caption as well.
+
+  Every dialog in this sequence is built from the same styled controls
+  as the rest of the library: a `TCssPanel` backdrop with
+  `border-radius`, a `TCssMessageIcon`, a `TCssLabel` with `HtmlMode`,
+  a one-pixel divider, and `TCssButton`s that inherit `:default` and
+  `:cancel` from the theme. When the theme is switched from light to
+  dark, the whole sequence is restyled automatically — no per-dialog
+  configuration is required.
+
+  HTML mode is turned on for the duration of the sequence with
+  `CssMessageDlgSetHtmlMode(True)` and turned off in a `finally` block,
+  so the rest of the application keeps interpreting `<` and `>` as
+  ordinary characters.
 
 - Four `TCssBitBtn` controls next to those buttons, covering every glyph
   source the control supports:
@@ -384,8 +429,9 @@ end;
 procedure TForm1.CssLabel2LinkClick(Sender : TObject;
   const AHref, AText : UnicodeString);
 begin
-  MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText,
-    mtInformation, [mbOk], '');
+  CssMessageBox('Link clicked',
+    'Href=' + AHref + ' , Text=' + AText,
+    MB_YESNOCANCEL or MB_ICONINFORMATION);
 end;
 
 procedure TForm1.LeftTreeNewText(Sender : TObject; Node : TCssVirtualNode;
@@ -415,6 +461,15 @@ begin
   // MoveNodes.
 end;
 ```
+
+Note the second handler: clicking an `<a>` inside the HTML label now
+opens a `CssMessageBox` from `TCssMessageDialogs`, so even the
+"reference to a link" popup is skinned by the same theme and inherits
+the `MB_ICONINFORMATION` glyph from the CSS-aware dialog engine. The
+`Dialogs` unit is still present in the `uses` clause, but only for the
+`mrYes` / `mrNo` / `mrCancel` result constants — none of the standard
+`ShowMessage` / `MessageDlg` / `MessageBox` functions are called from
+the demo.
 
 Switching the toggle changes the CSS theme **and** every SVG icon at the
 same time — the tab-strip icon, both `TCssBitBtn` glyphs, the popup menu
@@ -1711,6 +1766,255 @@ Set `ShowHint := True`, `Hint := '...'` and (optionally) `HintHtmlMode := True`.
 If `HintHtmlMode` is `True`, the hint text is rendered as HTML; otherwise it is plain text.
 
 The hint is drawn by an internal `TCssStyledHintWindow` that uses the same CSS engine, so all general properties (background, border, radius, padding, font, shadow) are supported.
+---
+
+## Message Dialogs (CssMessageDialogs)
+
+The `CssMessageDialogs` unit provides CSS-styled replacements for the standard dialog functions from `Dialogs.pas`. Instead of the native LCL dialogs, it opens a `TCssMessageForm` — a plain `TForm` used only as a container — whose entire visible content is built from `TCssStyledControl` descendants:
+
+- a `TCssPanel` backdrop that draws the dialog background, border and rounded corners from CSS;
+- a `TCssMessageIcon` that renders the standard information / warning / error / question icon using the anti-aliased primitives of the base engine (no bitmap assets);
+- a `TCssLabel` for the message text, optionally rendered as HTML;
+- an optional `TCssEdit` for text and password input;
+- an optional one-pixel `TCssPanel` divider between the icon and the message;
+- `TCssButton` instances for the action buttons, inheriting `:default` and `:cancel` pseudo-classes from `TCssButton`.
+
+Because a `TForm` is not a `TCssStyledControl`, its `Color` property is kept in sync with the active CSS theme through a `TCssProxy` attached to the form. The backdrop panel uses the same `.msgdialog` class name as the form proxy, so both resolve to the same declaration and blend cleanly at the rounded corners.
+
+### Function Mapping
+
+| Standard (`Dialogs.pas`) | CSS replacement     |
+| ------------------------ | ------------------- |
+| `ShowMessage`            | `CssShowMessage`    |
+| `ShowMessageFmt`         | `CssShowMessageFmt` |
+| `MessageDlg`             | `CssMessageDlg`     |
+| `MessageDlgPos`          | `CssMessageDlgPos`  |
+| `MessageBox`             | `CssMessageBox`     |
+| `InputBox`               | `CssInputBox`       |
+| `InputQuery`             | `CssInputQuery`     |
+| `PasswordBox`            | `CssPasswordBox`    |
+
+The `Css` prefix avoids a name clash with the `Dialogs` unit. If you prefer the original names, alias them in a one-line wrapper unit.
+
+### Quick Start
+
+1. Add `CssMessageDialogs` to the `uses` clause of the unit where you show dialogs.
+2. (Optional) Place a `TCssStyleProvider` on your main form and load a theme into it. Every dialog will find that provider automatically, because it is looked up by walking the active form's components.
+3. Call any of the functions:
+
+```pascal
+CssShowMessage('Operation completed.');
+CssMessageDlg('Save changes?', mtConfirmation, [mbYes, mbNo, mbCancel], 0);
+```
+
+If there is no provider on the active form and no global provider has been set, the dialog still opens and uses system default colours.
+
+### Function Overloads
+
+`CssMessageDlg` and `CssMessageDlgPos` come in four overloads each, and `CssMessageBox` in two:
+
+```pascal
+// 1. No caption, automatic default button
+CssMessageDlg('Message', mtInformation, [mbOK], 0);
+
+// 2. Explicit default button, no caption
+CssMessageDlg('Message', mtInformation, [mbYes, mbNo], 0, mbNo);
+
+// 3. Explicit caption, automatic default button
+CssMessageDlg('Message', mtWarning, [mbRetry, mbCancel], 0, 'Network error');
+
+// 4. Explicit caption and default button
+CssMessageDlg('Delete permanently?', mtError, [mbYes, mbNo, mbCancel], 0,
+              'Confirmation', mbCancel);
+```
+
+`CssMessageDlgPos` takes the same four combinations plus a screen position:
+
+```pascal
+CssMessageDlgPos('Message', mtInformation, [mbOK], 0, 200, 150);
+CssMessageDlgPos('Message', mtInformation, [mbOK], 0, 200, 150, 'Title');
+CssMessageDlgPos('Message', mtInformation, [mbOK], 0, 200, 150, mbCancel);
+CssMessageDlgPos('Message', mtInformation, [mbOK], 0, 200, 150, 'Title', mbCancel);
+```
+
+`CssMessageBox` accepts either the WinAPI flag set alone, or the flag set plus an explicit `TMsgDlgBtn` that overrides `MB_DEFBUTTONn`:
+
+```pascal
+CssMessageBox('Caption', 'Message', MB_OK or MB_ICONINFORMATION);
+CssMessageBox('Caption', 'Overwrite?', MB_YESNOCANCEL or MB_ICONWARNING, mbCancel);
+```
+
+`CssInputBox`, `CssInputQuery`, and `CssPasswordBox` keep the standard signatures:
+
+```pascal
+S  := CssInputBox('Name', 'Enter display name:', 'Anonymous');
+Ok := CssInputQuery('Path', 'Export directory:', S);
+S  := CssPasswordBox('Auth', 'Password:');
+```
+
+### Caption Handling
+
+If the caption is empty, `Application.Title` is used — this matches the LCL behaviour of the standard `MessageDlg`. `CssShowMessage` and `CssShowMessageFmt` always use this default caption.
+
+### Default Button Selection
+
+When a `TMsgDlgBtn` value is passed explicitly, it becomes the default only if that button is actually present in the `Buttons` set. Otherwise the default is auto-picked by the same priority order used by LCL:
+
+```
+OK > Yes > YesToAll > No > NoToAll > Retry > Abort > Ignore > All > Close
+```
+
+The default button is rendered through `TCssButton:default`, the cancel-like button through `TCssButton:cancel`. The Escape key activates the first Cancel-like button found, and Return activates the default button.
+
+### Provider Resolution
+
+The style provider for a dialog is resolved in this order:
+
+1. The first `TCssStyleProvider` found on the currently active form, or on `Application.MainForm` if there is no active form.
+2. The provider set globally with `CssMessageDlgSetStyleProvider`.
+3. No provider — controls fall back to system default colours.
+
+```pascal
+// App-wide fallback, used when the owning form has no provider of its own.
+CssMessageDlgSetStyleProvider(CssStyleProvider1);
+CssMessageDlgSetStyleProvider(CssStyleProvider1, 'dark');   // with a style name
+CssMessageDlgSetStyleProvider(nil);                          // reset
+```
+
+### HTML Mode
+
+HTML rendering of the message text is **off by default**, so `<` and `>` inside normal strings are treated as ordinary characters. Enable it globally:
+
+```pascal
+CssMessageDlgSetHtmlMode(True);
+try
+  CssShowMessage('<b>Success!</b><br>The file has been saved.');
+  CssMessageDlg('<h3>Summary</h3><ul>' +
+                '<li>3 files updated</li>' +
+                '<li>1 file deleted</li>' +
+                '</ul>',
+                mtInformation, [mbOK], 0, 'Results');
+finally
+  CssMessageDlgSetHtmlMode(False);
+end;
+```
+
+When HTML mode is off, `#13#10`, `#13`, and `#10` in the message produce line breaks, and long lines wrap automatically to the dialog width. When HTML mode is on, use `<br>` for a line break and `<p>...</p>` for a paragraph — `#13#10` is treated as a space, as in HTML.
+
+The same flag controls HTML rendering in the prompt of `CssInputQuery` / `CssInputBox` / `CssPasswordBox`.
+
+### CSS Styling
+
+The dialog is skinned by a single `.msgdialog` rule (applied to both the form proxy and the backdrop panel), plus its helper rules for the divider and the icon:
+
+```css
+.msgdialog {
+  background-color: #FFFFFF;
+  color: #1E293B;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 0px;
+  focus-within: false;
+}
+.msgdialog:hover,
+.msgdialog:focus { border-color: #CBD5E1; }
+
+/* One-pixel divider between the icon column and the message text. */
+.msgdialog-divider {
+  background-color: #E2E8F0;
+  border: none;
+  border-radius: 0px;
+  padding: 0px;
+  focus-within: false;
+}
+.msgdialog-divider:hover,
+.msgdialog-divider:focus { border: none; }
+
+/* Icon canvas: transparent, no border, no padding. */
+TCssMessageIcon {
+  background-color: transparent;
+  border: none;
+  border-radius: 0px;
+  padding: 0px;
+}
+```
+
+Everything else — buttons, input edit, label — is styled by the ordinary `TCssButton`, `TCssEdit`, and `TCssLabel` rules of the active theme. This means a `TCssMessageForm` inherits the same look as the rest of the application: no separate dialog theme to maintain.
+
+`.msgdialog` deliberately sets `focus-within: false` to suppress the base `TCssPanel` focus ring; the dialog is not a composite widget that needs a group highlight.
+
+### Layout
+
+The dialog lays itself out in a single column:
+
+```
+┌──────────────────────────────────────────────┐
+│ [PadPx]                                      │
+│ [PadPx][icon][PadPx][div][PadPx][text ...][PadPx]
+│                                              │
+│                    [input edit]              │
+│                                              │
+│                     [btn][btn][btn]          │
+│ [PadPx]                                      │
+└──────────────────────────────────────────────┘
+```
+
+- The icon is vertically centred against the whole message block.
+- For single-line messages, the icon and the text share a vertical centre, so the row reads as one unit.
+- For multi-line messages, the text anchors to the top and the icon floats in the middle of the block, matching the behaviour of the standard Windows `MessageBox`.
+- The divider (when present) is centred within the same block, with a small top and bottom inset so it does not touch the panel edges.
+- Buttons are right-aligned; their width, height and gap are DPI-scaled.
+
+### DPI
+
+Every metric — padding, spacing, icon size, edit height, button size and gap — is scaled through the standard `ScaleDpi` helper, so the dialog looks correct at 100 %, 125 %, 150 %, 200 % and higher.
+
+### Full Example
+
+```pascal
+uses
+  ..., CssMessageDialogs;
+
+procedure TForm1.RunDialogDemos;
+var
+  R: Integer;
+  S: string;
+  Ok: Boolean;
+begin
+  // Plain message.
+  CssShowMessage('A simple information box.');
+
+  // Formatted message.
+  CssShowMessageFmt('File "%s" not found in "%s".',
+                    ['settings.ini', 'C:\ProgramData']);
+
+  // Confirmation, default button = No.
+  R := CssMessageDlg('Save changes?',
+    mtConfirmation, [mbYes, mbNo, mbCancel], 0, mbNo);
+
+  // Destructive action, caption and safe default.
+  R := CssMessageDlgPos('Delete permanently?',
+    mtError, [mbYes, mbNo, mbCancel], 0, 300, 200,
+    'Confirmation', mbCancel);
+
+  // WinAPI-style.
+  R := CssMessageBox('Caption', 'Overwrite the existing file?',
+    MB_YESNOCANCEL or MB_ICONWARNING, mbCancel);
+
+  // Input.
+  S  := CssInputBox('Name', 'Enter display name:', 'Anonymous');
+  Ok := CssInputQuery('Path', 'Choose an export directory:', S);
+  S  := CssPasswordBox('Auth', 'Enter administrator password:');
+end;
+```
+
+### Design Notes
+
+- The dialog window is a plain `TForm` used only as a container. Every visible element is a `TCssStyledControl`.
+- The form's `Color` is synchronised with the CSS theme through a `TCssProxy` attached to the form, using the same `.msgdialog` selector as the backdrop panel. The two never diverge, so rounded corners never show a mismatched corner pixel.
+- Icons are drawn with the AA primitives (`DrawAntiAliasedCircle`, `DrawAntiAliasedTriangle`) from the base engine — no external images, no bitmap assets, no missing-glyph issues.
+- HTML mode, the style provider, and the input password mask are global state. Call `CssMessageDlgSetHtmlMode` and `CssMessageDlgSetStyleProvider` once at application startup, not per dialog.
+- Because the dialog is modal and blocks the calling thread, it behaves exactly like the standard `MessageDlg`: code after the call runs once the user has pressed a button.
 ---
 
 ## Style Provider API

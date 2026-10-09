@@ -10,7 +10,7 @@ uses
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
   CssMenuControl, CssBitBtnControl, CssSvgImgList, CssSplitterControl,
   CssEditControl, CssComboControl, CssListboxControl, CssMemoControl,
-  CssVirtualTreeControl;
+  CssVirtualTreeControl, CssMessageDialogs;
 
 type
   PNodeData = ^TNodeData;
@@ -98,6 +98,7 @@ type
     MenuItem6 : TCssMenuItem;
     MenuItem7 : TCssMenuItem;
     MenuItem8 : TCssMenuItem;
+    procedure CssButton1Click(Sender : TObject);
     procedure CssCheckBox1Click(Sender : TObject);
     procedure CssLabel2LinkClick(Sender : TObject; const AHref, AText: String);
     procedure FormCreate(Sender : TObject);
@@ -146,7 +147,7 @@ var
 implementation
 
 uses
-  CssUtils;
+  LCLType, CssUtils;
 
 {$R *.lfm}
 
@@ -172,10 +173,183 @@ begin
     CssStyleProvider1.DefaultStyleName := 'Light';
 end;
 
+procedure TForm1.CssButton1Click(Sender: TObject);
+var
+  R: Integer;
+  S: string;
+begin
+  // ------------------------------------------------------------------
+  // HTML mode is a global switch that affects every subsequent
+  // CssMessageDlg / CssShowMessage / CssInputQuery dialog. Turn it on
+  // before the demos and off afterwards, so that the rest of the
+  // application keeps interpreting '<' and '>' as ordinary characters.
+  // ------------------------------------------------------------------
+  CssMessageDlgSetHtmlMode(True);
+  try
+    // ------------------------------------------------------------------
+    // 1. Inline formatting
+    // ------------------------------------------------------------------
+    CssShowMessage(
+      '1. Inline formatting: ' +
+      '<b>bold</b>, <i>italic</i>, <u>underline</u>, ' +
+      '<s>strikeout</s>, <code>inline code</code>.');
+
+    // ------------------------------------------------------------------
+    // 2. Inline colors via <span style="..."> and <font color="...">
+    // ------------------------------------------------------------------
+    CssShowMessage(
+      '2. Colors: ' +
+      '<span style="color:#2563EB">blue</span>, ' +
+      '<span style="color:#DC2626">red</span>, ' +
+      '<span style="color:#16A34A">green</span>, ' +
+      '<font color="#F59E0B">orange via &lt;font&gt;</font>.');
+
+    // ------------------------------------------------------------------
+    // 3. Headings
+    // ------------------------------------------------------------------
+    CssMessageDlg(
+      '<h1>3. Heading level 1</h1>' +
+      '<h2>Heading level 2</h2>' +
+      '<h3>Heading level 3</h3>' +
+      '<p>Normal paragraph text below the headings.</p>',
+      mtInformation, [mbOK], 0, 'Headings');
+
+    // ------------------------------------------------------------------
+    // 4. Paragraphs and explicit line breaks
+    // ------------------------------------------------------------------
+    CssShowMessage(
+      '<p>4. First paragraph — spans a couple of lines to demonstrate ' +
+      'word wrapping inside the dialog label.</p>' +
+      '<p>A second paragraph follows after a blank line.</p>' +
+      'And a manual break here:<br>second half of the same paragraph.');
+
+    // ------------------------------------------------------------------
+    // 5. Ordered and unordered lists
+    // ------------------------------------------------------------------
+    CssMessageDlg(
+      '<p>5. Lists supported by the HTML parser:</p>' +
+      '<ul>' +
+        '<li>unordered item one</li>' +
+        '<li>unordered item two</li>' +
+        '<li>unordered item three</li>' +
+      '</ul>' +
+      '<ol>' +
+        '<li>ordered first</li>' +
+        '<li>ordered second</li>' +
+        '<li>ordered third</li>' +
+      '</ol>',
+      mtInformation, [mbOK], 0, 'Lists');
+
+    // ------------------------------------------------------------------
+    // 6. Preformatted block: <pre> preserves spaces and line breaks
+    // ------------------------------------------------------------------
+    CssMessageDlg(
+      '<p>6. Code sample:</p>' +
+      '<pre>' +
+      'function Add(A, B: Integer): Integer;'#10 +
+      'begin'#10 +
+      '  Result := A + B;'#10 +
+      'end;' +
+      '</pre>',
+      mtInformation, [mbOK], 0, 'Preformatted code');
+
+    // ------------------------------------------------------------------
+    // 7. Horizontal rule and alignment
+    // ------------------------------------------------------------------
+    CssMessageDlg(
+      '<p>7. Divider and alignment:</p>' +
+      '<hr>' +
+      '<center>This line is centered.</center>' +
+      '<p align="right">This line is right-aligned.</p>',
+      mtInformation, [mbOK], 0, 'Divider and alignment');
+
+    // ------------------------------------------------------------------
+    // 8. Subscript, superscript and inline quotes
+    // ------------------------------------------------------------------
+    CssShowMessage(
+      '8. Sub/superscript: H<sub>2</sub>O, E = mc<sup>2</sup>. ' +
+      'Inline quote: <q>quoted text</q>.');
+
+    // ------------------------------------------------------------------
+    // 9. Hyperlink appearance. The link is rendered with the styled
+    //    colour and underline; because the label lives inside an
+    //    internally created form, there is no OnLinkClick hook here,
+    //    so the demo only shows the visual styling.
+    // ------------------------------------------------------------------
+    CssShowMessage(
+      '9. Hyperlink styling: see ' +
+      '<a href="https://example.com">example.com</a>.');
+
+    // ------------------------------------------------------------------
+    // 10. Mixed content in a confirmation dialog
+    // ------------------------------------------------------------------
+    R := CssMessageDlg(
+      '<h3>10. Uncommitted changes</h3>' +
+      '<p>You are about to close the document with unsaved edits.</p>' +
+      '<ul>' +
+        '<li><b>3 files</b> modified</li>' +
+        '<li><b>1 file</b> deleted</li>' +
+      '</ul>' +
+      '<p style="color:#DC2626"><b>This action cannot be undone.</b></p>',
+      mtWarning,
+      [mbYes, mbNo, mbCancel],
+      0,
+      'Unsaved changes',
+      mbNo);
+
+    // ------------------------------------------------------------------
+    // 11. Long wrapped HTML paragraph with mixed inline fragments
+    // ------------------------------------------------------------------
+    CssMessageDlg(
+      '<p>11. This paragraph exceeds the dialog width on purpose. ' +
+      'The label performs word wrapping automatically, so the content ' +
+      'stays fully readable without clipping. <b>Bold fragments</b> ' +
+      'and <i>italics</i> still render inline, and ' +
+      '<code>inline code</code> keeps its monospaced font, even when ' +
+      'a wrap point falls in the middle of the run.</p>',
+      mtInformation, [mbOK], 0, 'Long HTML paragraph');
+
+    // ------------------------------------------------------------------
+    // 12. Release-notes style combination
+    // ------------------------------------------------------------------
+    CssMessageDlg(
+      '<h2>12. Release notes</h2>' +
+      '<p><b>CssMessageDlg</b> supports a useful subset of HTML:</p>' +
+      '<ul>' +
+        '<li><b>Bold</b>, <i>italic</i>, <u>underline</u>, ' +
+        '<s>strikeout</s></li>' +
+        '<li><span style="color:#2563EB">Inline colors</span></li>' +
+        '<li>Headings <code>&lt;h1&gt;</code>..<code>&lt;h6&gt;</code></li>' +
+        '<li>Ordered and unordered lists</li>' +
+        '<li>Preformatted blocks <code>&lt;pre&gt;</code></li>' +
+        '<li>Paragraphs <code>&lt;p&gt;</code> and rules ' +
+        '<code>&lt;hr&gt;</code></li>' +
+      '</ul>' +
+      '<hr>' +
+      '<p align="center"><i>End of demonstration</i></p>',
+      mtInformation, [mbOK], 0, 'HTML capabilities');
+
+    // ------------------------------------------------------------------
+    // 13. HTML is also honoured in the prompt of input dialogs
+    // ------------------------------------------------------------------
+    S := CssInputBox(
+      'HTML prompt',
+      'Enter the <b>user name</b> for the ' +
+      '<span style="color:#2563EB">remote connection</span>:',
+      'admin');
+  finally
+    // ------------------------------------------------------------------
+    // Restore plain-text mode. From here on, '<' and '>' inside message
+    // strings are once again treated as ordinary characters.
+    // ------------------------------------------------------------------
+    CssMessageDlgSetHtmlMode(False);
+  end;
+end;
+
 procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref,
   AText : String);
 begin
-  MessageDlg('Link clicked', 'Href='+AHref+' , Text='+AText, mtInformation, [mbOk], '');
+  CssMessageBox('Link clicked', 'Href='+AHref+' , Text='+AText, MB_YESNOCANCEL or MB_ICONINFORMATION);
 end;
 
 procedure TForm1.FormCreate(Sender : TObject);

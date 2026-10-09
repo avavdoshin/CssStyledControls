@@ -113,6 +113,10 @@
         <Filename Value="..\Source\CssSvgImgList.pas"/>
         <UnitName Value="CssSvgImgList"/>
       </Item>
+      <Item>
+        <Filename Value="..\Source\CssMessageDialogs.pas"/>
+        <UnitName Value="CssMessageDialogs"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

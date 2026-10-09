@@ -448,6 +448,36 @@ TCssPanel.panel-container-square {
 }
 TCssPanel.panel-container-square:hover { border: none; }
 
+.msgdialog {
+  background-color: #FFFFFF;
+  color: #1E293B;
+  border: 1px solid #CBD5E1;
+  border-radius: 10px;
+  padding: 0px;
+  text-align: left;
+  vertical-align: top;
+  focus-within: false;
+}
+.msgdialog:hover,
+.msgdialog:focus { border-color: #CBD5E1; }
+.msgdialog-divider {
+  background-color: #E2E8F0;
+  border: none;
+  border-radius: 0px;
+  padding: 0px;
+  focus-within: false;
+}
+.msgdialog-divider:hover,
+.msgdialog-divider:focus { border: none; }
+
+/* Icon canvas inside the dialog. */
+TCssMessageIcon {
+  background-color: transparent;
+  border: none;
+  border-radius: 0px;
+  padding: 0px;
+}
+
 TCssMainMenu {
   background-color: #F8FAFC;
   color: #1E293B;
@@ -1042,6 +1072,35 @@ TCssPanel.panel-container-square {
   border-radius: 0px;
 }
 TCssPanel.panel-container-square:hover { border: none; }
+
+.msgdialog {
+  background-color: #1E293B;
+  color: #E2E8F0;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  padding: 0px;
+  text-align: left;
+  vertical-align: top;
+  focus-within: false;
+}
+.msgdialog:hover,
+.msgdialog:focus { border-color: #475569; }
+.msgdialog-divider {
+  background-color: #334155;
+  border: none;
+  border-radius: 0px;
+  padding: 0px;
+  focus-within: false;
+}
+.msgdialog-divider:hover,
+.msgdialog-divider:focus { border: none; }
+
+TCssMessageIcon {
+  background-color: transparent;
+  border: none;
+  border-radius: 0px;
+  padding: 0px;
+}
 
 TCssMainMenu {
   background-color: #0F172A;

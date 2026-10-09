@@ -14,7 +14,7 @@ uses
   CssScrollControl, CssSplitterControl, CssTabbedControl, 
   CssVirtualTreeControl, CssUtils, CssGroupCaptionControl, CssStyledControl, 
   CssProxyControl, CssFormDarkTitle, CssBitBtnControl, CssAntiAlias, 
-  CssSvgImgList, LazarusPackageIntf;
+  CssSvgImgList, CssMessageDialogs, LazarusPackageIntf;
 
 implementation
 
