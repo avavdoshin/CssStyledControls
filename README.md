@@ -250,7 +250,7 @@ native LCL dialog anywhere on screen.
   default, cancel, and one with a `TCssPopupMenu`).
 
 - The first button in that group (`CssButton1`, the one labelled
-  *Enabled button*) opens a step-by-step demonstration of the
+  *Show all dialogs*) opens a step-by-step demonstration of the
   **`TCssMessageDialogs`** unit. Its hint reads
   *"Click to see all CssMessageDlg functions"*; the handler walks through
   thirteen consecutive dialogs, one per click, closing each one to see

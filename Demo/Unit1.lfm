@@ -139,10 +139,10 @@ object Form1: TForm1
           Height = 22
           Hint = 'Click to see all CssMessageDlg functions'
           Top = 41
-          Width = 100
+          Width = 103
           BorderSpacing.Left = 10
           BorderSpacing.Top = 15
-          Caption = '<b>Enabled</b> button'
+          Caption = 'Show <b>all</b> dialogs'
           CssTag = 'control'
           HtmlMode = True
           StyleProvider = CssStyleProvider1
@@ -160,7 +160,7 @@ object Form1: TForm1
           AnchorSideTop.Control = CssButton1
           AnchorSideRight.Control = CssGroupBox1
           AnchorSideRight.Side = asrBottom
-          Left = 120
+          Left = 123
           Height = 22
           Top = 41
           Width = 104
@@ -182,7 +182,7 @@ object Form1: TForm1
           AnchorSideRight.Control = CssGroupBox1
           AnchorSideRight.Side = asrBottom
           Cursor = crHandPoint
-          Left = 234
+          Left = 237
           Height = 22
           Top = 41
           Width = 99
@@ -204,7 +204,7 @@ object Form1: TForm1
           AnchorSideRight.Control = CssGroupBox1
           AnchorSideRight.Side = asrBottom
           Cursor = crHandPoint
-          Left = 343
+          Left = 346
           Height = 22
           Hint = '<b><u>Cancel</u></b> current operation'
           Top = 41
@@ -229,7 +229,7 @@ object Form1: TForm1
           AnchorSideRight.Control = CssGroupBox1
           AnchorSideRight.Side = asrBottom
           Cursor = crHandPoint
-          Left = 446
+          Left = 449
           Height = 22
           Top = 41
           Width = 157
@@ -250,7 +250,7 @@ object Form1: TForm1
           AnchorSideLeft.Side = asrBottom
           AnchorSideTop.Control = CssButton5
           Cursor = crHandPoint
-          Left = 613
+          Left = 616
           Height = 22
           Top = 41
           Width = 119
@@ -269,7 +269,7 @@ object Form1: TForm1
           AnchorSideLeft.Control = CssBitBtn1
           AnchorSideLeft.Side = asrBottom
           AnchorSideTop.Control = CssButton5
-          Left = 742
+          Left = 745
           Height = 22
           Top = 41
           Width = 119
@@ -290,7 +290,7 @@ object Form1: TForm1
           AnchorSideLeft.Side = asrBottom
           AnchorSideTop.Control = CssGroupBox1
           Cursor = crHandPoint
-          Left = 871
+          Left = 874
           Height = 38
           Top = 33
           Width = 123
@@ -312,7 +312,7 @@ object Form1: TForm1
           AnchorSideLeft.Control = CssBitBtn3
           AnchorSideLeft.Side = asrBottom
           AnchorSideTop.Control = CssGroupBox1
-          Left = 1004
+          Left = 1007
           Height = 38
           Top = 33
           Width = 123
@@ -1897,6 +1897,15 @@ object Form1: TForm1
       Caption = 'File'
       object MenuItem6: TCssMenuItem
         Caption = 'Do nothing'
+      end
+      object MenuItem11: TCssMenuItem
+        Caption = 'Advanced'
+        object MenuItem9: TCssMenuItem
+          Caption = 'Nested item'
+        end
+        object MenuItem10: TCssMenuItem
+          Caption = 'Nested item 2'
+        end
       end
       object MenuItem7: TCssMenuItem
         Caption = 'Item'

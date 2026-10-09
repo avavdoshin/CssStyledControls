@@ -98,6 +98,9 @@ type
     CssTabSheet3 : TCssTabSheet;
     CssTabSheet4 : TCssTabSheet;
     LeftTree : TCssVirtualStringTree;
+    MenuItem10 : TCssMenuItem;
+    MenuItem11 : TCssMenuItem;
+    MenuItem9 : TCssMenuItem;
     RightTree : TCssVirtualStringTree;
     MenuItem1 : TCssMenuItem;
     MenuItem2 : TCssMenuItem;
