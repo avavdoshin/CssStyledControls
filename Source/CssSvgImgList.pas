@@ -446,6 +446,108 @@ begin
   else Result := AValue;
 end;
 
+// ---------------------------------------------------------------------------
+//  Supersampled rasterisation for TCssSvgImgList.GetBitmap
+//
+//  The vector rasteriser produces correct geometry, but at small icon
+//  sizes (16..48 px) the diagonal edges of an SVG cannot avoid visible
+//  stair-stepping: there are simply not enough pixels for a proper AA
+//  gradient, no matter how accurate the coverage mask is.
+//
+//  The fix here is the classic one: render at a multiple of the target
+//  size, then downsample with a box filter. The internal render is
+//  capped at CSSVG_SUPER_MAX_DIM px on the longest side, so large
+//  requests (>= 256 px) fall through to a plain single-pass render.
+//
+//  Cache hits are unaffected: the supersampling only runs the very
+//  first time a given (image, size, colour, variant) tuple is asked
+//  for, and the downsampled bitmap is what gets stored.
+// ---------------------------------------------------------------------------
+
+const
+  CSSVG_SUPER_MAX_DIM = 256;
+  CSSVG_SUPER_MAX_FACTOR = 4;
+
+{ Returns the integer supersampling factor for the requested size:
+    32x32  -> 4  (render 128x128, downsample to 32x32)
+    48x48  -> 4  (render 192x192, downsample to 48x48)
+    64x64  -> 4  (render 256x256, downsample to 64x64)
+    128x128 -> 2
+    256x256 -> 1
+    512x512 -> 1 }
+function ComputeSvgSuperFactor(AWidth, AHeight: Integer): Integer;
+var
+  MaxDim: Integer;
+begin
+  MaxDim := AWidth;
+  if AHeight > MaxDim then
+    MaxDim := AHeight;
+
+  if MaxDim <= 0 then
+    Exit(1);
+
+  Result := CSSVG_SUPER_MAX_DIM div MaxDim;
+
+  if Result < 1 then
+    Result := 1;
+  if Result > CSSVG_SUPER_MAX_FACTOR then
+    Result := CSSVG_SUPER_MAX_FACTOR;
+end;
+
+{ Box-filter downsampling with premultiplied alpha.
+
+  ASrc must be exactly AFactor times larger than ADst in both
+  dimensions. Pixels are averaged in premultiplied form, then
+  un-premultiplied, so transparent SVG areas with arbitrary (black or
+  undefined) RGB do not bleed dark halos into the visible edge. }
+procedure DownsampleBitmapAlpha(ASrc, ADst: TLazIntfImage;
+  AFactor: Integer);
+var
+  X, Y, XX, YY: Integer;
+  SumR, SumG, SumB, SumA: Int64;
+  Pix, OutPix: TFPColor;
+  Count: Integer;
+begin
+  Count := AFactor * AFactor;
+
+  for Y := 0 to ADst.Height - 1 do
+    for X := 0 to ADst.Width - 1 do
+    begin
+      SumR := 0;
+      SumG := 0;
+      SumB := 0;
+      SumA := 0;
+
+      for YY := 0 to AFactor - 1 do
+        for XX := 0 to AFactor - 1 do
+        begin
+          Pix := ASrc.Colors[X * AFactor + XX, Y * AFactor + YY];
+
+          Inc(SumR, Int64(Pix.Red)   * Int64(Pix.Alpha));
+          Inc(SumG, Int64(Pix.Green) * Int64(Pix.Alpha));
+          Inc(SumB, Int64(Pix.Blue)  * Int64(Pix.Alpha));
+          Inc(SumA, Int64(Pix.Alpha));
+        end;
+
+      OutPix.Alpha := SumA div Count;
+
+      if SumA > 0 then
+      begin
+        OutPix.Red   := SumR div SumA;
+        OutPix.Green := SumG div SumA;
+        OutPix.Blue  := SumB div SumA;
+      end
+      else
+      begin
+        OutPix.Red   := 0;
+        OutPix.Green := 0;
+        OutPix.Blue  := 0;
+      end;
+
+      ADst.Colors[X, Y] := OutPix;
+    end;
+end;
+
 procedure DrawSvgBitmapWithAlpha(ACanvas: TCanvas; AX, AY: Integer;
   ABmp: TBitmap);
 var
@@ -880,6 +982,54 @@ begin
     Inc(I);
   end;
   APos := Length(S) + 1;
+end;
+
+function SvgElementHidden(const AAttrs: string): Boolean;
+var
+  Sv, L: string;
+begin
+  Result := False;
+
+  if SameText(SvgGetAttr(AAttrs, 'display'), 'none') then
+    Exit(True);
+  if SameText(SvgGetAttr(AAttrs, 'visibility'), 'hidden') then
+    Exit(True);
+
+  Sv := SvgGetAttr(AAttrs, 'style');
+  if Sv <> '' then
+  begin
+    L := LowerCase(Sv);
+    L := StringReplace(L, ' ', '', [rfReplaceAll]);
+    L := StringReplace(L, #9, '', [rfReplaceAll]);
+    L := StringReplace(L, #10, '', [rfReplaceAll]);
+    L := StringReplace(L, #13, '', [rfReplaceAll]);
+
+    if Pos('display:none', L) > 0 then Exit(True);
+    if Pos('visibility:hidden', L) > 0 then Exit(True);
+  end;
+end;
+
+procedure SkipElement(const S: string; var APos: Integer; const ATag: string);
+var
+  Depth: Integer;
+  TagName, Attrs: string;
+  Closing, SelfClosing: Boolean;
+begin
+  Depth := 1;
+
+  while (APos <= Length(S)) and (Depth > 0) do
+  begin
+    if not NextSvgTag(S, APos, TagName, Closing, SelfClosing, Attrs) then
+      Break;
+
+    if not SameText(TagName, ATag) then
+      Continue;
+
+    if Closing then
+      Dec(Depth)
+    else if not SelfClosing then
+      Inc(Depth);
+  end;
 end;
 
 // Split string by whitespace (compatible with all FPC versions)
@@ -1929,7 +2079,7 @@ var
   Def: TSvgGradientDef;
   TagName, Attrs, Sv: string;
   Closing, SelfClosing: Boolean;
-  Sc: TSvgScanner;
+  M: TSvgMatrix;
   V: Double;
   StopOffset, StopOpacity: Double;
   StopColor: TColor;
@@ -1968,14 +2118,13 @@ begin
   Sv := SvgGetAttr(AAttrs, 'gradienttransform');
   if Sv <> '' then
   begin
-    // Parse transform and convert to TSvgGradientMatrix
-    Sc := TSvgScanner.Create(Sv);
-    try
-      // Simplified: just parse matrix() if present
-      // For full support, would need ParseSvgTransformList equivalent
-    finally
-      Sc.Free;
-    end;
+    M := ParseSvgTransformList(Sv);
+    Def.Transform.A := M.A;
+    Def.Transform.B := M.B;
+    Def.Transform.C := M.C;
+    Def.Transform.D := M.D;
+    Def.Transform.E := M.E;
+    Def.Transform.F := M.F;
   end;
 
   if Def.Kind = svgkLinear then
@@ -2504,6 +2653,11 @@ begin
     begin
       if Closing then
         PopCtx
+      else if SvgElementHidden(Attrs) then
+      begin
+        if not SelfClosing then
+          SkipElement(FSvg, P, TagName);
+      end
       else
       begin
         PushCtx(CtxStack[High(CtxStack)], Attrs);
@@ -2687,11 +2841,37 @@ var
   I, J: Integer;
   Pts: TAAFloatPoints;
   P: TPointF;
+  Mgt, Mutd, Mcombined: TSvgMatrix;
 begin
   Result.Kind := ADef.Kind;
   Result.Stops := ADef.Stops;
   Result.Transform := ADef.Transform;
   Result.SpreadMethod := ADef.SpreadMethod;
+
+  // Compose the parsed gradientTransform (gradient -> user) with the
+  // user-to-device transform, so SvgGradientColorAtPoint can apply
+  // the inverse directly to device pixel coordinates.
+  //
+  //   device -> user        : Mutd^-1
+  //   user   -> gradient    : Mgt^-1
+  //   device -> gradient    : (Mutd * Mgt)^-1
+  //
+  Mgt.A := ADef.Transform.A;
+  Mgt.B := ADef.Transform.B;
+  Mgt.C := ADef.Transform.C;
+  Mgt.D := ADef.Transform.D;
+  Mgt.E := ADef.Transform.E;
+  Mgt.F := ADef.Transform.F;
+
+  Mutd := SvgMatrixMake(SX, 0, 0, SY, OX, OY);
+  Mcombined := SvgMatrixMultiply(Mutd, Mgt);
+
+  Result.Transform.A := Mcombined.A;
+  Result.Transform.B := Mcombined.B;
+  Result.Transform.C := Mcombined.C;
+  Result.Transform.D := Mcombined.D;
+  Result.Transform.E := Mcombined.E;
+  Result.Transform.F := Mcombined.F;
 
   if ADef.GradientUnits = svgguObjectBoundingBox then
   begin
@@ -2730,15 +2910,17 @@ begin
   end
   else // svgguUserSpaceOnUse
   begin
-    Result.X1 := ADef.X1 * SX + OX;
-    Result.Y1 := ADef.Y1 * SY + OY;
-    Result.X2 := ADef.X2 * SX + OX;
-    Result.Y2 := ADef.Y2 * SY + OY;
-    Result.CX := ADef.CX * SX + OX;
-    Result.CY := ADef.CY * SY + OY;
-    Result.R := ADef.R * (SX + SY) / 2;
-    Result.FX := ADef.FX * SX + OX;
-    Result.FY := ADef.FY * SY + OY;
+    // Coordinates stay in SVG user space; the composed transform
+    // above takes care of mapping device pixels back into it.
+    Result.X1 := ADef.X1;
+    Result.Y1 := ADef.Y1;
+    Result.X2 := ADef.X2;
+    Result.Y2 := ADef.Y2;
+    Result.CX := ADef.CX;
+    Result.CY := ADef.CY;
+    Result.R := ADef.R;
+    Result.FX := ADef.FX;
+    Result.FY := ADef.FY;
   end;
 end;
 
@@ -3583,6 +3765,9 @@ var
   Cached: TBitmap;
   Item: TCssSvgImgListItem;
   C: TColor;
+  SuperFactor, SuperW, SuperH: Integer;
+  Big: TBitmap;
+  BigImg, DstImg: TLazIntfImage;
 begin
   Result := TBitmap.Create;
   Result.PixelFormat := pf32bit;
@@ -3593,6 +3778,10 @@ begin
   C := ACurrentColor;
   if C = clDefault then C := clBlack;
 
+  // NOTE: the cache signature intentionally stays the same — the
+  // supersampling factor is derived deterministically from
+  // (AWidth, AHeight), so two calls with identical arguments can never
+  // disagree about which internal render size to use.
   Sig := Format('%d;%d;%s;%dx%d;%d',
     [FSerial, AIndex, AVariant, AWidth, AHeight, Integer(ColorToRGB(C))]);
 
@@ -3600,9 +3789,51 @@ begin
   if Cached = nil then
   begin
     Item := FItems[AIndex];
-    Cached := TBitmap.Create;
-    Item.GetImageForVariant(AVariant)
-        .RenderToBitmap(Cached, AWidth, AHeight, C);
+    SuperFactor := ComputeSvgSuperFactor(AWidth, AHeight);
+
+    if SuperFactor <= 1 then
+    begin
+      // Large target — the native resolution is already fine, render
+      // straight to the destination bitmap.
+      Cached := TBitmap.Create;
+      Cached.PixelFormat := pf32bit;
+      Item.GetImageForVariant(AVariant)
+          .RenderToBitmap(Cached, AWidth, AHeight, C);
+    end
+    else
+    begin
+      SuperW := AWidth  * SuperFactor;
+      SuperH := AHeight * SuperFactor;
+
+      Big := TBitmap.Create;
+      try
+        Big.PixelFormat := pf32bit;
+        Big.SetSize(SuperW, SuperH);
+
+        Item.GetImageForVariant(AVariant)
+            .RenderToBitmap(Big, SuperW, SuperH, C);
+
+        Cached := TBitmap.Create;
+        Cached.PixelFormat := pf32bit;
+        Cached.SetSize(AWidth, AHeight);
+
+        BigImg := Big.CreateIntfImage;
+        try
+          DstImg := Cached.CreateIntfImage;
+          try
+            DownsampleBitmapAlpha(BigImg, DstImg, SuperFactor);
+            Cached.LoadFromIntfImage(DstImg);
+          finally
+            DstImg.Free;
+          end;
+        finally
+          BigImg.Free;
+        end;
+      finally
+        Big.Free;
+      end;
+    end;
+
     CachePut(Sig, Cached);
   end;
 
