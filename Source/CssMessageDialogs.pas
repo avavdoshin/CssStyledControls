@@ -7,10 +7,39 @@
 
   Public functions (all prefixed with Css to avoid clashes with Dialogs):
     CssShowMessage, CssShowMessageFmt, CssMessageDlg, CssMessageDlgPos,
-    CssMessageBox, CssInputBox, CssInputQuery, CssPasswordBox.
+    CssMessageBox, CssInputBox, CssInputQuery, CssPasswordBox,
+    CssMessageDlgIcon, CssMessageDlgPosIcon, CssMessageBoxIcon.
 
   HTML formatting of message text is OFF by default. Call
   CssMessageDlgSetHtmlMode(True) once to enable it globally.
+
+  Link-click handling
+  -------------------
+  HTML links inside the message text can be handled in two ways:
+
+    * globally, for every dialog:
+        CssMessageDlgSetOnLinkClick(@MyHandler);
+
+    * per dialog, for one specific instance:
+        Dlg := TCssMessageForm.CreateMessageDialog(..., @MyHandler);
+
+  The per-dialog handler wins over the global one. In either case the
+  Sender passed to the handler is the TCssMessageForm itself.
+
+  Custom icons
+  ------------
+  The SVG image source for dialog icons is a single, application-wide
+  TCssSvgImgList. It is set once:
+
+      CssMessageDlgSetIconSource(CssSvgImgList1);
+
+  Individual dialog calls then select an item from that source with an
+  explicit index:
+
+      CssMessageDlgIcon('msg', mtInformation, [mbOK], 0, 5);
+
+  If the source is nil or the index is out of range, the dialog falls
+  back to the built-in shapes (warning triangle, error cross, etc.).
 }
 
 interface
@@ -20,25 +49,49 @@ uses
   LCLType, Dialogs,
   CssStyledControl, CssButtonControl,
   CssLabelControl, CssEditControl,
-  CssProxyControl, CssPanelControl;
+  CssProxyControl, CssPanelControl,
+  CssSvgImgList;
 
 type
   TCssMessageIcon = class(TCssStyledControl)
   private
     FKind: TMsgDlgType;
+    FSvgImages: TCssSvgImgList;
+    FSvgImageIndex: Integer;
+    FSvgVariant: string;
+
     procedure SetKind(AValue: TMsgDlgType);
+    procedure SetSvgImages(AValue: TCssSvgImgList);
+    procedure SetSvgImageIndex(AValue: Integer);
+    procedure SetSvgVariant(const AValue: string);
+
+    function HasSvgIcon: Boolean;
   protected
     procedure Paint; override;
     function  ShouldPaintCaption: Boolean; override;
+    procedure Notification(AComponent: TComponent;
+      Operation: TOperation); override;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor  Destroy; override;
+
     property Kind: TMsgDlgType read FKind write SetKind;
+    property SvgImages: TCssSvgImgList
+      read FSvgImages write SetSvgImages;
+    property SvgImageIndex: Integer
+      read FSvgImageIndex write SetSvgImageIndex;
+    property SvgVariant: string
+      read FSvgVariant write SetSvgVariant;
   end;
 
   TCssMessageForm = class(TForm)
   private
     FProvider: TCssStyleProvider;
     FStyleName: string;
+    FOnLinkClick: TCssLinkClickEvent;
+
+    FSvgImages: TCssSvgImgList;
+    FSvgImageIndex: Integer;
 
     FProxy: TCssProxy;
     FBackdrop: TCssPanel;
@@ -61,6 +114,10 @@ type
 
     function  BtnCaption(ABtn: TMsgDlgBtn): string;
     function  BtnResult (ABtn: TMsgDlgBtn): Integer;
+
+    procedure SetOnLinkClick(AValue: TCssLinkClickEvent);
+    procedure MessageLinkClick(Sender: TObject;
+      const AHref, AText: AnsiString);
   public
     constructor CreateMessageDialog(
       AOwner: TComponent;
@@ -70,9 +127,14 @@ type
       ADefault: TMsgDlgBtn;
       AInputMode, APasswordMode: Boolean;
       const ADefaultText: string;
-      const ACaption: string = '');
+      const ACaption: string = '';
+      AOnLinkClick: TCssLinkClickEvent = nil;
+      AIconIndex: Integer = -1);
 
     function GetEditText: string;
+
+    property OnLinkClick: TCssLinkClickEvent
+      read FOnLinkClick write SetOnLinkClick;
   end;
 
 { ---- Public API ---- }
@@ -92,6 +154,25 @@ function CssMessageDlg(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
   const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer; overload;
 
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer): Integer; overload;
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer;
+  ADefaultBtn: TMsgDlgBtn): Integer; overload;
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer;
+  const ACaption: string): Integer; overload;
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer;
+  const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer; overload;
+
 function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
   X, Y: Integer): Integer; overload;
@@ -109,6 +190,25 @@ function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
   X, Y: Integer; const ACaption: string;
   ADefaultBtn: TMsgDlgBtn): Integer; overload;
 
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer): Integer; overload;
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer;
+  ADefaultBtn: TMsgDlgBtn): Integer; overload;
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer;
+  const ACaption: string): Integer; overload;
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer;
+  const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer; overload;
+
 procedure CssShowMessage(const Msg: string);
 procedure CssShowMessageFmt(const Msg: string; Params: array of const);
 
@@ -117,6 +217,13 @@ function CssMessageBox(const ACaption, AMsg: string;
 
 function CssMessageBox(const ACaption, AMsg: string;
   AFlags: LongInt; ADefaultBtn: TMsgDlgBtn): Integer; overload;
+
+function CssMessageBoxIcon(const ACaption, AMsg: string;
+  AFlags: LongInt; AIconIndex: Integer): Integer; overload;
+
+function CssMessageBoxIcon(const ACaption, AMsg: string;
+  AFlags: LongInt; AIconIndex: Integer;
+  ADefaultBtn: TMsgDlgBtn): Integer; overload;
 
 function CssInputBox(const ACaption, APrompt, ADefault: string): string;
 function CssInputQuery(const ACaption, APrompt: string;
@@ -128,6 +235,10 @@ procedure CssMessageDlgSetStyleProvider(AProvider: TCssStyleProvider;
   const AStyleName: string = '');
 
 procedure CssMessageDlgSetHtmlMode(AEnabled: Boolean);
+
+procedure CssMessageDlgSetOnLinkClick(AHandler: TCssLinkClickEvent);
+
+procedure CssMessageDlgSetIconSource(AImages: TCssSvgImgList);
 
 implementation
 
@@ -149,9 +260,11 @@ const
   MSGDLG_CSS_CLASS = 'msgdialog';
 
 var
-  GProvider:  TCssStyleProvider = nil;
-  GStyleName: string = '';
-  GHtmlMode:  Boolean = False;
+  GProvider:    TCssStyleProvider  = nil;
+  GStyleName:   string             = '';
+  GHtmlMode:    Boolean            = False;
+  GOnLinkClick: TCssLinkClickEvent = nil;
+  GSvgImages:   TCssSvgImgList     = nil;
 
 procedure CssMessageDlgSetStyleProvider(AProvider: TCssStyleProvider;
   const AStyleName: string);
@@ -163,6 +276,16 @@ end;
 procedure CssMessageDlgSetHtmlMode(AEnabled: Boolean);
 begin
   GHtmlMode := AEnabled;
+end;
+
+procedure CssMessageDlgSetOnLinkClick(AHandler: TCssLinkClickEvent);
+begin
+  GOnLinkClick := AHandler;
+end;
+
+procedure CssMessageDlgSetIconSource(AImages: TCssSvgImgList);
+begin
+  GSvgImages := AImages;
 end;
 
 function GetDialogOwner: TComponent;
@@ -212,7 +335,6 @@ begin
   Result := mbOK;
 end;
 
-{ Word-wrap aware measurement for plain-text messages. }
 function MeasureDialogPlainText(
   ACanvas: TCanvas;
   const AText: string;
@@ -291,11 +413,34 @@ end;
 constructor TCssMessageIcon.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FKind   := mtInformation;
-  TabStop := False;
-  CssTag  := 'msgdlg-icon';
+  FKind          := mtInformation;
+  FSvgImages     := nil;
+  FSvgImageIndex := -1;
+  FSvgVariant    := '';
+  TabStop        := False;
+  CssTag         := 'msgdlg-icon';
 
   CssStyle := 'background-color: transparent; border: none; border-radius: 0px;';
+end;
+
+destructor TCssMessageIcon.Destroy;
+begin
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  inherited Destroy;
+end;
+
+procedure TCssMessageIcon.Notification(AComponent: TComponent;
+  Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+
+  if (Operation = opRemove) and (AComponent = FSvgImages) then
+  begin
+    FSvgImages := nil;
+    Invalidate;
+  end;
 end;
 
 procedure TCssMessageIcon.SetKind(AValue: TMsgDlgType);
@@ -305,6 +450,44 @@ begin
   Invalidate;
 end;
 
+procedure TCssMessageIcon.SetSvgImages(AValue: TCssSvgImgList);
+begin
+  if FSvgImages = AValue then Exit;
+
+  if FSvgImages <> nil then
+    FSvgImages.RemoveFreeNotification(Self);
+
+  FSvgImages := AValue;
+
+  if FSvgImages <> nil then
+    FSvgImages.FreeNotification(Self);
+
+  Invalidate;
+end;
+
+procedure TCssMessageIcon.SetSvgImageIndex(AValue: Integer);
+begin
+  if AValue < -1 then AValue := -1;
+  if FSvgImageIndex = AValue then Exit;
+  FSvgImageIndex := AValue;
+  Invalidate;
+end;
+
+procedure TCssMessageIcon.SetSvgVariant(const AValue: string);
+begin
+  if FSvgVariant = AValue then Exit;
+  FSvgVariant := AValue;
+  Invalidate;
+end;
+
+function TCssMessageIcon.HasSvgIcon: Boolean;
+begin
+  Result :=
+    (FSvgImages <> nil) and
+    (FSvgImageIndex >= 0) and
+    (FSvgImageIndex < FSvgImages.Count);
+end;
+
 function TCssMessageIcon.ShouldPaintCaption: Boolean;
 begin
   Result := False;
@@ -312,19 +495,71 @@ end;
 
 procedure TCssMessageIcon.Paint;
 var
-  R: TRect;
+  R, IconR: TRect;
+  BgColor: TColor;
   CX, CY, Rad: Integer;
   BG, SymColor: TColor;
   Sym: string;
   SymOffsetY: Integer;
   SavedFont: TFont;
-  TW, TH, TX, TY: Integer;
+  TW, TH, TX, TY, Size: Integer;
+  Bmp: TBitmap;
 begin
-  inherited Paint;
-
   R := ClientRect;
-  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then Exit;
+  if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
+    Exit;
 
+  // ------------------------------------------------------------------
+  //  Background.
+  //
+  //  Deliberately NOT calling inherited Paint: the base class fills
+  //  the control with GetParentBackgroundColor, which silently falls
+  //  back to clBtnFace whenever the CSS lookup fails at paint time.
+  //  On a themed dialog panel that produces an ugly grey block around
+  //  the icon. Here we use the colour the dialog passed explicitly via
+  //  SetExternalBackgroundColor, or — as a fallback — the same value
+  //  the parent lookup would produce.
+  // ------------------------------------------------------------------
+  BgColor := GetCornerBackgroundColor;      // honour SetExternalBackgroundColor
+  if (BgColor = clNone) or (BgColor = clDefault) then
+    BgColor := GetParentBackgroundColor;
+  if (BgColor = clNone) or (BgColor = clDefault) then
+    BgColor := clWindow;
+
+  Canvas.Brush.Style := bsSolid;
+  Canvas.Brush.Color := BgColor;
+  Canvas.FillRect(R);
+
+  // ------------------------------------------------------------------
+  //  SVG path: a custom icon fully replaces the built-in shapes.
+  // ------------------------------------------------------------------
+  if HasSvgIcon then
+  begin
+    Size := Min(R.Width, R.Height);
+    if Size <= 0 then Exit;
+
+    IconR := Rect(
+      R.Left + (R.Width  - Size) div 2,
+      R.Top  + (R.Height - Size) div 2,
+      R.Left + (R.Width  - Size) div 2 + Size,
+      R.Top  + (R.Height - Size) div 2 + Size);
+
+    Bmp := FSvgImages.GetBitmap(
+      FSvgImageIndex, Size, Size,
+      GetEffectiveTextColor,
+      FSvgVariant);
+    try
+      DrawSvgBitmapWithAlpha(Canvas, IconR.Left, IconR.Top, Bmp);
+    finally
+      Bmp.Free;
+    end;
+
+    Exit;
+  end;
+
+  // ------------------------------------------------------------------
+  //  Built-in shapes.
+  // ------------------------------------------------------------------
   CX  := (R.Left + R.Right) div 2;
   CY  := (R.Top  + R.Bottom) div 2;
   Rad := Min(R.Right - R.Left, R.Bottom - R.Top) div 2 - ScaleForDpi(1);
@@ -342,12 +577,9 @@ begin
           Point(CX + Rad, CY + Rad),
           Point(CX - Rad, CY + Rad),
           RGBToColor(245, 190, 20),
-          GetCornerBackgroundColor);
+          BgColor);
         Sym      := '!';
         SymColor := clBlack;
-        // The triangle's mass is concentrated towards its base, so its
-        // visual centre lies below the geometric one. Placing the mark
-        // at the centroid (CY + Rad/3) keeps it visually balanced.
         SymOffsetY := Rad div 3 - ScaleForDpi(2);
       end;
 
@@ -356,7 +588,7 @@ begin
         BG := RGBToColor(210, 40, 40);
         DrawAntiAliasedCircle(Canvas,
           Rect(CX - Rad, CY - Rad, CX + Rad, CY + Rad),
-          BG, BG, 0, GetCornerBackgroundColor);
+          BG, BG, 0, BgColor);
         Sym := 'X';
       end;
 
@@ -365,7 +597,7 @@ begin
         BG := RGBToColor(40, 120, 220);
         DrawAntiAliasedCircle(Canvas,
           Rect(CX - Rad, CY - Rad, CX + Rad, CY + Rad),
-          BG, BG, 0, GetCornerBackgroundColor);
+          BG, BG, 0, BgColor);
         Sym := 'i';
       end;
 
@@ -374,7 +606,7 @@ begin
         BG := RGBToColor(40, 120, 220);
         DrawAntiAliasedCircle(Canvas,
           Rect(CX - Rad, CY - Rad, CX + Rad, CY + Rad),
-          BG, BG, 0, GetCornerBackgroundColor);
+          BG, BG, 0, BgColor);
         Sym := '?';
       end;
   end;
@@ -414,7 +646,9 @@ constructor TCssMessageForm.CreateMessageDialog(
   ADefault: TMsgDlgBtn;
   AInputMode, APasswordMode: Boolean;
   const ADefaultText: string;
-  const ACaption: string);
+  const ACaption: string;
+  AOnLinkClick: TCssLinkClickEvent;
+  AIconIndex: Integer);
 const
   ORDER: array[0..11] of TMsgDlgBtn = (
     mbYes, mbYesToAll, mbNo, mbNoToAll,
@@ -442,17 +676,7 @@ var
 begin
   inherited CreateNew(AOwner);
 
-  // The form is created entirely in code, so it has no design-time
-  // size for the auto-scaler to use as a reference. Leaving Scaled on
-  // makes LCL's dialog-unit machinery divide by a zero base unit while
-  // the form is still being sized. Turn it off; the dialog lays itself
-  // out explicitly below.
   Scaled := False;
-
-  // A programmatically-created form does not inherit a valid font
-  // from a design-time resource. The dialog-unit math needs a usable
-  // font metric; without it the widgetset may divide by the base
-  // unit's zero width.
   Font.Assign(Screen.SystemFont);
 
   FProvider     := FindProvider(AOwner);
@@ -460,6 +684,13 @@ begin
   FInputMode    := AInputMode;
   FPasswordMode := APasswordMode;
   FDefaultBtn   := nil;
+
+  FOnLinkClick := AOnLinkClick;
+  if FOnLinkClick = nil then
+    FOnLinkClick := GOnLinkClick;
+
+  FSvgImages     := GSvgImages;
+  FSvgImageIndex := AIconIndex;
 
   BorderStyle    := bsDialog;
   BorderIcons    := [biSystemMenu];
@@ -471,12 +702,10 @@ begin
   Color          := clBtnFace;
   Caption        := ACaption;
 
-  // --- Form-level CSS via TCssProxy ------------------------------------
   FProxy := TCssProxy.Create(Self);
   FProxy.FormStyleName := MSGDLG_CSS_CLASS;
   FProxy.ThemeProvider := FProvider;
 
-  // --- Backdrop panel --------------------------------------------------
   FBackdrop := TCssPanel.Create(Self);
   FBackdrop.Parent        := Self;
   FBackdrop.Align         := alClient;
@@ -486,7 +715,6 @@ begin
   FBackdrop.ShowFocusRect := False;
   ApplyProvider(FBackdrop);
 
-  // --- DPI scaling -----------------------------------------------------
   PadPx     := ScaleDpi(MSGDLG_PAD);
   SpacingPx := ScaleDpi(MSGDLG_SPACING);
   IconPx    := ScaleDpi(MSGDLG_ICON);
@@ -495,12 +723,14 @@ begin
   BtnHPx    := ScaleDpi(MSGDLG_BTN_H);
   BtnGapPx  := ScaleDpi(MSGDLG_BTN_GAP);
 
-  HasIcon := ADlgType in [mtWarning, mtError, mtInformation, mtConfirmation];
+  HasIcon :=
+    (ADlgType in [mtWarning, mtError, mtInformation, mtConfirmation]) or
+    ((FSvgImages <> nil) and
+     (FSvgImageIndex >= 0) and
+     (FSvgImageIndex < FSvgImages.Count));
+
   ClientW := ScaleDpi(MSGDLG_DEF_W);
 
-  // --- Message label ---------------------------------------------------
-  // Created before the icon so that its CSS metrics (padding, border)
-  // are known when the horizontal layout is computed.
   FMessage := TCssLabel.Create(Self);
   FMessage.Parent   := FBackdrop;
   FMessage.AutoSize := False;
@@ -509,23 +739,16 @@ begin
   FMessage.Caption  := AMessage;
   ApplyProvider(FMessage);
 
+  FMessage.OnLinkClick := @MessageLinkClick;
+
   LabelBorder := FMessage.GetStyledBorderWidth;
   LabelPad    := FMessage.GetStyledPadding;
 
-  // Divider between icon and message. Only meaningful when there is an
-  // icon; without it the label uses the full content width.
   if HasIcon then
     DividerW := ScaleDpi(MSGDLG_DIVIDER_W)
   else
     DividerW := 0;
 
-  // Horizontal layout with symmetric gaps around the divider:
-  //
-  //   [ PadPx ][ Icon ][ PadPx ][ div ][ PadPx ][ Label ... ][ PadPx ]
-  //
-  // The gap to the left of the icon equals the gap between icon and
-  // divider, which equals the gap between divider and text. The three
-  // whitespace bands are therefore visually balanced.
   if HasIcon then
   begin
     Gap1     := PadPx;
@@ -551,13 +774,6 @@ begin
   if ContentW < ScaleDpi(20) then
     ContentW := ScaleDpi(20);
 
-  // Realise the handle chain before measuring. A handleless TCanvas
-  // returns garbage from TextHeight / TextWidth in LCL instead of
-  // failing, and that garbage used to propagate into ClientHeight,
-  // triggering the INT DIVIDE BY ZERO inside the widgetset's dialog
-  // unit code. HandleNeeded walks up the parent chain, so this single
-  // call creates the window handles for the form, the backdrop and
-  // the label in one go.
   FMessage.HandleNeeded;
 
   if FMessage.HtmlMode then
@@ -565,9 +781,6 @@ begin
   else
     S := MeasureDialogPlainText(FMessage.Canvas, AMessage, ContentW);
 
-  // Sanity clamp. Even with a valid HDC some fonts under some
-  // widgetsets return absurd numbers for an empty or whitespace-only
-  // string. Never allow that to reach the layout math.
   if (S.cy <= 0) or (S.cy > ScaleDpi(4000)) then
     S.cy := ScaleDpi(20);
 
@@ -580,18 +793,8 @@ begin
 
   MsgTextH := ContentH + 2 * LabelBorder + LabelPad.Top + LabelPad.Bottom;
 
-  // "Single-line" here means the whole text block fits within the
-  // height of the icon. In that case the vertical centres of the text
-  // and the icon can be aligned and the result reads as one row.
-  // Anything taller is treated as a multi-line message: the text stays
-  // anchored at the top and the icon floats in the middle of the block,
-  // which is how the standard Windows MessageBox behaves.
   IsSingleLine := HasIcon and (ContentH <= IconPx);
 
-  // --- Divider ---------------------------------------------------------
-  // A one-pixel vertical strip between the icon and the text. Its
-  // colour comes from the `.msgdialog-divider` CSS rule, so it follows
-  // the active theme automatically.
   if HasIcon then
   begin
     FDivider := TCssPanel.Create(Self);
@@ -603,28 +806,33 @@ begin
     ApplyProvider(FDivider);
   end;
 
-  // --- Icon and vertical placement -------------------------------------
   if HasIcon then
   begin
     FIcon := TCssMessageIcon.Create(Self);
-    FIcon.Parent := FBackdrop;
-    FIcon.Kind   := ADlgType;
+    FIcon.Parent        := FBackdrop;
+
+    if FBackdrop <> nil then
+      FIcon.SetExternalBackgroundColor(FBackdrop.GetStyledBackgroundColor);
+
+    FIcon.Kind          := ADlgType;
+    FIcon.SvgImages     := FSvgImages;
+    FIcon.SvgImageIndex := FSvgImageIndex;
+
+    if FSvgImages <> nil then
+      FIcon.SvgVariant := FStyleName
+    else
+      FIcon.SvgVariant := '';
+
     ApplyProvider(FIcon);
 
     if IsSingleLine then
     begin
-      // Single line: the icon and the text share a common vertical
-      // centre. The block height is whichever of the two is taller;
-      // both are centred within it.
       MsgHeight := Max(MsgTextH, IconPx);
       IconTop   := PadPx + (MsgHeight - IconPx) div 2;
       LabelTop  := PadPx + (MsgHeight - MsgTextH) div 2;
     end
     else
     begin
-      // Multi-line: the text anchors to the top, the icon floats in
-      // the middle of the whole block. The block height accommodates
-      // the taller of the two so neither is clipped.
       MsgHeight := Max(MsgTextH, IconPx);
       IconTop   := PadPx + (MsgHeight - IconPx) div 2;
       LabelTop  := PadPx;
@@ -632,8 +840,6 @@ begin
 
     FIcon.SetBounds(IconLeft, IconTop, IconPx, IconPx);
 
-    // Divider: vertically centred within the message block, with a
-    // small top and bottom inset so it does not touch the panel edges.
     DivInset := ScaleDpi(4);
     if MsgHeight < DivInset * 3 then
       DivInset := 0;
@@ -651,12 +857,10 @@ begin
     LabelTop  := PadPx;
   end;
 
-  // --- Label geometry --------------------------------------------------
   FMessage.SetBounds(TextLeft, LabelTop, MsgWidth, MsgTextH);
 
   ContentTop := PadPx + MsgHeight + SpacingPx;
 
-  // --- Input edit ------------------------------------------------------
   if FInputMode then
   begin
     FEdit := TCssEdit.Create(Self);
@@ -672,7 +876,6 @@ begin
     ContentTop := ContentTop + EditHPx + SpacingPx;
   end;
 
-  // --- Buttons ---------------------------------------------------------
   SetLength(Ordered, 0);
   for I := Low(ORDER) to High(ORDER) do
     if ORDER[I] in AButtons then
@@ -708,7 +911,6 @@ begin
       FDefaultBtn := B;
     end;
 
-    // Esc should pick Cancel > No > Close > Abort, matching LCL.
     IsCancelLike :=
       (Ordered[I] = mbCancel) or
       ((Ordered[I] = mbNo)    and not (mbCancel in AButtons)) or
@@ -728,11 +930,6 @@ begin
 
   ContentBottom := BtnY + BtnHPx + PadPx;
 
-  // Set both client dimensions with align recalculation suspended.
-  // Two consecutive assignments without this guard produce an
-  // intermediate WM_SIZE with the form partially sized; on some LCL
-  // versions that intermediate state makes the widgetset divide by
-  // zero while it recomputes the dialog's border / dialog-unit metrics.
   DisableAlign;
   try
     ClientWidth  := ClientW;
@@ -741,73 +938,25 @@ begin
     EnableAlign;
   end;
 
-  // Apply form-level CSS synchronously; the async queue has not started.
   if FProvider <> nil then
     FProxy.ApplyStyles;
 
-  // --- Active control --------------------------------------------------
   if FEdit <> nil then
     ActiveControl := FEdit
   else if FDefaultBtn <> nil then
     ActiveControl := FDefaultBtn;
 end;
 
-function TCssMessageForm.ScaleDpi(APx: Integer): Integer;
-var
-  PPI: Integer;
+procedure TCssMessageForm.SetOnLinkClick(AValue: TCssLinkClickEvent);
 begin
-  PPI := Screen.PixelsPerInch;
-  if PPI <= 0 then PPI := 96;
-  Result := Round(APx * PPI / 96.0);
+  FOnLinkClick := AValue;
 end;
 
-procedure TCssMessageForm.ApplyProvider(AControl: TCssStyledControl);
+procedure TCssMessageForm.MessageLinkClick(Sender: TObject;
+  const AHref, AText: AnsiString);
 begin
-  if FProvider <> nil then
-  begin
-    AControl.StyleProvider := FProvider;
-    AControl.StyleName     := FStyleName;
-  end;
-end;
-
-function TCssMessageForm.BtnCaption(ABtn: TMsgDlgBtn): string;
-begin
-  case ABtn of
-    mbYes:      Result := 'Yes';
-    mbYesToAll: Result := 'Yes to All';
-    mbNo:       Result := 'No';
-    mbNoToAll:  Result := 'No to All';
-    mbOK:       Result := 'OK';
-    mbCancel:   Result := 'Cancel';
-    mbAbort:    Result := 'Abort';
-    mbRetry:    Result := 'Retry';
-    mbIgnore:   Result := 'Ignore';
-    mbAll:      Result := 'All';
-    mbClose:    Result := 'Close';
-    mbHelp:     Result := 'Help';
-  else
-    Result := '';
-  end;
-end;
-
-function TCssMessageForm.BtnResult(ABtn: TMsgDlgBtn): Integer;
-begin
-  case ABtn of
-    mbYes:      Result := mrYes;
-    mbYesToAll: Result := mrYesToAll;
-    mbNo:       Result := mrNo;
-    mbNoToAll:  Result := mrNoToAll;
-    mbOK:       Result := mrOk;
-    mbCancel:   Result := mrCancel;
-    mbAbort:    Result := mrAbort;
-    mbRetry:    Result := mrRetry;
-    mbIgnore:   Result := mrIgnore;
-    mbAll:      Result := mrAll;
-    mbClose:    Result := mrClose;
-    mbHelp:     Result := mrCssHelp;
-  else
-    Result := mrNone;
-  end;
+  if Assigned(FOnLinkClick) then
+    FOnLinkClick(Self, AHref, AText);
 end;
 
 procedure TCssMessageForm.FormKeyDown(Sender: TObject; var Key: Word;
@@ -876,14 +1025,76 @@ begin
     Result := '';
 end;
 
+function TCssMessageForm.ScaleDpi(APx: Integer): Integer;
+var
+  PPI: Integer;
+begin
+  PPI := Screen.PixelsPerInch;
+  if PPI <= 0 then PPI := 96;
+  Result := Round(APx * PPI / 96.0);
+end;
+
+procedure TCssMessageForm.ApplyProvider(AControl: TCssStyledControl);
+begin
+  if FProvider <> nil then
+  begin
+    AControl.StyleProvider := FProvider;
+    AControl.StyleName     := FStyleName;
+  end;
+end;
+
+function TCssMessageForm.BtnCaption(ABtn: TMsgDlgBtn): string;
+begin
+  case ABtn of
+    mbYes:      Result := 'Yes';
+    mbYesToAll: Result := 'Yes to All';
+    mbNo:       Result := 'No';
+    mbNoToAll:  Result := 'No to All';
+    mbOK:       Result := 'OK';
+    mbCancel:   Result := 'Cancel';
+    mbAbort:    Result := 'Abort';
+    mbRetry:    Result := 'Retry';
+    mbIgnore:   Result := 'Ignore';
+    mbAll:      Result := 'All';
+    mbClose:    Result := 'Close';
+    mbHelp:     Result := 'Help';
+  else
+    Result := '';
+  end;
+end;
+
+function TCssMessageForm.BtnResult(ABtn: TMsgDlgBtn): Integer;
+begin
+  case ABtn of
+    mbYes:      Result := mrYes;
+    mbYesToAll: Result := mrYesToAll;
+    mbNo:       Result := mrNo;
+    mbNoToAll:  Result := mrNoToAll;
+    mbOK:       Result := mrOk;
+    mbCancel:   Result := mrCancel;
+    mbAbort:    Result := mrAbort;
+    mbRetry:    Result := mrRetry;
+    mbIgnore:   Result := mrIgnore;
+    mbAll:      Result := mrAll;
+    mbClose:    Result := mrClose;
+    mbHelp:     Result := mrCssHelp;
+  else
+    Result := mrNone;
+  end;
+end;
+
 { =========================================================================== }
 {  Public API                                                                 }
 { =========================================================================== }
 
-function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
+{ Internal worker. All public wrappers — with and without an explicit
+  icon index — funnel through here. It is intentionally NOT declared in
+  the interface section, so it never collides with the public overloads
+  of CssMessageDlgPos during overload resolution. }
+function CssMessageDlgPosEx(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
   X, Y: Integer; const ACaption: string;
-  ADefaultBtn: TMsgDlgBtn): Integer;
+  ADefaultBtn: TMsgDlgBtn; AIconIndex: Integer): Integer;
 var
   Dlg: TCssMessageForm;
   DefBtn: TMsgDlgBtn;
@@ -901,7 +1112,7 @@ begin
 
   Dlg := TCssMessageForm.CreateMessageDialog(
     GetDialogOwner, DlgType, Msg, Buttons, DefBtn,
-    False, False, '', Cap);
+    False, False, '', Cap, nil, AIconIndex);
   try
     if (X <> -1) or (Y <> -1) then
       Dlg.Position := poDesigned;
@@ -914,59 +1125,149 @@ begin
   end;
 end;
 
+{ --- CssMessageDlgPos: all four overloads declared in interface --- }
+
 function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
-  X, Y: Integer; const ACaption: string): Integer;
+  X, Y: Integer): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, X, Y,
-    ACaption, PickDefaultButton(Buttons));
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    '', PickDefaultButton(Buttons), -1);
 end;
 
 function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
   X, Y: Integer; ADefaultBtn: TMsgDlgBtn): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, X, Y,
-    '', ADefaultBtn);
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    '', ADefaultBtn, -1);
 end;
 
 function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
-  Buttons: TMsgDlgButtons; HelpCtx: LongInt; X, Y: Integer): Integer;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; const ACaption: string): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, X, Y,
-    '', PickDefaultButton(Buttons));
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    ACaption, PickDefaultButton(Buttons), -1);
 end;
 
-function CssMessageDlg(const Msg: string; DlgType: TMsgDlgType;
+function CssMessageDlgPos(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
-  const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer;
+  X, Y: Integer; const ACaption: string;
+  ADefaultBtn: TMsgDlgBtn): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, -1, -1,
-    ACaption, ADefaultBtn);
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    ACaption, ADefaultBtn, -1);
 end;
 
+{ --- CssMessageDlg: all four overloads declared in interface --- }
+
 function CssMessageDlg(const Msg: string; DlgType: TMsgDlgType;
-  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
-  const ACaption: string): Integer;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, -1, -1,
-    ACaption, PickDefaultButton(Buttons));
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    '', PickDefaultButton(Buttons), -1);
 end;
 
 function CssMessageDlg(const Msg: string; DlgType: TMsgDlgType;
   Buttons: TMsgDlgButtons; HelpCtx: LongInt;
   ADefaultBtn: TMsgDlgBtn): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, -1, -1,
-    '', ADefaultBtn);
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    '', ADefaultBtn, -1);
 end;
 
 function CssMessageDlg(const Msg: string; DlgType: TMsgDlgType;
-  Buttons: TMsgDlgButtons; HelpCtx: LongInt): Integer;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  const ACaption: string): Integer;
 begin
-  Result := CssMessageDlgPos(Msg, DlgType, Buttons, HelpCtx, -1, -1,
-    '', PickDefaultButton(Buttons));
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    ACaption, PickDefaultButton(Buttons), -1);
 end;
+
+function CssMessageDlg(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    ACaption, ADefaultBtn, -1);
+end;
+
+{ --- CssMessageDlgIcon: all four overloads declared in interface --- }
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    '', PickDefaultButton(Buttons), AIconIndex);
+end;
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer;
+  ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    '', ADefaultBtn, AIconIndex);
+end;
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer;
+  const ACaption: string): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    ACaption, PickDefaultButton(Buttons), AIconIndex);
+end;
+
+function CssMessageDlgIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  AIconIndex: Integer;
+  const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, -1, -1,
+    ACaption, ADefaultBtn, AIconIndex);
+end;
+
+{ --- CssMessageDlgPosIcon: all four overloads declared in interface --- }
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    '', PickDefaultButton(Buttons), AIconIndex);
+end;
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer;
+  ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    '', ADefaultBtn, AIconIndex);
+end;
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer;
+  const ACaption: string): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    ACaption, PickDefaultButton(Buttons), AIconIndex);
+end;
+
+function CssMessageDlgPosIcon(const Msg: string; DlgType: TMsgDlgType;
+  Buttons: TMsgDlgButtons; HelpCtx: LongInt;
+  X, Y: Integer; AIconIndex: Integer;
+  const ACaption: string; ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageDlgPosEx(Msg, DlgType, Buttons, HelpCtx, X, Y,
+    ACaption, ADefaultBtn, AIconIndex);
+end;
+
+{ --- Simple helpers --- }
 
 procedure CssShowMessage(const Msg: string);
 begin
@@ -978,8 +1279,11 @@ begin
   CssShowMessage(Format(Msg, Params));
 end;
 
-function CssMessageBox(const ACaption, AMsg: string;
-  AFlags: LongInt; ADefaultBtn: TMsgDlgBtn): Integer;
+{ --- CssMessageBox family --- }
+
+function CssMessageBoxEx(const ACaption, AMsg: string;
+  AFlags: LongInt; ADefaultBtn: TMsgDlgBtn;
+  AIconIndex: Integer): Integer;
 var
   DlgType: TMsgDlgType;
   Btns: TMsgDlgButtons;
@@ -1015,7 +1319,7 @@ begin
 
   with TCssMessageForm.CreateMessageDialog(
     GetDialogOwner, DlgType, AMsg, Btns, DefBtn,
-    False, False, '', ACaption) do
+    False, False, '', ACaption, nil, AIconIndex) do
   try
     Result := ShowModal;
   finally
@@ -1053,8 +1357,31 @@ begin
     if mbOK in Btns then DefBtn := mbOK;
   end;
 
-  Result := CssMessageBox(ACaption, AMsg, AFlags, DefBtn);
+  Result := CssMessageBoxEx(ACaption, AMsg, AFlags, DefBtn, -1);
 end;
+
+function CssMessageBox(const ACaption, AMsg: string;
+  AFlags: LongInt; ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageBoxEx(ACaption, AMsg, AFlags, ADefaultBtn, -1);
+end;
+
+function CssMessageBoxIcon(const ACaption, AMsg: string;
+  AFlags: LongInt; AIconIndex: Integer): Integer;
+begin
+  Result := CssMessageBoxEx(ACaption, AMsg, AFlags,
+    PickDefaultButton([mbOK]), AIconIndex);
+end;
+
+function CssMessageBoxIcon(const ACaption, AMsg: string;
+  AFlags: LongInt; AIconIndex: Integer;
+  ADefaultBtn: TMsgDlgBtn): Integer;
+begin
+  Result := CssMessageBoxEx(ACaption, AMsg, AFlags,
+    ADefaultBtn, AIconIndex);
+end;
+
+{ --- Input helpers --- }
 
 function CssInputQuery(const ACaption, APrompt: string;
   var AValue: string): Boolean;
@@ -1063,7 +1390,7 @@ var
 begin
   Dlg := TCssMessageForm.CreateMessageDialog(
     GetDialogOwner, mtCustom, APrompt,
-    [mbOK, mbCancel], mbOK, True, False, AValue, ACaption);
+    [mbOK, mbCancel], mbOK, True, False, AValue, ACaption, nil, -1);
   try
     Result := Dlg.ShowModal = mrOk;
     if Result then
@@ -1089,7 +1416,7 @@ var
 begin
   Dlg := TCssMessageForm.CreateMessageDialog(
     GetDialogOwner, mtCustom, APrompt,
-    [mbOK, mbCancel], mbOK, True, True, '', ACaption);
+    [mbOK, mbCancel], mbOK, True, True, '', ACaption, nil, -1);
   try
     if Dlg.ShowModal = mrOk then
       Result := Dlg.GetEditText
