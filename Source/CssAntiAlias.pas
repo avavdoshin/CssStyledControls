@@ -2044,7 +2044,7 @@ procedure AABuildPolygonsCoverage(
   const APolygons: TAAFloatPolygons;
   AFillRule: TAAFillRule);
 const
-  SUBPIXEL_Y = 8;
+  SUBPIXEL_Y = 16;
 type
   TEdge = record
     X0, Y0, X1, Y1: Double;
