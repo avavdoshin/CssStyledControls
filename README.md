@@ -67,8 +67,8 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - **Nested child styling** — composite controls (`TCssComboBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssListBox`, `TCssVirtualStringTree`, tabs) expose `*CssClass` / `*CssStyle` properties so you can style their internal children too.
 - **Focus-within** — a parent (`TCssPanel`, `TCssGroupBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssComboBox`, `TCssTabControl`, `TCssPageControl`) can highlight its border while a child has focus (`focus-within: true`).
 - **Standard LCL styling** — `TCssProxy` reads the active CSS variant and applies `background`, `color`, `font-*`, and `text-align` to plain LCL `TButton`, `TEdit`, `TLabel`, `TPanel`, and forms.
-- **Anti-aliased rendering** — rounded boxes, circles, triangles, check marks, and focus rings are drawn with sub-pixel coverage and cached bitmaps.
-- **CSS-styled message dialogs** — the `CssMessageDialogs` unit replaces `ShowMessage`, `MessageDlg`, `MessageBox`, `InputBox`, `InputQuery`, and `PasswordBox` with dialogs built entirely from `TCssStyledControl` descendants, skinned by the same theme and honouring HTML text.
+- **Anti-aliased rendering** — rounded boxes, circles, triangles, check marks, and focus rings are drawn with sub-pixel coverage and cached bitmaps. SVG icons from `TCssSvgImgList` are rendered at up to 4× the requested size and box-filtered down with premultiplied alpha, so small icons keep clean diagonal edges.
+- **CSS-styled message dialogs** — the `CssMessageDialogs` unit replaces `ShowMessage`, `MessageDlg`, `MessageBox`, `InputBox`, `InputQuery`, and `PasswordBox` with dialogs built entirely from `TCssStyledControl` descendants, skinned by the same theme and honouring HTML text. Dialog messages may carry clickable `<a href="…">` links, handled through a global or per-dialog callback, and the icon shown next to the message can be taken from a shared `TCssSvgImgList` instead of the built-in shapes.
 - **No external dependencies** — pure LCL, works on Windows, Linux, and macOS.
 
 ---
@@ -117,6 +117,15 @@ inline editing, and drag & drop between the trees.
 | Light | Dark |
 | :---: | :---: |
 | ![TreeView — light](Screenshots/Treeview_light.png) | ![TreeView — dark](Screenshots/Treeview_dark.png) |
+
+### Message dialogs
+
+Dialogs built by `TCssMessageDialogs` inherit the same `TCssStyleProvider` as the rest of the form, so switching the theme restyles them together with the main window — no per-dialog configuration is needed. The pair below shows the same confirmation dialog in both variants; two more dialog examples appear in the [Message Dialogs](#message-dialogs-cssmessagedialogs) section below.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Message dialog — light](Screenshots/Dialog_14_light.png) | ![Message dialog — dark](Screenshots/Dialog_14_dark.png) |
+
 ---
 
 ## Installation
@@ -231,6 +240,31 @@ wired so that almost everything is driven by CSS and by events — Pascal
 code is only used where a demo cannot avoid it (populating the tree,
 switching the theme, copying nodes on cross-tree drops).
 
+All application-wide configuration is performed **once in the `.lpr`
+file**, right after `Application.CreateForm` and before
+`Application.Run`:
+
+```pascal
+Application.Initialize;
+Application.CreateForm(TForm1, Form1);
+
+TCssFormDarkTitle.EnableAutoAttach(Form1.CssStyleProvider1);
+CssMessageDlgSetStyleProvider(Form1.CssStyleProvider1);
+CssMessageDlgSetHtmlMode(True);
+CssMessageDlgSetOnLinkClick(@Form1.OnLinkClick);
+CssMessageDlgSetIconSource(Form1.CssSvgImgList1);
+
+Application.Run;
+```
+
+Keeping these calls in the `.lpr` — rather than in `FormCreate` —
+guarantees they are already active on the very first frame, before any
+form has had a chance to open. The main form itself only contains the
+event handlers that are genuinely form-local: `FormCreate` for
+populating the tree, `CssCheckBox1Click` for the theme toggle,
+`CssLabel2LinkClick` and `OnLinkClick` for the link demo, and the
+tree's own editing and drag-and-drop events.
+
 The form is organised as a `TCssPageControl` with four tabs, plus a
 bottom status panel and a top menu bar. All dialogs shown during the
 demo are produced by the `TCssMessageDialogs` unit, so they are styled
@@ -253,7 +287,7 @@ native LCL dialog anywhere on screen.
   *Show all dialogs*) opens a step-by-step demonstration of the
   **`TCssMessageDialogs`** unit. Its hint reads
   *"Click to see all CssMessageDlg functions"*; the handler walks through
-  thirteen consecutive dialogs, one per click, closing each one to see
+  fourteen consecutive dialogs, one per click, closing each one to see
   the next:
 
   1. Inline formatting (`<b>`, `<i>`, `<u>`, `<s>`, `<code>`).
@@ -275,14 +309,28 @@ native LCL dialog anywhere on screen.
       `<hr>` and an italic footer.
   13. An HTML prompt rendered through `CssInputBox`, showing that the
       same parser drives the input-dialog caption as well.
+  14. A confirmation dialog that mirrors #10 but uses a **custom SVG
+      icon** through `CssMessageDlgIcon`. The icon comes from index 22
+      of the shared `CssSvgImgList1` — the `icons8-not-synced` artwork —
+      and is drawn in place of the built-in warning triangle. This
+      demonstrates that an arbitrary entry of the icon list can be
+      shown in a dialog without redefining the global source.
 
   Every dialog in this sequence is built from the same styled controls
   as the rest of the library: a `TCssPanel` backdrop with
   `border-radius`, a `TCssMessageIcon`, a `TCssLabel` with `HtmlMode`,
   a one-pixel divider, and `TCssButton`s that inherit `:default` and
-  `:cancel` from the theme. When the theme is switched from light to
-  dark, the whole sequence is restyled automatically — no per-dialog
-  configuration is required.
+  `:cancel` from the theme. Dialog #14 additionally exercises the
+  per-call SVG override (`CssMessageDlgIcon(..., 22, ...)`), which
+  needs the application-wide icon source to be configured once — the
+  demo does this in `FormCreate` with
+  `CssMessageDlgSetIconSource(CssSvgImgList1)`.
+
+  When the theme is switched from light to dark, the whole sequence is
+  restyled automatically — no per-dialog configuration is required.
+  Icons from the shared list are re-rasterised with the new
+  `currentColor`, and any entry that defines a `dark` variant is
+  swapped to that variant together with the rest of the dialog.
 
   HTML mode is turned on for the duration of the sequence with
   `CssMessageDlgSetHtmlMode(True)` and turned off in a `finally` block,
@@ -307,8 +355,9 @@ native LCL dialog anywhere on screen.
 - A non-visual `TCssSvgImgList` (`CssSvgImgList1`) holding the SVG sources
   for the whole demo. It is configured at `32 × 32` design-time size with
   `Scaled = True`, so every icon is always rendered at the current DPI,
-  and ships with **six 48×48 general-purpose icons** plus **sixteen
-  24×24 state icons** for the checkbox and radio demos:
+  and ships with **seven 48×48 general-purpose icons**, **sixteen
+  24×24 state icons** for the checkbox and radio demos, and **one
+  additional message-dialog icon**:
 
   **General icons (indices 0–5, used by buttons, tabs, menus, and trees):**
 
@@ -345,6 +394,17 @@ native LCL dialog anywhere on screen.
   The state icons are all pure-`fill` SVG (no `stroke`) with integer
   coordinates, so they rasterise cleanly at every DPI without the
   smearing that thin strokes would produce at 22-pixel sizes.
+
+  **Message-dialog icon (index 22, used by scenario #14 on
+  Page 1):**
+
+  - `icons8-not-synced` — a red "no sync" glyph exported from
+    Illustrator. The file wraps two full-canvas background rectangles
+    in `<g>` groups marked `style="display:none;"`. The SVG parser
+    skips those hidden subtrees together with their children, so the
+    rasterised output contains only the visible `Layer_3` and shows
+    clean transparency on the dialog backdrop. This entry doubles as a
+    live demonstration of the parser's hidden-group handling.
 
 - A `TCssPopupMenu` (`CssPopupMenu1`) whose icons are sourced **once at
   the menu level**: `CssPopupMenu1.SvgImages := CssSvgImgList1`. Every
@@ -528,6 +588,47 @@ the `MB_ICONINFORMATION` glyph from the CSS-aware dialog engine. The
 `mrYes` / `mrNo` / `mrCancel` result constants — none of the standard
 `ShowMessage` / `MessageDlg` / `MessageBox` functions are called from
 the demo.
+
+The dialog engine used by Page 1's *Show all dialogs* button is
+configured once, in the `.lpr` file, right after the main form is
+created:
+
+```pascal
+Application.Initialize;
+Application.CreateForm(TForm1, Form1);
+
+TCssFormDarkTitle.EnableAutoAttach(Form1.CssStyleProvider1);
+CssMessageDlgSetStyleProvider(Form1.CssStyleProvider1);
+CssMessageDlgSetHtmlMode(True);
+CssMessageDlgSetOnLinkClick(@Form1.OnLinkClick);
+CssMessageDlgSetIconSource(Form1.CssSvgImgList1);
+
+Application.Run;
+```
+
+Four of these calls configure the dialog engine for the whole
+application at once:
+
+- `CssMessageDlgSetStyleProvider` binds the same `TCssStyleProvider`
+  the main form uses, so a dialog is skinned by the same theme.
+- `CssMessageDlgSetHtmlMode` turns on the HTML parser for the message
+  text and for the input prompt.
+- `CssMessageDlgSetOnLinkClick` installs `TForm1.OnLinkClick` as the
+  global handler for `<a href="...">` links, so a click in any dialog
+  is routed through the same method as a click in the on-form label.
+- `CssMessageDlgSetIconSource` registers the shared `CssSvgImgList1`
+  as the source for the dialog icons. This is what makes
+  `CssMessageDlgIcon('...', ..., 22, ...)` in scenario #14 show the
+  `icons8-not-synced` artwork; without it, the call would silently
+  fall back to the built-in shapes.
+
+`TCssFormDarkTitle.EnableAutoAttach` is a separate concern — it makes
+every form that becomes visible follow the same CSS theme on its native
+Windows title bar. See [Native Form Title Bar](#native-form-title-bar-windows)
+above.
+
+---
+
 
 Switching the toggle changes the CSS theme **and** every SVG icon at the
 same time — the tab-strip icon, both `TCssBitBtn` glyphs, the popup menu
@@ -1416,6 +1517,8 @@ The built-in rasteriser is deliberately small but covers what icon sets actually
 - **Stops**: both `style="stop-color:...;stop-opacity:..."` and the presentation attributes `stop-color` / `stop-opacity` are honoured, so output from Illustrator, Inkscape and Figma is parsed correctly out of the box.
 - **View box**: `viewBox` + `preserveAspectRatio` (`meet` / `slice`, alignment keywords, `none`).
 
+Hidden subtrees — elements with `display:none` or `visibility:hidden` — are skipped together with their children, so the background rectangles that Illustrator and Inkscape wrap in a hidden `<g>` never appear in the rasterised output.
+
 Not supported: filters, `<use>` / `<defs>` references (other than gradients), `<textPath>`, CSS animations, embedded fonts. If your icons rely on any of these, pre-render them to PNG or simplify them in the SVG editor.
 
 ---
@@ -1795,6 +1898,7 @@ Every consumer that points to this list (`TCssBitBtn`, `TCssMenuItem`, `TCssTabC
 
 - The SVG parser is not an XML validator. If it fails, `Image.Error` is non-empty and the rasteriser returns a blank bitmap. Call `GetParseError(Index)` if you need to surface the reason.
 - The rasteriser produces a `pf32bit` bitmap with a real per-pixel alpha channel — no `TransparentColor` chroma-keying anywhere, so semi-transparent strokes and antialiased edges blend correctly on any background.
+- Small icons (16–64 px) are rendered at up to 4× the requested size and box-filtered down with premultiplied alpha. The extra cost is paid once per `(image, size, colour, variant)` tuple and cached; repeated draws reuse the cached bitmap. Icons larger than 256 px are rasterised at their native size.
 - The `Variants` lookup is case-insensitive, which matters because `TCssStyleProvider.DefaultStyleName` is often capitalised (`Dark`, `Light`) while authors type variant names in lowercase.
 
 ---
@@ -1989,7 +2093,7 @@ The hint is drawn by an internal `TCssStyledHintWindow` that uses the same CSS e
 The `CssMessageDialogs` unit provides CSS-styled replacements for the standard dialog functions from `Dialogs.pas`. Instead of the native LCL dialogs, it opens a `TCssMessageForm` — a plain `TForm` used only as a container — whose entire visible content is built from `TCssStyledControl` descendants:
 
 - a `TCssPanel` backdrop that draws the dialog background, border and rounded corners from CSS;
-- a `TCssMessageIcon` that renders the standard information / warning / error / question icon using the anti-aliased primitives of the base engine (no bitmap assets);
+- a `TCssMessageIcon` that renders the standard information / warning / error / question icon using the anti-aliased primitives of the base engine (no bitmap assets), or — when an icon index is supplied — a vector icon taken from a shared `TCssSvgImgList`;
 - a `TCssLabel` for the message text, optionally rendered as HTML;
 - an optional `TCssEdit` for text and password input;
 - an optional one-pixel `TCssPanel` divider between the icon and the message;
@@ -1997,18 +2101,50 @@ The `CssMessageDialogs` unit provides CSS-styled replacements for the standard d
 
 Because a `TForm` is not a `TCssStyledControl`, its `Color` property is kept in sync with the active CSS theme through a `TCssProxy` attached to the form. The backdrop panel uses the same `.msgdialog` class name as the form proxy, so both resolve to the same declaration and blend cleanly at the rounded corners.
 
+### Screenshots
+
+Three representative dialogs, each shown in both the `light` and the `dark` variant of the bundled theme. Every element visible inside the dialog — the backdrop, the icon column, the divider, the HTML label, the input edit, and the action buttons — is a `TCssStyledControl` and is skinned by the same `TCssStyleProvider` that skins the rest of the application.
+
+#### Confirmation dialog — mixed HTML, custom SVG icon
+
+A warning dialog that combines a heading, an unordered list, and a colored paragraph. The icon is taken from the application-wide `TCssSvgImgList` through `CssMessageDlgIcon(..., 22, ...)`.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Confirmation dialog — light](Screenshots/Dialog_14_light.png) | ![Confirmation dialog — dark](Screenshots/Dialog_14_dark.png) |
+
+#### Information dialog — release-notes layout
+
+A pure-HTML dialog with headings, bold / italic / underline / strikeout fragments, inline colors, code fragments, ordered and unordered lists, a horizontal rule, and a centered footer. No SVG icon is used here — the built-in anti-aliased information glyph is drawn from the base engine.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Release-notes dialog — light](Screenshots/Dialog_12_light.png) | ![Release-notes dialog — dark](Screenshots/Dialog_12_dark.png) |
+
+#### Input dialog — HTML prompt with an embedded `TCssEdit`
+
+An input dialog built through `CssInputBox`. The prompt itself is HTML (`<b>` and a colored `<span>`), and the embedded `TCssEdit` uses the ordinary `TCssEdit` styling of the active theme.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Input dialog — light](Screenshots/Dialog_13_light.png) | ![Input dialog — dark](Screenshots/Dialog_13_dark.png) |
+
 ### Function Mapping
 
-| Standard (`Dialogs.pas`) | CSS replacement     |
-| ------------------------ | ------------------- |
-| `ShowMessage`            | `CssShowMessage`    |
-| `ShowMessageFmt`         | `CssShowMessageFmt` |
-| `MessageDlg`             | `CssMessageDlg`     |
-| `MessageDlgPos`          | `CssMessageDlgPos`  |
-| `MessageBox`             | `CssMessageBox`     |
-| `InputBox`               | `CssInputBox`       |
-| `InputQuery`             | `CssInputQuery`     |
-| `PasswordBox`            | `CssPasswordBox`    |
+| Standard (`Dialogs.pas`) | CSS replacement                                    |
+| ------------------------ | -------------------------------------------------- |
+| `ShowMessage`            | `CssShowMessage`                                   |
+| `ShowMessageFmt`         | `CssShowMessageFmt`                                |
+| `MessageDlg`             | `CssMessageDlg` / `CssMessageDlgIcon`              |
+| `MessageDlgPos`          | `CssMessageDlgPos` / `CssMessageDlgPosIcon`        |
+| `MessageBox`             | `CssMessageBox` / `CssMessageBoxIcon`              |
+| `InputBox`               | `CssInputBox`                                      |
+| `InputQuery`             | `CssInputQuery`                                    |
+| `PasswordBox`            | `CssPasswordBox`                                   |
+
+The `*Icon` variants take an extra `AIconIndex` argument that selects an
+entry inside the application-wide icon source; see
+[Custom SVG Icons](#custom-svg-icons) below.
 
 The `Css` prefix avoids a name clash with the `Dialogs` unit. If you prefer the original names, alias them in a one-line wrapper unit.
 
@@ -2024,6 +2160,24 @@ CssMessageDlg('Save changes?', mtConfirmation, [mbYes, mbNo, mbCancel], 0);
 ```
 
 If there is no provider on the active form and no global provider has been set, the dialog still opens and uses system default colours.
+
+Two optional global setters configure behaviour that applies to every
+subsequent dialog. Call them once, typically in the application's
+`.lpr` file right after the main form is created — see the demo for
+the exact ordering — or, if you prefer, in the main form's
+`FormCreate`:
+
+```pascal
+// Handle clicks on <a href="..."> links inside dialog messages.
+CssMessageDlgSetOnLinkClick(@HandleDialogLink);
+
+// Use a shared SVG list for dialog icons.
+CssMessageDlgSetIconSource(CssSvgImgList1);
+```
+
+Pass `nil` to either setter to clear the setting. See
+[Link Handling](#link-handling) and [Custom SVG Icons](#custom-svg-icons)
+below for the full API.
 
 ### Function Overloads
 
@@ -2067,6 +2221,196 @@ S  := CssInputBox('Name', 'Enter display name:', 'Anonymous');
 Ok := CssInputQuery('Path', 'Export directory:', S);
 S  := CssPasswordBox('Auth', 'Password:');
 ```
+
+### Custom SVG Icons
+
+By default a dialog draws one of the four built-in icons — information,
+warning, error, or question — using the anti-aliased primitives of the
+base engine. To show your own artwork instead, point the dialog engine
+at a `TCssSvgImgList` and pick an entry by index.
+
+The **icon source is application-wide**: set it once, and every dialog
+that is asked to display an SVG icon uses the same list. The **index**
+is a per-call argument, so different dialogs can show different
+pictures without duplicating the source.
+
+```pascal
+// Once, at application startup.
+CssMessageDlgSetIconSource(CssSvgImgList1);
+
+// Later — every dialog that wants an SVG icon passes its own index:
+CssMessageDlgIcon(
+  'The file was <b>saved</b>.',
+  mtInformation, [mbOK], 0,
+  5);                                    // 5 = index inside CssSvgImgList1
+```
+
+The index is passed **after** all existing optional parameters, which
+keeps FPC's overload resolution unambiguous: `Integer` and `TMsgDlgBtn`
+are numerically compatible, and putting the index last is what lets the
+new signatures coexist with the old ones.
+
+#### API
+
+| Function               | Notes                                             |
+| ---------------------- | ------------------------------------------------- |
+| `CssMessageDlgIcon`    | Four overloads, mirroring `CssMessageDlg`.        |
+| `CssMessageDlgPosIcon` | Four overloads, mirroring `CssMessageDlgPos`.     |
+| `CssMessageBoxIcon`    | Two overloads, mirroring `CssMessageBox`.         |
+
+```pascal
+// Minimal form: just an icon index.
+CssMessageDlgIcon('Message', mtInformation, [mbOK], 0, 5);
+
+// Index + default button.
+CssMessageDlgIcon('Save?', mtConfirmation, [mbYes, mbNo], 0, 7, mbNo);
+
+// Index + caption.
+CssMessageDlgIcon('Message', mtInformation, [mbOK], 0, 5, 'Update');
+
+// Full form.
+CssMessageDlgIcon('Delete?', mtError, [mbYes, mbNo, mbCancel], 0,
+                  12, 'Confirmation', mbCancel);
+
+// Positioned variant.
+CssMessageDlgPosIcon('Message', mtInformation, [mbOK], 0,
+                     200, 150, 5);
+
+// WinAPI-style variant.
+CssMessageBoxIcon('Caption', 'Overwrite?',
+                  MB_YESNOCANCEL or MB_ICONWARNING, 3, mbCancel);
+```
+
+#### Behaviour
+
+- **A valid index replaces the built-in shape.** When
+  `0 <= AIconIndex < Source.Count`, the SVG is drawn inside the icon
+  column and the icon column is reserved even for `mtCustom` dialogs
+  that would otherwise be icon-less.
+- **An invalid index or a `nil` source falls back silently.**
+  `AIconIndex = -1` (the default in all `CssMessageDlg*` wrappers) and
+  an out-of-range index both mean "use the built-in shape".
+- **The icon follows the active theme.** The variant name passed to
+  `TCssSvgImgList.GetBitmap` is the dialog's `StyleName`, which is
+  itself derived from the provider's `DefaultStyleName`. If the SVG
+  entry defines a `dark` variant, switching the CSS theme switches the
+  dialog icon too, without any extra code.
+- **`currentColor` works.** The rasteriser is passed
+  `GetEffectiveTextColor`, so SVG paths written as
+  `fill="currentColor"` follow the dialog's `color` declaration from
+  `.msgdialog`.
+- **Transparency is preserved.** The rendered glyph is a `pf32bit`
+  bitmap with a real per-pixel alpha channel; it is composited
+  per-pixel onto the dialog backdrop. Anti-aliased edges and
+  semi-transparent artwork blend correctly against both the light and
+  the dark variant of the theme.
+- **The icon background is painted by the dialog.** `TCssMessageIcon`
+  does not call the base class's `Paint`; instead it fills its client
+  rectangle with the backdrop's styled background color and then draws
+  the SVG on top. This is what removes the grey block that a naive
+  `inherited Paint` would leave around the icon on themed panels.
+
+#### Per-Dialog Override
+
+`CssMessageDlgSetIconSource` changes the source for every subsequent
+dialog. To use a different source — or no source at all — for a single
+dialog, use `TCssMessageForm.CreateMessageDialog` directly:
+
+```pascal
+var
+  Dlg: TCssMessageForm;
+begin
+  Dlg := TCssMessageForm.CreateMessageDialog(
+    Application.MainForm, mtInformation,
+    'Choose an option.', [mbOK], mbOK,
+    False, False, '',
+    'Title',
+    nil,              // OnLinkClick: nil = use the global handler
+    7);               // AIconIndex
+  try
+    Dlg.ShowModal;
+  finally
+    Dlg.Free;
+  end;
+end;
+```
+
+### Link Handling
+
+When `CssMessageDlgSetHtmlMode(True)` is active, a dialog message may
+contain `<a href="...">` links. Links are rendered with the CSS rules
+for `a`, `a:hover`, and `a:active`, and clicking one raises a callback
+with the `href` and the plain-text body of the link.
+
+Two ways to install the handler:
+
+1. **Globally**, once at application startup, for every dialog:
+
+   ```pascal
+   CssMessageDlgSetOnLinkClick(@HandleDialogLink);
+
+   procedure TForm1.HandleDialogLink(Sender: TObject;
+     const AHref, AText: string);
+   begin
+     if AHref = 'help' then
+       OpenHelp(AText)
+     else
+       ShellExecute(0, 'open', PChar(AHref), nil, nil, SW_SHOWNORMAL);
+   end;
+   ```
+
+The same four `CssMessageDlgSet*` calls can equally well be placed in
+the application's `.lpr` file, right after
+`Application.CreateForm(TForm1, Form1);` — that is where the bundled
+demo puts them, so the configuration is already active before the main
+form is first shown.
+
+2. **Per dialog**, when you construct a `TCssMessageForm` yourself:
+
+   ```pascal
+   Dlg := TCssMessageForm.CreateMessageDialog(
+     Application.MainForm, mtInformation,
+     'Read the <a href="https://example.com">documentation</a>.',
+     [mbOK], mbOK,
+     False, False, '',
+     'Welcome',
+     @HandleDialogLink);   // per-dialog handler
+   ```
+
+   The same handler can also be set after construction:
+
+   ```pascal
+   Dlg.OnLinkClick := @HandleDialogLink;
+   ```
+
+If both a per-dialog handler and a global handler are present, the
+per-dialog one wins. If neither is set, links are still drawn with the
+correct style and still change the cursor, but clicking them does
+nothing.
+
+#### Callback signature
+
+```pascal
+type
+  TCssLinkClickEvent = procedure(Sender: TObject;
+    const AHref, AText: AnsiString) of object;
+```
+
+The `Sender` passed to the callback is the `TCssMessageForm` itself,
+not the internal `TCssLabel`. This is deliberate: the dialog is the
+public object the caller interacts with, and it stays valid as long as
+the dialog is open.
+
+#### Caveats
+
+- Avoid opening another `CssMessageDlg`-based dialog from inside the
+  link-click handler if the global handler is set. Doing so would
+  recurse: the new dialog would use the same global handler, and a
+  click on a link in it would open yet another dialog. Open the target
+  with `ShellExecute`, `OpenDocument`, or your own navigation logic
+  instead.
+- Turning HTML mode off (`CssMessageDlgSetHtmlMode(False)`) also
+  disables link rendering, because the `<a>` tags are no longer parsed.
 
 ### Caption Handling
 
@@ -2155,7 +2499,16 @@ TCssMessageIcon {
 }
 ```
 
-Everything else — buttons, input edit, label — is styled by the ordinary `TCssButton`, `TCssEdit`, and `TCssLabel` rules of the active theme. This means a `TCssMessageForm` inherits the same look as the rest of the application: no separate dialog theme to maintain.
+Everything else — buttons, input edit, label, and any SVG icon — is
+styled by the ordinary `TCssButton`, `TCssEdit`, and `TCssLabel` rules
+of the active theme. This means a `TCssMessageForm` inherits the same
+look as the rest of the application: no separate dialog theme to
+maintain.
+
+An SVG icon is rasterised with `currentColor` bound to the dialog's
+`color`, so SVG artwork that uses `fill="currentColor"` follows the
+theme in the same way the built-in shapes do. In dark mode the icon
+becomes light, and vice versa.
 
 `.msgdialog` deliberately sets `focus-within: false` to suppress the base `TCssPanel` focus ring; the dialog is not a composite widget that needs a group highlight.
 
@@ -2221,12 +2574,41 @@ begin
   S  := CssInputBox('Name', 'Enter display name:', 'Anonymous');
   Ok := CssInputQuery('Path', 'Choose an export directory:', S);
   S  := CssPasswordBox('Auth', 'Enter administrator password:');
+
+  // Custom SVG icon — index 5 inside the global source.
+  CssMessageDlgIcon('The file was saved.', mtInformation, [mbOK], 0, 5);
+
+  // SVG icon with a caption.
+  CssMessageDlgIcon('Delete this entry?', mtConfirmation,
+                    [mbYes, mbNo], 0, 12, 'Confirmation');
+
+  // HTML link with the global handler installed above.
+  CssMessageDlg(
+    'See the <a href="https://example.com/release-notes">release notes</a> ' +
+    'for details.',
+    mtInformation, [mbOK], 0);
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  CssMessageDlgSetHtmlMode(True);
+  CssMessageDlgSetStyleProvider(CssStyleProvider1);
+  CssMessageDlgSetOnLinkClick(@HandleDialogLink);
+  CssMessageDlgSetIconSource(CssSvgImgList1);
+end;
+
+procedure TForm1.HandleDialogLink(Sender: TObject;
+  const AHref, AText: string);
+begin
+  ShellExecute(0, 'open', PChar(AHref), nil, nil, SW_SHOWNORMAL);
 end;
 ```
 
 ### Design Notes
 
 - The dialog window is a plain `TForm` used only as a container. Every visible element is a `TCssStyledControl`.
+- `TCssMessageIcon` deliberately does not call `inherited Paint`. The base class fills the control with `GetParentBackgroundColor`, which silently falls back to `clBtnFace` when a CSS lookup fails at paint time; on a themed backdrop that produces an ugly grey block around the icon. Instead, the dialog passes the backdrop's styled background to the icon through `SetExternalBackgroundColor`, and the icon fills its own client area with that color before compositing the SVG.
+- The per-dialog handler for links is stored on the form and forwarded to the internal label via a small adapter method, so external code never sees the internal `TCssLabel`. This keeps the public API stable if the label is ever replaced by another renderer.
 - The form's `Color` is synchronised with the CSS theme through a `TCssProxy` attached to the form, using the same `.msgdialog` selector as the backdrop panel. The two never diverge, so rounded corners never show a mismatched corner pixel.
 - Icons are drawn with the AA primitives (`DrawAntiAliasedCircle`, `DrawAntiAliasedTriangle`) from the base engine — no external images, no bitmap assets, no missing-glyph issues.
 - HTML mode, the style provider, and the input password mask are global state. Call `CssMessageDlgSetHtmlMode` and `CssMessageDlgSetStyleProvider` once at application startup, not per dialog.

@@ -29,6 +29,8 @@ begin
   TCssFormDarkTitle.EnableAutoAttach(Form1.CssStyleProvider1);
   CssMessageDlgSetStyleProvider(Form1.CssStyleProvider1);
   CssMessageDlgSetHtmlMode(True);
+  CssMessageDlgSetOnLinkClick(@Form1.OnLinkClick);
+  CssMessageDlgSetIconSource(Form1.CssSvgImgList1);
 
   Application.Run;
 end.

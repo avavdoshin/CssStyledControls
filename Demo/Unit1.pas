@@ -150,7 +150,7 @@ type
       TargetTree: TCssVirtualStringTree;
       TargetParent: TCssVirtualNode): TCssVirtualNode;
   public
-
+    procedure OnLinkClick(Sender : TObject; const AHref, AText: String);
   end;
 
 var
@@ -349,6 +349,24 @@ begin
       'Enter the <b>user name</b> for the ' +
       '<span style="color:#2563EB">remote connection</span>:',
       'admin');
+
+    // ------------------------------------------------------------------
+    // 14. Mixed content in a confirmation dialog with custom icon
+    // ------------------------------------------------------------------
+    R := CssMessageDlgIcon(
+      '<h3>14. Uncommitted changes</h3>' +
+      '<p>You are about to close the document with unsaved edits.</p>' +
+      '<ul>' +
+        '<li><b>3 files</b> modified</li>' +
+        '<li><b>1 file</b> deleted</li>' +
+      '</ul>' +
+      '<p style="color:#DC2626"><b>This action cannot be undone.</b></p>',
+      mtWarning,
+      [mbYes, mbNo, mbCancel],
+      0,
+      22,
+      'Unsaved changes',
+      mbNo);
   finally
     // ------------------------------------------------------------------
     // Restore plain-text mode. From here on, '<' and '>' inside message
@@ -361,7 +379,7 @@ end;
 procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref,
   AText : String);
 begin
-  CssMessageBox('Link clicked', 'Href='+AHref+' , Text='+AText, MB_YESNOCANCEL or MB_ICONINFORMATION);
+  OnLinkClick(Sender, AHref, AText);
 end;
 
 procedure TForm1.FormCreate(Sender : TObject);
@@ -631,6 +649,11 @@ begin
     CopyNodeToTree(Child, TargetTree, Result);
     Child := Child.NextSibling;
   end;
+end;
+
+procedure TForm1.OnLinkClick(Sender : TObject; const AHref, AText : String);
+begin
+  CssMessageBox('Link clicked', 'Href='+AHref+' , Text='+AText, MB_YESNOCANCEL or MB_ICONINFORMATION);
 end;
 
 end.
