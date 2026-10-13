@@ -5,7 +5,7 @@ unit CssRadioControl;
 interface
 
 uses
-  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType,
+  Classes, SysUtils, Controls, Graphics, GraphType, Types, LCLType, ExtCtrls,
   CssStyledControl, CssGroupCaptionControl, CssAntiAlias, CssSvgImgList;
 
 type
@@ -40,6 +40,14 @@ type
     FToggleThumbColor: TColor;
     FToggleThumbColorSet: Boolean;
 
+    // Toggle thumb animation
+    FToggleAnimProgress: Double;
+    FToggleAnimTarget: Double;
+    FToggleAnimStartProgress: Double;
+    FToggleAnimStartTime: QWord;
+    FToggleAnimTimer: TTimer;
+    FToggleAnimation: Boolean;
+
     // SVG images (state-based)
     FSvgImages: TCssSvgImgList;
     FImageIndex: Integer;
@@ -53,6 +61,12 @@ type
 
     // Events
     FOnChange: TNotifyEvent;
+
+    // Toggle thumb animation
+    procedure ToggleAnimTimerTick(Sender: TObject);
+    procedure StartToggleAnimation;
+    procedure SnapToggleAnimation;
+    procedure SetToggleAnimation(AValue: Boolean);
 
     // State setters
     procedure SetChecked(AValue: Boolean);
@@ -139,6 +153,9 @@ type
 
     // Silent state change (no OnChange)
     procedure SetCheckedSilent(AValue: Boolean);
+
+    property ToggleAnimation: Boolean
+      read FToggleAnimation write SetToggleAnimation default True;
   published
     property Checked: Boolean read FChecked write SetChecked;
 
@@ -437,6 +454,17 @@ begin
   FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
 
+  FToggleAnimProgress := 0;
+  FToggleAnimTarget := 0;
+  FToggleAnimStartProgress := 0;
+  FToggleAnimStartTime := 0;
+  FToggleAnimation := True;
+
+  FToggleAnimTimer := TTimer.Create(Self);
+  FToggleAnimTimer.Interval := 15;
+  FToggleAnimTimer.Enabled := False;
+  FToggleAnimTimer.OnTimer := @ToggleAnimTimerTick;
+
   FSvgImages := nil;
   FImageIndex := -1;
   FImageIndexChecked := -1;
@@ -454,6 +482,9 @@ end;
 
 destructor TCssRadioButton.Destroy;
 begin
+  if Assigned(FToggleAnimTimer) then
+    FToggleAnimTimer.Enabled := False;
+
   if FSvgImages <> nil then
     FSvgImages.RemoveFreeNotification(Self);
 
@@ -475,6 +506,23 @@ end;
 procedure TCssRadioButton.Loaded;
 begin
   inherited Loaded;
+
+  if FToggleStyle then
+  begin
+    if FChecked then
+    begin
+      FToggleAnimProgress := 1.0;
+      FToggleAnimTarget := 1.0;
+    end
+    else
+    begin
+      FToggleAnimProgress := 0.0;
+      FToggleAnimTarget := 0.0;
+    end;
+
+    if Assigned(FToggleAnimTimer) then
+      FToggleAnimTimer.Enabled := False;
+  end;
 
   if AutoSize then
     AdjustSize;
@@ -533,6 +581,7 @@ begin
   begin
     V := LowerCase(Trim(AValue));
     FToggleStyle := (V = 'toggle') or (V = 'switch') or (V = 'custom');
+
     if AutoSize and (not IsApplyingCss) then
       AdjustSize;
     Invalidate;
@@ -656,6 +705,16 @@ begin
 
   SetCssCheckedState(AValue);
 
+  if FToggleStyle then
+  begin
+    if AValue then
+      FToggleAnimTarget := 1.0
+    else
+      FToggleAnimTarget := 0.0;
+
+    StartToggleAnimation;
+  end;
+
   Invalidate;
 end;
 
@@ -674,6 +733,69 @@ begin
     if (Ctrl is TCssRadioButton) and (Ctrl <> Self) then
       TCssRadioButton(Ctrl).SetCheckedSilent(False);
   end;
+end;
+
+procedure TCssRadioButton.SetToggleAnimation(AValue: Boolean);
+begin
+  if FToggleAnimation = AValue then
+    Exit;
+
+  FToggleAnimation := AValue;
+
+  if not AValue then
+    SnapToggleAnimation;
+end;
+
+procedure TCssRadioButton.SnapToggleAnimation;
+begin
+  if FToggleAnimTimer <> nil then
+    FToggleAnimTimer.Enabled := False;
+
+  FToggleAnimProgress := FToggleAnimTarget;
+  Invalidate;
+end;
+
+procedure TCssRadioButton.StartToggleAnimation;
+begin
+  if not FToggleStyle then
+    Exit;
+
+  if FToggleAnimProgress = FToggleAnimTarget then
+    Exit;
+
+  if (not FToggleAnimation) or (not (HandleAllocated and Showing)) then
+  begin
+    SnapToggleAnimation;
+    Exit;
+  end;
+
+  FToggleAnimStartProgress := FToggleAnimProgress;
+  FToggleAnimStartTime := GetTickCount64;
+  FToggleAnimTimer.Enabled := True;
+end;
+
+procedure TCssRadioButton.ToggleAnimTimerTick(Sender: TObject);
+const
+  ANIM_DURATION_MS = 150;
+var
+  Elapsed: QWord;
+  T: Double;
+begin
+  Elapsed := GetTickCount64 - FToggleAnimStartTime;
+
+  if Elapsed >= ANIM_DURATION_MS then
+  begin
+    FToggleAnimProgress := FToggleAnimTarget;
+    FToggleAnimTimer.Enabled := False;
+  end
+  else
+  begin
+    T := Elapsed / ANIM_DURATION_MS;
+    FToggleAnimProgress := FToggleAnimStartProgress +
+      (FToggleAnimTarget - FToggleAnimStartProgress) * T;
+  end;
+
+  Invalidate;
 end;
 
 procedure TCssRadioButton.SetChecked(AValue: Boolean);
@@ -1075,6 +1197,7 @@ var
   Radius: Integer;
   LBorderWidth: Integer;
   BG, BorderColor, TextColor, DotColor: TColor;
+  StartPos, EndPos: Integer;
 begin
   inherited Paint;
 
@@ -1144,16 +1267,20 @@ begin
       Dec(BoxHeight, 2 * FToggleThumbInset);
       if BoxHeight < ScalePx(2) then BoxHeight := ScalePx(2);
 
-      if FChecked then
-        Radius := Box.Right - Box.Left - BoxHeight - FToggleThumbInset
-      else
+      StartPos := FToggleThumbInset;
+      EndPos := Box.Right - Box.Left - BoxHeight - FToggleThumbInset;
+      if EndPos < StartPos then
+        EndPos := StartPos;
+
+      Radius := Round(StartPos + (EndPos - StartPos) * FToggleAnimProgress);
+      if Radius < FToggleThumbInset then
         Radius := FToggleThumbInset;
 
-      if Radius < FToggleThumbInset then Radius := FToggleThumbInset;
-
       DrawAntiAliasedCircle(Canvas,
-        Rect(Box.Left + Radius, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
-             Box.Left + Radius + BoxHeight, Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
+        Rect(Box.Left + Radius,
+             Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2),
+             Box.Left + Radius + BoxHeight,
+             Box.Top + ((Box.Bottom - Box.Top - BoxHeight) div 2) + BoxHeight),
         GetToggleThumbColor, GetToggleThumbColor, 0, BG);
     end
     else if FBoxRadiusSet and (Radius < (BoxSize div 2)) then

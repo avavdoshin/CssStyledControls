@@ -7421,6 +7421,7 @@ begin
   Result.AutoSize := False;
   Result.ShowFocusRect := False;
   Result.CssTag := 'checkbox';
+  Result.ToggleAnimation := False;
   Result.Caption := '';
 
   Result.SetVisualState(AChecked, AHover);

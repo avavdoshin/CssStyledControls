@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics, GraphType, Types, StdCtrls, LCLType,
-  CssStyledControl, CssGroupCaptionControl, CssAntiAlias, CssSvgImgList;
+  ExtCtrls, CssStyledControl, CssGroupCaptionControl, CssAntiAlias, CssSvgImgList;
 
 type
   TCssCheckBox = class(TCssStyledControl)
@@ -47,6 +47,20 @@ type
     FImageIndexCheckedFocused: Integer;
     FImageIndexDisabled: Integer;
     FImageIndexCheckedDisabled: Integer;
+
+    // Toggle thumb animation
+    FToggleAnimProgress: Double;
+    FToggleAnimTarget: Double;
+    FToggleAnimStartProgress: Double;
+    FToggleAnimStartTime: QWord;
+    FToggleAnimTimer: TTimer;
+    FToggleAnimation: Boolean;
+
+    // Toggle thumb animation
+    procedure ToggleAnimTimerTick(Sender: TObject);
+    procedure StartToggleAnimation;
+    procedure SnapToggleAnimation;
+    procedure SetToggleAnimation(AValue: Boolean);
 
     // Property getters
     function GetCheckBoxBackground: TColor;
@@ -145,6 +159,8 @@ type
     // Drawing to external canvas
     procedure DrawStateToCanvas(ACanvas: TCanvas; const ARect: TRect; AState: TCheckBoxState);
     procedure DrawToCanvas(ACanvas: TCanvas; const ARect: TRect);
+    property ToggleAnimation: Boolean
+      read FToggleAnimation write SetToggleAnimation default True;
   published
     // State properties
     property Checked: Boolean read GetChecked write SetChecked;
@@ -451,6 +467,16 @@ begin
   FToggleHeight := 20;
   FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
+  FToggleAnimProgress := 0;
+  FToggleAnimTarget := 0;
+  FToggleAnimStartProgress := 0;
+  FToggleAnimStartTime := 0;
+  FToggleAnimation := True;
+
+  FToggleAnimTimer := TTimer.Create(Self);
+  FToggleAnimTimer.Interval := 15;
+  FToggleAnimTimer.Enabled := False;
+  FToggleAnimTimer.OnTimer := @ToggleAnimTimerTick;
 
   FClicked := False;
   FSpacePressed := False;
@@ -473,6 +499,9 @@ end;
 
 destructor TCssCheckBox.Destroy;
 begin
+  if Assigned(FToggleAnimTimer) then
+    FToggleAnimTimer.Enabled := False;
+
   if FSvgImages <> nil then
     FSvgImages.RemoveFreeNotification(Self);
   inherited Destroy;
@@ -487,8 +516,84 @@ procedure TCssCheckBox.Loaded;
 begin
   inherited Loaded;
 
+  if FToggleStyle then
+  begin
+    case FState of
+      cbChecked: begin FToggleAnimProgress := 1.0; FToggleAnimTarget := 1.0; end;
+      cbGrayed:  begin FToggleAnimProgress := 0.5; FToggleAnimTarget := 0.5; end;
+    else
+      begin FToggleAnimProgress := 0.0; FToggleAnimTarget := 0.0; end;
+    end;
+
+    if Assigned(FToggleAnimTimer) then
+      FToggleAnimTimer.Enabled := False;
+  end;
+
   if AutoSize then
     AdjustSize;
+end;
+
+procedure TCssCheckBox.SetToggleAnimation(AValue: Boolean);
+begin
+  if FToggleAnimation = AValue then
+    Exit;
+
+  FToggleAnimation := AValue;
+
+  if not AValue then
+    SnapToggleAnimation;
+end;
+
+procedure TCssCheckBox.SnapToggleAnimation;
+begin
+  if FToggleAnimTimer <> nil then
+    FToggleAnimTimer.Enabled := False;
+
+  FToggleAnimProgress := FToggleAnimTarget;
+  Invalidate;
+end;
+
+procedure TCssCheckBox.StartToggleAnimation;
+begin
+  if not FToggleStyle then
+    Exit;
+
+  if FToggleAnimProgress = FToggleAnimTarget then
+    Exit;
+
+  if (not FToggleAnimation) or (not (HandleAllocated and Showing)) then
+  begin
+    SnapToggleAnimation;
+    Exit;
+  end;
+
+  FToggleAnimStartProgress := FToggleAnimProgress;
+  FToggleAnimStartTime := GetTickCount64;
+  FToggleAnimTimer.Enabled := True;
+end;
+
+procedure TCssCheckBox.ToggleAnimTimerTick(Sender: TObject);
+const
+  ANIM_DURATION_MS = 150;
+var
+  Elapsed: QWord;
+  T: Double;
+begin
+  Elapsed := GetTickCount64 - FToggleAnimStartTime;
+
+  if Elapsed >= ANIM_DURATION_MS then
+  begin
+    FToggleAnimProgress := FToggleAnimTarget;
+    FToggleAnimTimer.Enabled := False;
+  end
+  else
+  begin
+    T := Elapsed / ANIM_DURATION_MS;
+    FToggleAnimProgress := FToggleAnimStartProgress +
+      (FToggleAnimTarget - FToggleAnimStartProgress) * T;
+  end;
+
+  Invalidate;
 end;
 
 function TCssCheckBox.GetCheckBoxBackground: TColor;
@@ -578,6 +683,18 @@ begin
   // Notify the base CSS engine whether the control is in :checked state.
   SetCssCheckedState(FState = cbChecked);
 
+  if FToggleStyle then
+  begin
+    case FState of
+      cbChecked: FToggleAnimTarget := 1.0;
+      cbGrayed:  FToggleAnimTarget := 0.5;
+    else
+      FToggleAnimTarget := 0.0;
+    end;
+
+    StartToggleAnimation;
+  end;
+
   Invalidate;
 end;
 
@@ -651,6 +768,7 @@ begin
   begin
     V := LowerCase(Trim(AValue));
     FToggleStyle := (V = 'toggle') or (V = 'switch') or (V = 'custom');
+
     if AutoSize and (not IsApplyingCss) then
       AdjustSize;
     Invalidate;
@@ -874,6 +992,7 @@ begin
   FToggleHeight := 20;
   FToggleThumbInset := ScalePx(4);
   FToggleThumbColorSet := False;
+
   inherited ResetStyle;
 end;
 
@@ -1495,6 +1614,7 @@ procedure TCssCheckBox.DrawStateToCanvas(
 var
   BG, BorderColor, CheckColor: TColor;
   LBorderWidth, Radius, Size: Integer;
+  StartPos, EndPos: Integer;
   ABorderStyle: TCssBorderStyle;
   ParentBG: TColor;
 begin
@@ -1531,18 +1651,20 @@ begin
     Dec(Size, 2 * FToggleThumbInset);
     if Size < ScalePx(2) then Size := ScalePx(2);
 
-    if AState = cbChecked then
-      Radius := ARect.Right - ARect.Left - Size - FToggleThumbInset
-    else if AState = cbGrayed then
-      Radius := (ARect.Right - ARect.Left - Size) div 2
-    else
+    StartPos := FToggleThumbInset;
+    EndPos := ARect.Right - ARect.Left - Size - FToggleThumbInset;
+    if EndPos < StartPos then
+      EndPos := StartPos;
+
+    Radius := Round(StartPos + (EndPos - StartPos) * FToggleAnimProgress);
+    if Radius < FToggleThumbInset then
       Radius := FToggleThumbInset;
 
-        if Radius < FToggleThumbInset then Radius := FToggleThumbInset;
-
-        DrawAntiAliasedCircle(ACanvas,
-      Rect(ARect.Left + Radius, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2),
-           ARect.Left + Radius + Size, ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2) + Size),
+    DrawAntiAliasedCircle(ACanvas,
+      Rect(ARect.Left + Radius,
+           ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2),
+           ARect.Left + Radius + Size,
+           ARect.Top + ((ARect.Bottom - ARect.Top - Size) div 2) + Size),
       GetToggleThumbColor, GetToggleThumbColor, 0, BG);
     Exit;
   end;
