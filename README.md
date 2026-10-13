@@ -128,6 +128,17 @@ Dialogs built by `TCssMessageDialogs` inherit the same `TCssStyleProvider` as th
 | :---: | :---: |
 | ![Message dialog — light](Screenshots/Dialog_14_light.png) | ![Message dialog — dark](Screenshots/Dialog_14_dark.png) |
 
+### Progress bar
+
+Determinate and indeterminate `TCssProgressBar`s in both orientations,
+with `ShowText` on and off, and one bar per semantic state — normal,
+error, paused — so the three fill colors from the active theme are
+visible side by side.
+
+| Light | Dark |
+| :---: | :---: |
+| ![Progress bar — light](Screenshots/Bars_light.png) | ![Progress bar — dark](Screenshots/Bars_dark.png) |
+
 ---
 
 ## Installation
