@@ -619,6 +619,27 @@ TCssScrollBar:disabled {
   arrow-color: #CBD5E1;
 }
 
+TCssProgressBar {
+  background-color: #F1F5F9;
+  color: #1E293B;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 2px;
+  progress-color: #2563EB;
+  progress-text-color: #FFFFFF;
+  progress-error-color: #DC2626;
+  progress-paused-color: #F59E0B;
+}
+TCssProgressBar:hover { border-color: #CBD5E1; }
+TCssProgressBar:disabled {
+  background-color: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #94A3B8;
+  progress-color: #94A3B8;
+  progress-error-color: #F87171;
+  progress-paused-color: #FBBF24;
+}
+
 TCssSplitter {
   background-color: #F1F5F9;
   border: none;
@@ -1333,6 +1354,27 @@ TCssScrollBar {
 TCssScrollBar:disabled {
   thumb-background: #334155;
   arrow-color: #475569;
+}
+
+TCssProgressBar {
+  background-color: #334155;
+  color: #E2E8F0;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 2px;
+  progress-color: #3B82F6;
+  progress-text-color: #FFFFFF;
+  progress-error-color: #EF4444;
+  progress-paused-color: #F59E0B;
+}
+TCssProgressBar:hover { border-color: #64748B; }
+TCssProgressBar:disabled {
+  background-color: #1E293B;
+  border-color: #334155;
+  color: #64748B;
+  progress-color: #64748B;
+  progress-error-color: #B91C1C;
+  progress-paused-color: #B45309;
 }
 
 TCssSplitter {

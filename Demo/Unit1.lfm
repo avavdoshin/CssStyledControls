@@ -89,6 +89,7 @@ object Form1: TForm1
       'Checkboxes, Radio, Splitters'
       'Editors'
       'TreeView'
+      'Bars'
     )
     TabIndex = 0
     TabSpacing = 2
@@ -1880,6 +1881,825 @@ object Form1: TForm1
         end
       end
     end
+    object CssTabSheet5: TCssTabSheet
+      Left = -32000
+      Height = 638
+      Top = -32000
+      Width = 1153
+      Caption = 'Bars'
+      CssTag = 'control'
+      StyleProvider = CssStyleProvider1
+      MonospaceFontName = 'Courier New'
+      TabOrder = 4
+      TabStop = True
+      Visible = False
+      ImageIndex = 23
+      object CssPanel15: TCssPanel
+        AnchorSideLeft.Control = CssTabSheet5
+        AnchorSideTop.Control = CssTabSheet5
+        AnchorSideRight.Control = CssTabSheet5
+        AnchorSideRight.Side = asrBottom
+        Left = 5
+        Height = 203
+        Top = 5
+        Width = 1143
+        Anchors = [akTop, akLeft, akRight]
+        BorderSpacing.Around = 5
+        Caption = '<h6>Progressbars</h6>'
+        CssTag = 'control'
+        HtmlMode = True
+        StyleProvider = CssStyleProvider1
+        FocusColor = 16426336
+        MonospaceFontName = 'Courier New'
+        TabOrder = 0
+        TabStop = True
+        Alignment = taLeftJustify
+        Layout = tlTop
+        WordWrap = True
+        object CssPanel16: TCssPanel
+          Left = 13
+          Height = 154
+          Top = 36
+          Width = 233
+          Align = alLeft
+          CssTag = 'control'
+          CssClass = 'panel-container-square'
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 0
+          TabStop = True
+          Alignment = taLeftJustify
+          Layout = tlTop
+          WordWrap = True
+          object CssProgressBar1: TCssProgressBar
+            Left = 4
+            Height = 20
+            Hint = 'Normal'
+            Top = 4
+            Width = 225
+            Align = alTop
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 0
+            Position = 10
+          end
+          object CssProgressBar2: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar1
+            AnchorSideTop.Control = CssProgressBar1
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar1
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Paused'
+            Top = 29
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 1
+            Position = 20
+            State = pbsPaused
+          end
+          object CssProgressBar3: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar1
+            AnchorSideTop.Control = CssProgressBar2
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar1
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Error'
+            Top = 54
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 2
+            Position = 30
+            State = pbsError
+          end
+          object CssProgressBar4: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar1
+            AnchorSideTop.Control = CssProgressBar3
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar1
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Normal disabled'
+            Top = 79
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 3
+            Position = 40
+          end
+          object CssProgressBar5: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar1
+            AnchorSideTop.Control = CssProgressBar4
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar1
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Paused disabled'
+            Top = 104
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 4
+            Position = 50
+            State = pbsPaused
+          end
+          object CssProgressBar6: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar1
+            AnchorSideTop.Control = CssProgressBar5
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar1
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Error disabled'
+            Top = 129
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 5
+            Position = 60
+            State = pbsError
+          end
+        end
+        object CssPanel17: TCssPanel
+          AnchorSideLeft.Control = CssPanel16
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssPanel16
+          AnchorSideBottom.Control = CssPanel16
+          AnchorSideBottom.Side = asrBottom
+          Left = 256
+          Height = 154
+          Top = 36
+          Width = 233
+          Align = alCustom
+          Anchors = [akTop, akLeft, akBottom]
+          BorderSpacing.Left = 10
+          CssTag = 'control'
+          CssClass = 'panel-container-square'
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 1
+          TabStop = True
+          Alignment = taLeftJustify
+          Layout = tlTop
+          WordWrap = True
+          object CssProgressBar7: TCssProgressBar
+            Left = 4
+            Height = 20
+            Hint = 'Normal'
+            Top = 4
+            Width = 225
+            Align = alTop
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 0
+            Position = 10
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssProgressBar8: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar7
+            AnchorSideTop.Control = CssProgressBar7
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar7
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Paused'
+            Top = 29
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 1
+            Position = 20
+            State = pbsPaused
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssProgressBar9: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar7
+            AnchorSideTop.Control = CssProgressBar8
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar7
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Error'
+            Top = 54
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 2
+            Position = 30
+            State = pbsError
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssProgressBar10: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar7
+            AnchorSideTop.Control = CssProgressBar9
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar7
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Normal disabled'
+            Top = 79
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 3
+            Position = 40
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssProgressBar11: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar7
+            AnchorSideTop.Control = CssProgressBar10
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar7
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Paused disabled'
+            Top = 104
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 4
+            Position = 50
+            State = pbsPaused
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssProgressBar12: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar7
+            AnchorSideTop.Control = CssProgressBar11
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar7
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Error disabled'
+            Top = 129
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 5
+            Position = 60
+            State = pbsError
+            Style = pbMarquee
+            ShowText = True
+          end
+        end
+        object CssPanel18: TCssPanel
+          AnchorSideLeft.Control = CssPanel17
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssPanel16
+          AnchorSideBottom.Control = CssPanel16
+          AnchorSideBottom.Side = asrBottom
+          Left = 499
+          Height = 154
+          Top = 36
+          Width = 233
+          Align = alCustom
+          Anchors = [akTop, akLeft, akBottom]
+          BorderSpacing.Left = 10
+          CssTag = 'control'
+          CssClass = 'panel-container-square'
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 2
+          TabStop = True
+          Alignment = taLeftJustify
+          Layout = tlTop
+          WordWrap = True
+          object CssProgressBar13: TCssProgressBar
+            Left = 4
+            Height = 20
+            Hint = 'Normal'
+            Top = 4
+            Width = 225
+            Align = alTop
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 0
+            Position = 10
+            Orientation = pbVertical
+            Style = pbMarquee
+          end
+          object CssProgressBar14: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar13
+            AnchorSideTop.Control = CssProgressBar13
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar13
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Paused'
+            Top = 29
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 1
+            Position = 20
+            Orientation = pbVertical
+            State = pbsPaused
+            Style = pbMarquee
+          end
+          object CssProgressBar15: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar13
+            AnchorSideTop.Control = CssProgressBar14
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar13
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Error'
+            Top = 54
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 2
+            Position = 30
+            Orientation = pbVertical
+            State = pbsError
+            Style = pbMarquee
+          end
+          object CssProgressBar16: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar13
+            AnchorSideTop.Control = CssProgressBar15
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar13
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Normal disabled'
+            Top = 79
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 3
+            Position = 40
+            Orientation = pbVertical
+            Style = pbMarquee
+          end
+          object CssProgressBar17: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar13
+            AnchorSideTop.Control = CssProgressBar16
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar13
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Paused disabled'
+            Top = 104
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 4
+            Position = 50
+            Orientation = pbVertical
+            State = pbsPaused
+            Style = pbMarquee
+          end
+          object CssProgressBar18: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar13
+            AnchorSideTop.Control = CssProgressBar17
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar13
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Error disabled'
+            Top = 129
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            Enabled = False
+            ParentShowHint = False
+            TabOrder = 5
+            Position = 60
+            Orientation = pbVertical
+            State = pbsError
+            Style = pbMarquee
+          end
+        end
+        object CssPanel19: TCssPanel
+          AnchorSideLeft.Control = CssPanel18
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssPanel16
+          AnchorSideBottom.Control = CssPanel16
+          AnchorSideBottom.Side = asrBottom
+          Left = 742
+          Height = 154
+          Top = 36
+          Width = 233
+          Align = alCustom
+          Anchors = [akTop, akLeft, akBottom]
+          BorderSpacing.Left = 10
+          CssTag = 'control'
+          CssClass = 'panel-container-square'
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 3
+          TabStop = True
+          Alignment = taLeftJustify
+          Layout = tlTop
+          WordWrap = True
+          object CssProgressBar19: TCssProgressBar
+            Left = 4
+            Height = 20
+            Hint = 'Normal'
+            Top = 4
+            Width = 225
+            Align = alTop
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 0
+            ShowText = True
+          end
+          object CssProgressBar20: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar19
+            AnchorSideTop.Control = CssProgressBar21
+            AnchorSideTop.Side = asrBottom
+            AnchorSideRight.Control = CssProgressBar19
+            AnchorSideRight.Side = asrBottom
+            Left = 4
+            Height = 20
+            Hint = 'Normal with marquee'
+            Top = 54
+            Width = 225
+            Align = alCustom
+            Anchors = [akTop, akLeft, akRight]
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 1
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssButton6: TCssButton
+            AnchorSideLeft.Control = CssProgressBar20
+            AnchorSideTop.Control = CssProgressBar20
+            AnchorSideTop.Side = asrBottom
+            Cursor = crHandPoint
+            Left = 29
+            Height = 25
+            Top = 79
+            Width = 75
+            BorderSpacing.Left = 25
+            BorderSpacing.Top = 5
+            Caption = 'Increase'
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            MonospaceFontName = 'Courier New'
+            TabOrder = 2
+            TabStop = True
+            OnClick = CssButton6Click
+          end
+          object CssButton7: TCssButton
+            AnchorSideLeft.Control = CssButton6
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = CssProgressBar20
+            AnchorSideTop.Side = asrBottom
+            Cursor = crHandPoint
+            Left = 124
+            Height = 25
+            Top = 79
+            Width = 75
+            BorderSpacing.Left = 20
+            BorderSpacing.Top = 5
+            Caption = 'Decrease'
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            MonospaceFontName = 'Courier New'
+            TabOrder = 3
+            TabStop = True
+            OnClick = CssButton7Click
+          end
+          object CssProgressBar21: TCssProgressBar
+            AnchorSideTop.Control = CssProgressBar19
+            Left = 4
+            Height = 20
+            Hint = 'Normal without smooth'
+            Top = 29
+            Width = 225
+            Align = alTop
+            BorderSpacing.Top = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 4
+            ShowText = True
+            Smooth = False
+          end
+        end
+        object CssPanel20: TCssPanel
+          AnchorSideLeft.Control = CssPanel19
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = CssPanel16
+          AnchorSideRight.Control = CssPanel15
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = CssPanel16
+          AnchorSideBottom.Side = asrBottom
+          Left = 985
+          Height = 154
+          Top = 36
+          Width = 148
+          Align = alCustom
+          Anchors = [akTop, akLeft, akRight, akBottom]
+          BorderSpacing.Left = 10
+          BorderSpacing.Right = 10
+          CssTag = 'control'
+          CssClass = 'panel-container-square'
+          StyleProvider = CssStyleProvider1
+          FocusColor = 16426336
+          MonospaceFontName = 'Courier New'
+          TabOrder = 4
+          TabStop = True
+          Alignment = taLeftJustify
+          Layout = tlTop
+          WordWrap = True
+          object CssProgressBar22: TCssProgressBar
+            Left = 4
+            Height = 146
+            Hint = 'Normal'
+            Top = 4
+            Width = 20
+            Align = alLeft
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 0
+            Position = 10
+            Orientation = pbVertical
+            ShowText = True
+          end
+          object CssProgressBar23: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar22
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = CssProgressBar22
+            Left = 29
+            Height = 146
+            Hint = 'Normal'
+            Top = 4
+            Width = 20
+            Align = alCustom
+            BorderSpacing.Left = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 1
+            Position = 50
+            Orientation = pbVertical
+            ShowText = True
+          end
+          object CssProgressBar24: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar23
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = CssProgressBar22
+            Left = 54
+            Height = 146
+            Hint = 'Marquee'
+            Top = 4
+            Width = 20
+            Align = alCustom
+            BorderSpacing.Left = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 2
+            Position = 100
+            Orientation = pbVertical
+            Style = pbMarquee
+            ShowText = True
+          end
+          object CssProgressBar25: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar24
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = CssProgressBar22
+            Left = 79
+            Height = 146
+            Hint = 'Paused'
+            Top = 4
+            Width = 20
+            Align = alCustom
+            BorderSpacing.Left = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 3
+            Position = 100
+            Orientation = pbVertical
+            State = pbsPaused
+            ShowText = True
+          end
+          object CssProgressBar26: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar25
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = CssProgressBar22
+            Left = 104
+            Height = 146
+            Hint = 'Error'
+            Top = 4
+            Width = 20
+            Align = alCustom
+            BorderSpacing.Left = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 4
+            Position = 100
+            Orientation = pbVertical
+            State = pbsError
+            ShowText = True
+          end
+          object CssProgressBar27: TCssProgressBar
+            AnchorSideLeft.Control = CssProgressBar26
+            AnchorSideLeft.Side = asrBottom
+            AnchorSideTop.Control = CssProgressBar22
+            Left = 129
+            Height = 146
+            Hint = 'Normal'
+            Top = 4
+            Width = 20
+            Align = alCustom
+            BorderSpacing.Left = 5
+            CssTag = 'control'
+            StyleProvider = CssStyleProvider1
+            ShowFocusRect = False
+            ShowHint = True
+            MonospaceFontName = 'Courier New'
+            ParentShowHint = False
+            TabOrder = 5
+            Position = 100
+            Orientation = pbVertical
+          end
+        end
+      end
+    end
   end
   object CssMainMenu1: TCssMainMenu
     Left = 0
@@ -1927,14 +2747,14 @@ object Form1: TForm1
   end
   object CssStyleProvider1: TCssStyleProvider
     DefaultStyleName = 'Light'
-    CssText = '@variant light'#13#10'{'#13#10'  .standart-form { background-color: #ffffff; color: #000000; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #eeeeee; font-weight: bold; }'#13#10'  .standart-edit { background: #f9f9f9; text-align: left; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #1E293B;'#13#10'  background-color: #F8FAFC;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #2563EB;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #0F172A;'#13#10'  border: 1px solid #94A3B8;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #2563EB; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #1D4ED8; }'#13#10'a:active { color: #1E40AF; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #F1F5F9;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #E2E8F0; border-color: #94A3B8; }'#13#10'TCssButton:active { background-color: #CBD5E1; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #CBD5E1;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #FEF2F2;'#13#10'  color: #B91C1C;'#13#10'  border: 1px solid #FCA5A5;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #FEE2E2; border-color: #F87171; }'#13#10'TCssButton:cancel:active { background-color: #FECACA; border-color: #EF4444; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #FEF2F2;'#13#10'  border-color: #FEE2E2;'#13#10'  color: #FECACA;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #2563EB;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #2563EB;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #1D4ED8; border-color: #1D4ED8; }'#13#10'TCssButton:default:active { background-color: #1E40AF; border-color: #1E40AF; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #F1F5F9;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #94A3B8;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #FFFFFF;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #2563EB; }'#13#10'TCssCheckBox:checked        { checkbox-background: #2563EB; checkbox-border-color: #2563EB; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #1D4ED8; checkbox-border-color: #1D4ED8; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #94A3B8;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  check-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #FFFFFF;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #2563EB;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #2563EB; }'#13#10'TCssRadioButton:checked        { radio-background: #2563EB; radio-border-color: #2563EB; dot-color: #2563EB; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #1D4ED8; radio-border-color: #1D4ED8; dot-color: #1D4ED8; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #94A3B8;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  dot-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches. Opt in by adding the `toggle` class.'#13#10'   For groups set CheckBoxCssClass / RadioCssClass to `toggle`. */'#13#10'/* Light: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckBox.custom,'#13#10'checkbox.custom {'#13#10'  checkbox-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'  toggle-thumb-inset: 4px;     '#13#10'}'#13#10'TCssCheckBox.custom:hover,'#13#10'checkbox.custom:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.custom:checked,'#13#10'checkbox.custom:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.custom:checked:hover,'#13#10'checkbox.custom:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.custom:disabled,'#13#10'checkbox.custom:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.custom:checked:disabled,'#13#10'checkbox.custom:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.custom:focus,'#13#10'checkbox.custom:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.custom,'#13#10'radio.custom {'#13#10'  radio-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  toggle-thumb-inset: 4px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.custom:hover,'#13#10'radio.custom:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:checked,'#13#10'radio.custom:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.custom:checked:hover,'#13#10'radio.custom:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.custom:disabled,'#13#10'radio.custom:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:checked:disabled,'#13#10'radio.custom:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.custom:focus,'#13#10'radio.custom:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #94A3B8; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-hover-background: #E2E8F0;'#13#10'  combo-button-active-background: #CBD5E1;'#13#10'  combo-button-border-color: #CBD5E1;'#13#10'  combo-button-arrow-color: #94A3B8; '#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssComboBox:hover  { border-color: #94A3B8; combo-button-arrow-color: #475569; }'#13#10'TCssComboBox:focus  { border-color: #2563EB; combo-button-arrow-color: #2563EB; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #DBEAFE;'#13#10'  item-selected-color: #1E40AF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #F8FAFC;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #94A3B8;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #94A3B8; }'#13#10'TCssEdit:focus { border-color: #2563EB; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #94A3B8; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #2563EB;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #94A3B8; }'#13#10'TCssListBox:focus { border-color: #2563EB; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  item-color: #94A3B8;'#13#10'  item-selected-background: #CBD5E1;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #1E293B;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #94A3B8; }'#13#10'TCssMemo:focus { border-color: #2563EB; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  caret-color: #94A3B8;'#13#10'  selection-background: #CBD5E1;'#13#10'  selection-color: #475569;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #94A3B8; }'#13#10'TCssPanel {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #94A3B8; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #CBD5E1; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'/* Icon canvas inside the dialog. */'#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #F8FAFC;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #2563EB; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  menu-background: #FFFFFF;'#13#10'  menu-border-color: #E2E8F0;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #F8FAFC;'#13#10'  border: none;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #F1F5F9;'#13#10'  border: none;'#13#10'  grip-color: #CBD5E1;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #E2E8F0;'#13#10'  grip-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #F1F5F9;'#13#10'  tab-hover-background: #E2E8F0;'#13#10'  tab-active-background: #2563EB;'#13#10#13#10'  tab-text-color: #475569;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #F1F5F9;'#13#10'  tab-scroll-button-hover-background: #E2E8F0;'#13#10'  tab-scroll-button-active-background: #CBD5E1;'#13#10'  tab-scroll-button-disabled-background: #F8FAFC;'#13#10'  tab-scroll-arrow-color: #475569;'#13#10'  tab-scroll-arrow-disabled-color: #CBD5E1;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #2563EB;   '#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #F8FAFC;'#13#10'  header-color: #475569;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #EFF6FF;'#13#10'  line-color: #E2E8F0;'#13#10'  button-color: #64748B;'#13#10'  drop-target-background: #DBEAFE;'#13#10'  sort-marker-color: #64748B;'#13#10'  disabled-background: #F8FAFC;'#13#10'  disabled-color: #94A3B8;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #E2E8F0;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #2563EB; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #2563EB;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10#13#10#13#10'@variant dark'#13#10'{'#13#10'  .standart-form { background-color: #1E293B; color: #ffffff; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #333333; color: #cccccc; }'#13#10'  .standart-edit { background: #222222; color: #ffffff; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #E2E8F0;'#13#10'  background-color: #1E293B;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #334155;'#13#10'  color: #F1F5F9;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #60A5FA; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #93C5FD; }'#13#10'a:active { color: #3B82F6; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #334155;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #475569; border-color: #64748B; }'#13#10'TCssButton:active { background-color: #64748B; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #475569;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #450A0A;'#13#10'  color: #FCA5A5;'#13#10'  border: 1px solid #7F1D1D;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #7F1D1D; border-color: #B91C1C; }'#13#10'TCssButton:cancel:active { background-color: #991B1B; border-color: #DC2626; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #7F1D1D;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #3B82F6;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #3B82F6;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #60A5FA; border-color: #60A5FA; }'#13#10'TCssButton:default:active { background-color: #2563EB; border-color: #2563EB; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #334155;'#13#10'  border-color: #334155;'#13#10'  color: #64748B;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:checked        { checkbox-background: #3B82F6; checkbox-border-color: #3B82F6; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #60A5FA; checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #64748B;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  check-color: #475569;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #3B82F6;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #60A5FA; }'#13#10'TCssRadioButton:checked        { radio-background: #3B82F6; radio-border-color: #3B82F6; dot-color: #3B82F6; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #60A5FA; radio-border-color: #60A5FA; dot-color: #60A5FA; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #64748B;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  dot-color: #475569;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches for the dark variant. */'#13#10'/* Dark: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckBox.custom,'#13#10'checkbox.custom {'#13#10'  checkbox-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'  toggle-thumb-inset: 4px;'#13#10'}'#13#10'TCssCheckBox.custom:hover,'#13#10'checkbox.custom:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.custom:checked,'#13#10'checkbox.custom:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.custom:checked:hover,'#13#10'checkbox.custom:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.custom:disabled,'#13#10'checkbox.custom:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.custom:checked:disabled,'#13#10'checkbox.custom:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.custom:focus,'#13#10'checkbox.custom:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.custom,'#13#10'radio.custom {'#13#10'  radio-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  toggle-thumb-inset: 4px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:hover,'#13#10'radio.custom:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.custom:checked,'#13#10'radio.custom:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.custom:checked:hover,'#13#10'radio.custom:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.custom:disabled,'#13#10'radio.custom:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.custom:checked:disabled,'#13#10'radio.custom:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.custom:focus,'#13#10'radio.custom:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #64748B; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #334155;'#13#10'  combo-button-hover-background: #475569;'#13#10'  combo-button-active-background: #64748B;'#13#10'  combo-button-border-color: #475569; '#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssComboBox:hover  { border-color: #64748B; combo-button-arrow-color: #E2E8F0; }'#13#10'TCssComboBox:focus  { border-color: #60A5FA; combo-button-arrow-color: #60A5FA; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'  combo-button-background: #1E293B;'#13#10'  combo-button-arrow-color: #475569;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #0F172A;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #64748B;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #64748B; }'#13#10'TCssEdit:focus { border-color: #60A5FA; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #64748B; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #64748B; }'#13#10'TCssListBox:focus { border-color: #60A5FA; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  item-color: #64748B;'#13#10'  item-selected-background: #334155;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #E2E8F0;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #64748B; }'#13#10'TCssMemo:focus { border-color: #60A5FA; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  caret-color: #64748B;'#13#10'  selection-background: #334155;'#13#10'  selection-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #64748B; }'#13#10'TCssPanel {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #64748B; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #475569; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #334155;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #0F172A;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #60A5FA; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  menu-background: #1E293B;'#13#10'  menu-border-color: #334155;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  grip-color: #475569;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #1E293B;'#13#10'  grip-color: #60A5FA;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #334155;'#13#10'  tab-hover-background: #475569;'#13#10'  tab-active-background: #3B82F6;'#13#10#13#10'  tab-text-color: #CBD5E1;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #334155;'#13#10'  tab-scroll-button-hover-background: #475569;'#13#10'  tab-scroll-button-active-background: #64748B;'#13#10'  tab-scroll-button-disabled-background: #1E293B;'#13#10'  tab-scroll-arrow-color: #CBD5E1;'#13#10'  tab-scroll-arrow-disabled-color: #475569;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #0F172A;'#13#10'  header-color: #94A3B8;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #334155;'#13#10'  line-color: #334155;'#13#10'  button-color: #94A3B8;'#13#10'  drop-target-background: #1E3A8A;'#13#10'  sort-marker-color: #CBD5E1;'#13#10'  disabled-background: #0F172A;'#13#10'  disabled-color: #64748B;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #334155;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #60A5FA; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #60A5FA;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10
+    CssText = '@variant light'#13#10'{'#13#10'  .standart-form { background-color: #ffffff; color: #000000; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #eeeeee; font-weight: bold; }'#13#10'  .standart-edit { background: #f9f9f9; text-align: left; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #1E293B;'#13#10'  background-color: #F8FAFC;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #2563EB;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #0F172A;'#13#10'  border: 1px solid #94A3B8;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #2563EB; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #1D4ED8; }'#13#10'a:active { color: #1E40AF; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #F1F5F9;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #E2E8F0; border-color: #94A3B8; }'#13#10'TCssButton:active { background-color: #CBD5E1; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #CBD5E1;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #FEF2F2;'#13#10'  color: #B91C1C;'#13#10'  border: 1px solid #FCA5A5;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #FEE2E2; border-color: #F87171; }'#13#10'TCssButton:cancel:active { background-color: #FECACA; border-color: #EF4444; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #FEF2F2;'#13#10'  border-color: #FEE2E2;'#13#10'  color: #FECACA;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #2563EB;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #2563EB;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #1D4ED8; border-color: #1D4ED8; }'#13#10'TCssButton:default:active { background-color: #1E40AF; border-color: #1E40AF; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #F1F5F9;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #94A3B8;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #FFFFFF;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #2563EB; }'#13#10'TCssCheckBox:checked        { checkbox-background: #2563EB; checkbox-border-color: #2563EB; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #1D4ED8; checkbox-border-color: #1D4ED8; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #94A3B8;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  check-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #FFFFFF;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #2563EB;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #2563EB; }'#13#10'TCssRadioButton:checked        { radio-background: #2563EB; radio-border-color: #2563EB; dot-color: #2563EB; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #1D4ED8; radio-border-color: #1D4ED8; dot-color: #1D4ED8; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #94A3B8;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  dot-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches. Opt in by adding the `toggle` class.'#13#10'   For groups set CheckBoxCssClass / RadioCssClass to `toggle`. */'#13#10'/* Light: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckBox.custom,'#13#10'checkbox.custom {'#13#10'  checkbox-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #CBD5E1;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'  toggle-thumb-inset: 4px;     '#13#10'}'#13#10'TCssCheckBox.custom:hover,'#13#10'checkbox.custom:hover {'#13#10'  checkbox-background: #E2E8F0;'#13#10'  checkbox-border-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.custom:checked,'#13#10'checkbox.custom:checked {'#13#10'  checkbox-background: #2563EB;'#13#10'  checkbox-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.custom:checked:hover,'#13#10'checkbox.custom:checked:hover {'#13#10'  checkbox-background: #1D4ED8;'#13#10'  checkbox-border-color: #1D4ED8;'#13#10'}'#13#10'TCssCheckBox.custom:disabled,'#13#10'checkbox.custom:disabled {'#13#10'  checkbox-background: #F1F5F9;'#13#10'  checkbox-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.custom:checked:disabled,'#13#10'checkbox.custom:checked:disabled {'#13#10'  checkbox-background: #BFDBFE;'#13#10'  checkbox-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssCheckBox.custom:focus,'#13#10'checkbox.custom:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.custom,'#13#10'radio.custom {'#13#10'  radio-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  toggle-thumb-inset: 4px;'#13#10'  padding: 0px;'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #CBD5E1;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.custom:hover,'#13#10'radio.custom:hover {'#13#10'  radio-background: #E2E8F0;'#13#10'  radio-border-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:checked,'#13#10'radio.custom:checked {'#13#10'  radio-background: #2563EB;'#13#10'  radio-border-color: #2563EB;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.custom:checked:hover,'#13#10'radio.custom:checked:hover {'#13#10'  radio-background: #1D4ED8;'#13#10'  radio-border-color: #1D4ED8;'#13#10'}'#13#10'TCssRadioButton.custom:disabled,'#13#10'radio.custom:disabled {'#13#10'  radio-background: #F1F5F9;'#13#10'  radio-border-color: #E2E8F0;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:checked:disabled,'#13#10'radio.custom:checked:disabled {'#13#10'  radio-background: #BFDBFE;'#13#10'  radio-border-color: #BFDBFE;'#13#10'  toggle-thumb-color: #F8FAFC;'#13#10'}'#13#10'TCssRadioButton.custom:focus,'#13#10'radio.custom:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #94A3B8; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-hover-background: #E2E8F0;'#13#10'  combo-button-active-background: #CBD5E1;'#13#10'  combo-button-border-color: #CBD5E1;'#13#10'  combo-button-arrow-color: #94A3B8; '#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA; '#13#10'}'#13#10'TCssComboBox:hover  { border-color: #94A3B8; combo-button-arrow-color: #475569; }'#13#10'TCssComboBox:focus  { border-color: #2563EB; combo-button-arrow-color: #2563EB; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'  combo-button-background: #F1F5F9;'#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #DBEAFE;'#13#10'  item-selected-color: #1E40AF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #F8FAFC;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #94A3B8;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #94A3B8; }'#13#10'TCssEdit:focus { border-color: #2563EB; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  border-color: #E2E8F0;'#13#10'  placeholder-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #94A3B8; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #FFFFFF;'#13#10'  item-color: #1E293B;'#13#10'  item-hover-background: #EFF6FF;'#13#10'  item-hover-color: #1D4ED8;'#13#10'  item-selected-background: #2563EB;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #94A3B8; }'#13#10'TCssListBox:focus { border-color: #2563EB; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  item-color: #94A3B8;'#13#10'  item-selected-background: #CBD5E1;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #1E293B;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #94A3B8; }'#13#10'TCssMemo:focus { border-color: #2563EB; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #94A3B8;'#13#10'  caret-color: #94A3B8;'#13#10'  selection-background: #CBD5E1;'#13#10'  selection-color: #475569;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #94A3B8; }'#13#10'TCssPanel {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #94A3B8; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #CBD5E1;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #CBD5E1; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'/* Icon canvas inside the dialog. */'#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #F8FAFC;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #F8FAFC;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #2563EB; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  menu-background: #FFFFFF;'#13#10'  menu-border-color: #E2E8F0;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #1E293B;'#13#10'  menu-hover-background: #2563EB;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #94A3B8;'#13#10'  menu-separator-color: #E2E8F0;'#13#10'  menu-shortcut-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #F8FAFC;'#13#10'  border: none;'#13#10'  scrolltrack-background: #F8FAFC;'#13#10'  thumb-background: #CBD5E1;'#13#10'  thumb-hover-background: #94A3B8;'#13#10'  thumb-active-background: #64748B;'#13#10'  thumb-border-color: #F8FAFC;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #64748B;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #E2E8F0;'#13#10'  arrow-color: #CBD5E1;'#13#10'}'#13#10#13#10'TCssProgressBar {'#13#10'  background-color: #F1F5F9;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 2px;'#13#10'  progress-color: #2563EB;'#13#10'  progress-error-color: #DC2626;'#13#10'  progress-paused-color: #F59E0B;'#13#10'}'#13#10'TCssProgressBar:hover { border-color: #CBD5E1; }'#13#10'TCssProgressBar:disabled {'#13#10'  background-color: #F8FAFC;'#13#10'  border-color: #E2E8F0;'#13#10'  color: #94A3B8;'#13#10'  progress-color: #94A3B8;'#13#10'  progress-error-color: #F87171;'#13#10'  progress-paused-color: #FBBF24;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #F1F5F9;'#13#10'  border: none;'#13#10'  grip-color: #CBD5E1;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #E2E8F0;'#13#10'  grip-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #F1F5F9;'#13#10'  tab-hover-background: #E2E8F0;'#13#10'  tab-active-background: #2563EB;'#13#10#13#10'  tab-text-color: #475569;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #F1F5F9;'#13#10'  tab-scroll-button-hover-background: #E2E8F0;'#13#10'  tab-scroll-button-active-background: #CBD5E1;'#13#10'  tab-scroll-button-disabled-background: #F8FAFC;'#13#10'  tab-scroll-arrow-color: #475569;'#13#10'  tab-scroll-arrow-disabled-color: #CBD5E1;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #2563EB;   '#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #E2E8F0;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #F8FAFC;'#13#10'  header-color: #475569;'#13#10'  selection-background: #2563EB;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #EFF6FF;'#13#10'  line-color: #E2E8F0;'#13#10'  button-color: #64748B;'#13#10'  drop-target-background: #DBEAFE;'#13#10'  sort-marker-color: #64748B;'#13#10'  disabled-background: #F8FAFC;'#13#10'  disabled-color: #94A3B8;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #E2E8F0;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #2563EB; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #FFFFFF;'#13#10'  color: #1E293B;'#13#10'  border: 1px solid #2563EB;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10#13#10#13#10'@variant dark'#13#10'{'#13#10'  .standart-form { background-color: #1E293B; color: #ffffff; font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif; }'#13#10'  .standart-btn { background: #333333; color: #cccccc; }'#13#10'  .standart-edit { background: #222222; color: #ffffff; }'#13#10'}'#13#10#13#10'* {'#13#10'  font-family: ''Segoe UI'', ''Segoe UI Variable'', ''Helvetica Neue'', Arial, sans-serif;'#13#10'  font-size: 10pt;'#13#10'  color: #E2E8F0;'#13#10'  background-color: #1E293B;'#13#10'  border-radius: 6px;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10#13#10'::hint {'#13#10'  background-color: #334155;'#13#10'  color: #F1F5F9;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 10px;'#13#10'  font-size: 9pt;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10#13#10'a { color: #60A5FA; text-decoration: underline; cursor: pointer; }'#13#10'a:hover  { color: #93C5FD; }'#13#10'a:active { color: #3B82F6; }'#13#10#13#10'TCssButton {'#13#10'  background-color: #334155;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 8px;'#13#10'  text-align: center;'#13#10'  vertical-align: middle;'#13#10'  font-weight: 500;'#13#10'  cursor: pointer;'#13#10'}'#13#10'TCssButton:hover  { background-color: #475569; border-color: #64748B; }'#13#10'TCssButton:active { background-color: #64748B; border-color: #94A3B8; }'#13#10'TCssButton:focus  { border-color: #93C5FD; }'#13#10'TCssButton:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #475569;'#13#10'  cursor: default;'#13#10'}'#13#10'TCssButton:cancel {'#13#10'  background-color: #450A0A;'#13#10'  color: #FCA5A5;'#13#10'  border: 1px solid #7F1D1D;'#13#10'}'#13#10'TCssButton:cancel:hover  { background-color: #7F1D1D; border-color: #B91C1C; }'#13#10'TCssButton:cancel:active { background-color: #991B1B; border-color: #DC2626; }'#13#10'TCssButton:cancel:focus  { border-color: #FCA5A5; }'#13#10'TCssButton:cancel:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #7F1D1D;'#13#10'}'#13#10'TCssButton:default {'#13#10'  background-color: #3B82F6;'#13#10'  color: #FFFFFF;'#13#10'  border: 1px solid #3B82F6;'#13#10'}'#13#10'TCssButton:default:hover  { background-color: #60A5FA; border-color: #60A5FA; }'#13#10'TCssButton:default:active { background-color: #2563EB; border-color: #2563EB; }'#13#10'TCssButton:default:focus  { border-color: #93C5FD; }'#13#10'TCssButton:default:disabled {'#13#10'  background-color: #334155;'#13#10'  border-color: #334155;'#13#10'  color: #64748B;'#13#10'}'#13#10'TCssBitBtn {'#13#10'  glyph-layout: left;'#13#10'  glyph-spacing: 4px;'#13#10'  glyph-margin: auto;'#13#10'}'#13#10#13#10'TCssCheckBox {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  checkbox-radius: 4px;'#13#10'  check-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox:hover          { checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:checked        { checkbox-background: #3B82F6; checkbox-border-color: #3B82F6; check-color: #FFFFFF; }'#13#10'TCssCheckBox:checked:hover  { checkbox-background: #60A5FA; checkbox-border-color: #60A5FA; }'#13#10'TCssCheckBox:disabled {'#13#10'  color: #64748B;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  check-color: #475569;'#13#10'}'#13#10'TCssCheckBox:focus { checkbox-border-color: #93C5FD; }'#13#10#13#10'TCssRadioButton {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 2px 4px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  radio-radius: 3px;'#13#10'  dot-color: #3B82F6;'#13#10'}'#13#10'TCssRadioButton:hover          { radio-border-color: #60A5FA; }'#13#10'TCssRadioButton:checked        { radio-background: #3B82F6; radio-border-color: #3B82F6; dot-color: #3B82F6; }'#13#10'TCssRadioButton:checked:hover  { radio-background: #60A5FA; radio-border-color: #60A5FA; dot-color: #60A5FA; }'#13#10'TCssRadioButton:disabled {'#13#10'  color: #64748B;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  dot-color: #475569;'#13#10'}'#13#10'TCssRadioButton:focus { radio-border-color: #93C5FD; }'#13#10#13#10'.checkbox {'#13#10'  background-color: transparent;'#13#10'}'#13#10'.radio {'#13#10'  background-color: transparent;'#13#10'}'#13#10#13#10'/* Optional Windows 11-style switches for the dark variant. */'#13#10'/* Dark: toggle */'#13#10'TCssCheckBox.toggle,'#13#10'checkbox.toggle {'#13#10'  checkbox-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssCheckBox.toggle:hover,'#13#10'checkbox.toggle:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:checked,'#13#10'checkbox.toggle:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:hover,'#13#10'checkbox.toggle:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.toggle:disabled,'#13#10'checkbox.toggle:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.toggle:checked:disabled,'#13#10'checkbox.toggle:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.toggle:focus,'#13#10'checkbox.toggle:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.toggle,'#13#10'radio.toggle {'#13#10'  radio-style: toggle;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.toggle:hover,'#13#10'radio.toggle:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:checked,'#13#10'radio.toggle:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:hover,'#13#10'radio.toggle:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.toggle:disabled,'#13#10'radio.toggle:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.toggle:checked:disabled,'#13#10'radio.toggle:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.toggle:focus,'#13#10'radio.toggle:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckBox.custom,'#13#10'checkbox.custom {'#13#10'  checkbox-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  padding: 0px;'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #475569;'#13#10'  checkbox-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'  toggle-thumb-inset: 4px;'#13#10'}'#13#10'TCssCheckBox.custom:hover,'#13#10'checkbox.custom:hover {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.custom:checked,'#13#10'checkbox.custom:checked {'#13#10'  checkbox-background: #3B82F6;'#13#10'  checkbox-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssCheckBox.custom:checked:hover,'#13#10'checkbox.custom:checked:hover {'#13#10'  checkbox-background: #60A5FA;'#13#10'  checkbox-border-color: #60A5FA;'#13#10'}'#13#10'TCssCheckBox.custom:disabled,'#13#10'checkbox.custom:disabled {'#13#10'  checkbox-background: #1E293B;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssCheckBox.custom:checked:disabled,'#13#10'checkbox.custom:checked:disabled {'#13#10'  checkbox-background: #334155;'#13#10'  checkbox-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssCheckBox.custom:focus,'#13#10'checkbox.custom:focus {'#13#10'  checkbox-border-color: #93C5FD;'#13#10'}'#13#10#13#10'TCssRadioButton.custom,'#13#10'radio.custom {'#13#10'  radio-style: custom;'#13#10'  toggle-width: 40px;'#13#10'  toggle-height: 20px;'#13#10'  toggle-thumb-inset: 4px;'#13#10'  padding: 0px;'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #475569;'#13#10'  radio-border-width: 1px;'#13#10'  toggle-thumb-color: #94A3B8;'#13#10'}'#13#10'TCssRadioButton.custom:hover,'#13#10'radio.custom:hover {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.custom:checked,'#13#10'radio.custom:checked {'#13#10'  radio-background: #3B82F6;'#13#10'  radio-border-color: #3B82F6;'#13#10'  toggle-thumb-color: #FFFFFF;'#13#10'}'#13#10'TCssRadioButton.custom:checked:hover,'#13#10'radio.custom:checked:hover {'#13#10'  radio-background: #60A5FA;'#13#10'  radio-border-color: #60A5FA;'#13#10'}'#13#10'TCssRadioButton.custom:disabled,'#13#10'radio.custom:disabled {'#13#10'  radio-background: #1E293B;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #475569;'#13#10'}'#13#10'TCssRadioButton.custom:checked:disabled,'#13#10'radio.custom:checked:disabled {'#13#10'  radio-background: #334155;'#13#10'  radio-border-color: #334155;'#13#10'  toggle-thumb-color: #64748B;'#13#10'}'#13#10'TCssRadioButton.custom:focus,'#13#10'radio.custom:focus {'#13#10'  radio-border-color: #93C5FD;'#13#10'}'#13#10#13#10#13#10'TCssCheckGroup,'#13#10'TCssRadioGroup {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssCheckGroup:hover, TCssRadioGroup:hover { border-color: #64748B; }'#13#10'TCssCheckGroup:disabled,'#13#10'TCssRadioGroup:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'}'#13#10#13#10'TCssComboBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: pointer;'#13#10'  combo-button-background: #334155;'#13#10'  combo-button-hover-background: #475569;'#13#10'  combo-button-active-background: #64748B;'#13#10'  combo-button-border-color: #475569; '#13#10'  combo-button-arrow-color: #CBD5E1;'#13#10'  combo-button-radius: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssComboBox:hover  { border-color: #64748B; combo-button-arrow-color: #E2E8F0; }'#13#10'TCssComboBox:focus  { border-color: #60A5FA; combo-button-arrow-color: #60A5FA; }'#13#10'TCssComboBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'  combo-button-background: #1E293B;'#13#10'  combo-button-arrow-color: #475569;'#13#10'}'#13#10#13#10'.combobox-edit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 0px;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'.combobox-list {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'.combobox-scrollbar,'#13#10'.listbox-scrollbar,'#13#10'.memo-scrollbar,'#13#10'.css-tree-scrollbar {'#13#10'  background-color: #0F172A;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'.listbox-scrollbar:hover,'#13#10'.combobox-scrollbar:hover,'#13#10'.memo-scrollbar:hover,'#13#10'.css-tree-scrollbar:hover {'#13#10'  thumb-background: #64748B;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10#13#10'.listbox-scrollbar:disabled,'#13#10'.combobox-scrollbar:disabled,'#13#10'.memo-scrollbar:disabled,'#13#10'.css-tree-scrollbar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssEdit {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px 6px;'#13#10'  text-align: left;'#13#10'  vertical-align: middle;'#13#10'  cursor: text;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: left;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssEdit:hover { border-color: #64748B; }'#13#10'TCssEdit:focus { border-color: #60A5FA; }'#13#10'TCssEdit:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  border-color: #334155;'#13#10'  placeholder-color: #475569;'#13#10'}'#13#10#13#10'TCssLabel {'#13#10'  background-color: transparent;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'}'#13#10'TCssLabel:disabled { color: #64748B; }'#13#10#13#10'TCssListBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 6px;'#13#10'  padding: 2px;'#13#10'  item-background: #1E293B;'#13#10'  item-color: #E2E8F0;'#13#10'  item-hover-background: #334155;'#13#10'  item-hover-color: #93C5FD;'#13#10'  item-selected-background: #3B82F6;'#13#10'  item-selected-color: #FFFFFF;'#13#10'  item-height: 22px;'#13#10'}'#13#10'TCssListBox:hover { border-color: #64748B; }'#13#10'TCssListBox:focus { border-color: #60A5FA; }'#13#10'TCssListBox:disabled {'#13#10'  background-color: #0F172A;'#13#10'  item-color: #64748B;'#13#10'  item-selected-background: #334155;'#13#10'}'#13#10#13#10'TCssMemo {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 6px;'#13#10'  padding: 6px 8px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  caret-color: #E2E8F0;'#13#10'  placeholder-color: #64748B;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssMemo:hover { border-color: #64748B; }'#13#10'TCssMemo:focus { border-color: #60A5FA; }'#13#10'TCssMemo:disabled {'#13#10'  background-color: #0F172A;'#13#10'  color: #64748B;'#13#10'  caret-color: #64748B;'#13#10'  selection-background: #334155;'#13#10'  selection-color: #94A3B8;'#13#10'}'#13#10#13#10'TCssGroupBox {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssGroupBox:hover { border-color: #64748B; }'#13#10'TCssPanel {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 12px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPanel:hover { border-color: #64748B; }'#13#10'TCssPanel.panel-container        { padding: 4px; focus-within: false;}'#13#10'TCssPanel.panel-container.tight  { padding: 0px; focus-within: false;}'#13#10'TCssPanel.panel-container.spaced { padding: 20px; focus-within: false;}'#13#10'TCssPanel.panel-container-square {'#13#10'  padding: 4px;'#13#10'  focus-within: false;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'}'#13#10'TCssPanel.panel-container-square:hover { border: none; }'#13#10#13#10'.msgdialog {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 10px;'#13#10'  padding: 0px;'#13#10'  text-align: left;'#13#10'  vertical-align: top;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog:hover,'#13#10'.msgdialog:focus { border-color: #475569; }'#13#10'.msgdialog-divider {'#13#10'  background-color: #334155;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'  focus-within: false;'#13#10'}'#13#10'.msgdialog-divider:hover,'#13#10'.msgdialog-divider:focus { border: none; }'#13#10#13#10'TCssMessageIcon {'#13#10'  background-color: transparent;'#13#10'  border: none;'#13#10'  border-radius: 0px;'#13#10'  padding: 0px;'#13#10'}'#13#10#13#10'TCssMainMenu {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 2px 4px;'#13#10'  menubar-background: #0F172A;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10'TCssMainMenu:focus { border-color: #60A5FA; }'#13#10#13#10'TCssPopupMenu {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  menu-background: #1E293B;'#13#10'  menu-border-color: #334155;'#13#10'  menu-item-height: 26px;'#13#10'  menu-separator-height: 5px;'#13#10'  menu-separator-width: 8px;'#13#10'  menu-text-color: #E2E8F0;'#13#10'  menu-hover-background: #3B82F6;'#13#10'  menu-hover-text-color: #FFFFFF;'#13#10'  menu-disabled-text-color: #64748B;'#13#10'  menu-separator-color: #334155;'#13#10'  menu-shortcut-color: #64748B;'#13#10'}'#13#10#13#10'TCssScrollBar {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  scrolltrack-background: #0F172A;'#13#10'  thumb-background: #475569;'#13#10'  thumb-hover-background: #64748B;'#13#10'  thumb-active-background: #94A3B8;'#13#10'  thumb-border-color: #0F172A;'#13#10'  thumb-radius: 4px;'#13#10'  arrow-color: #94A3B8;'#13#10'}'#13#10'TCssScrollBar:disabled {'#13#10'  thumb-background: #334155;'#13#10'  arrow-color: #475569;'#13#10'}'#13#10#13#10'TCssProgressBar {'#13#10'  background-color: #334155;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #475569;'#13#10'  border-radius: 8px;'#13#10'  padding: 2px;'#13#10'  progress-color: #3B82F6;'#13#10'  progress-error-color: #EF4444;'#13#10'  progress-paused-color: #F59E0B;'#13#10'}'#13#10'TCssProgressBar:hover { border-color: #64748B; }'#13#10'TCssProgressBar:disabled {'#13#10'  background-color: #1E293B;'#13#10'  border-color: #334155;'#13#10'  color: #64748B;'#13#10'  progress-color: #64748B;'#13#10'  progress-error-color: #B91C1C;'#13#10'  progress-paused-color: #B45309;'#13#10'}'#13#10#13#10'TCssSplitter {'#13#10'  background-color: #0F172A;'#13#10'  border: none;'#13#10'  grip-color: #475569;'#13#10'  grip-count: 3;'#13#10'  grip-size: 2px;'#13#10'  grip-spacing: 3px;'#13#10'}'#13#10'TCssSplitter:hover {'#13#10'  background-color: #1E293B;'#13#10'  grip-color: #60A5FA;'#13#10'}'#13#10#13#10'TCssTabControl,'#13#10'TCssPageControl {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10#13#10'  tab-background: #334155;'#13#10'  tab-hover-background: #475569;'#13#10'  tab-active-background: #3B82F6;'#13#10#13#10'  tab-text-color: #CBD5E1;'#13#10'  tab-active-text-color: #FFFFFF;'#13#10#13#10'  tab-border-color: transparent;'#13#10#13#10'  tab-radius: 6px;'#13#10'  tab-spacing: 2px;'#13#10'  tab-padding: 10px;'#13#10#13#10'  tab-cursor: pointer;'#13#10'  tab-scroll-button-background: #334155;'#13#10'  tab-scroll-button-hover-background: #475569;'#13#10'  tab-scroll-button-active-background: #64748B;'#13#10'  tab-scroll-button-disabled-background: #1E293B;'#13#10'  tab-scroll-arrow-color: #CBD5E1;'#13#10'  tab-scroll-arrow-disabled-color: #475569;'#13#10'  tab-scroll-button-radius: 6px;'#13#10#13#10'  focus-within: true;'#13#10'  focus-color: #60A5FA;'#13#10'}'#13#10'TCssPageControl:hover { border-color: #94A3B8; }'#13#10'TCssTabSheet {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: none;'#13#10'  padding: 8px;'#13#10'}'#13#10#13#10'TCssVirtualStringTree {'#13#10'  background-color: #1E293B;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #334155;'#13#10'  border-radius: 8px;'#13#10'  padding: 0px;'#13#10'  header-background: #0F172A;'#13#10'  header-color: #94A3B8;'#13#10'  selection-background: #3B82F6;'#13#10'  selection-color: #FFFFFF;'#13#10'  hover-background: #334155;'#13#10'  line-color: #334155;'#13#10'  button-color: #94A3B8;'#13#10'  drop-target-background: #1E3A8A;'#13#10'  sort-marker-color: #CBD5E1;'#13#10'  disabled-background: #0F172A;'#13#10'  disabled-color: #64748B;'#13#10'  header-height: 28px;'#13#10'  row-height: 24px;'#13#10'  indent: 18px;'#13#10'  scrollbar-size: 14px;'#13#10'  header-text-align: left;'#13#10'  header-vertical-align: middle;'#13#10'  cell-text-align: left;'#13#10'  cell-vertical-align: middle;'#13#10'  header-hover-background: #334155;'#13#10'  placeholder-color: #94A3B8;'#13#10'  placeholder-align: center;'#13#10'  placeholder-vertical-align: middle;'#13#10'  placeholder-font-style: italic;'#13#10'}'#13#10'TCssVirtualStringTree:focus { border-color: #60A5FA; }'#13#10'TCssVirtualStringTree:hover { border-color: #94A3B8; }'#13#10#13#10'.css-tree-edit {'#13#10'  background-color: #0F172A;'#13#10'  color: #E2E8F0;'#13#10'  border: 1px solid #60A5FA;'#13#10'  border-radius: 4px;'#13#10'  padding: 2px 6px;'#13#10'}'#13#10#13#10
     Left = 744
     Top = 336
   end
   object CssProxy1: TCssProxy
     ThemeProvider = CssStyleProvider1
     FormStyleName = 'standart-form'
-    Left = 736
+    Left = 680
     Top = 136
   end
   object CssSvgImgList1: TCssSvgImgList
@@ -2036,8 +2856,12 @@ object Form1: TForm1
       item
         Name = 'icons8-not-synced'
         Svg = '<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.0.2, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<g id="Layer_2" style="display:none;">'#13#10#9'<rect x="-118" y="-662" style="display:inline;fill:#202424;" width="760" height="760"/>'#13#10'</g>'#13#10'<g id="Layer_1" style="display:none;">'#13#10#9'<rect x="-118" y="-662" style="display:inline;fill:#F0F0F0;" width="760" height="760"/>'#13#10'</g>'#13#10'<g id="Layer_3">'#13#10#9#13#10#9#9'<radialGradient id="SVGID_1_" cx="28.686" cy="-583.073" r="17.032" gradientTransform="matrix(1 0 0 -1 0 -562)" gradientUnits="userSpaceOnUse">'#13#10#9#9'<stop  offset="0.683" style="stop-color:#C24717"/>'#13#10#9#9'<stop  offset="0.756" style="stop-color:#BB4417"/>'#13#10#9#9'<stop  offset="0.862" style="stop-color:#A83B18"/>'#13#10#9#9'<stop  offset="0.987" style="stop-color:#892C1A"/>'#13#10#9#9'<stop  offset="1" style="stop-color:#852A1A"/>'#13#10#9'</radialGradient>'#13#10#9'<path style="fill:url(#SVGID_1_);" d="M32.002,8.271l0.162-0.496c0.33-1.011-0.184-2.12-1.18-2.493'#13#10#9#9'C21.73,1.815,11.12,5.639,6.348,14.597c-3.137,5.89-3.031,12.643-0.305,18.212l5.354-2.71c-1.876-3.885-1.937-8.582,0.246-12.681'#13#10#9#9'c3.363-6.314,10.947-9.173,18.085-7.811C30.717,9.795,31.69,9.228,32.002,8.271z"/>'#13#10#9#13#10#9#9'<radialGradient id="SVGID_2_" cx="-1217.314" cy="1750.927" r="17.032" gradientTransform="matrix(-1 0 0 1 -1198 -1724)" gradientUnits="userSpaceOnUse">'#13#10#9#9'<stop  offset="0.683" style="stop-color:#C24717"/>'#13#10#9#9'<stop  offset="0.756" style="stop-color:#BB4417"/>'#13#10#9#9'<stop  offset="0.862" style="stop-color:#A83B18"/>'#13#10#9#9'<stop  offset="0.987" style="stop-color:#892C1A"/>'#13#10#9#9'<stop  offset="1" style="stop-color:#852A1A"/>'#13#10#9'</radialGradient>'#13#10#9'<path style="fill:url(#SVGID_2_);" d="M15.998,39.729l-0.162,0.496c-0.33,1.011,0.184,2.12,1.18,2.493'#13#10#9#9'c9.253,3.467,19.864-0.357,24.635-9.315c3.137-5.89,3.031-12.643,0.305-18.212l-5.354,2.71c1.876,3.885,1.937,8.582-0.246,12.681'#13#10#9#9'c-3.363,6.314-10.947,9.173-18.085,7.811C17.283,38.205,16.31,38.772,15.998,39.729z"/>'#13#10#9#13#10#9#9'<linearGradient id="SVGID_3_" gradientUnits="userSpaceOnUse" x1="17.5708" y1="-576.5989" x2="47.7575" y2="-620.739" gradientTransform="matrix(1 0 0 -1 0 -562)">'#13#10#9#9'<stop  offset="0" style="stop-color:#FED100"/>'#13#10#9#9'<stop  offset="1" style="stop-color:#E36001"/>'#13#10#9'</linearGradient>'#13#10#9'<path style="fill:url(#SVGID_3_);" d="M10,24c0,2.004,0.436,4.006,1.291,5.861l2.48-1.26c0.699-0.355,1.478,0.312,1.235,1.057'#13#10#9#9'l-2.439,7.482c-0.214,0.656-0.919,1.014-1.575,0.8L3.51,35.501c-0.745-0.243-0.824-1.265-0.126-1.62l2.563-1.303'#13#10#9#9'c-3.528-7.427-2.235-16.574,3.911-22.72C13.763,5.953,18.881,4,24,4C24,4,10,10,10,24z M44.49,12.499l-7.482-2.439'#13#10#9#9'c-0.656-0.214-1.361,0.145-1.575,0.8l-2.439,7.482c-0.243,0.745,0.536,1.412,1.235,1.057l2.48-1.26C37.564,19.994,38,21.996,38,24'#13#10#9#9'c0,14-14,20-14,20c5.119,0,10.237-1.952,14.142-5.857c6.146-6.146,7.439-15.293,3.911-22.72l2.563-1.303'#13#10#9#9'C45.315,13.765,45.235,12.742,44.49,12.499z"/>'#13#10#9'<path style="fill:#E52030;" d="M44.888,42.734L5.266,3.112c-0.149-0.149-0.39-0.149-0.539,0L3.112,4.728'#13#10#9#9'c-0.149,0.149-0.149,0.39,0,0.539l39.622,39.622c0.149,0.149,0.39,0.149,0.539,0l1.616-1.616'#13#10#9#9'C45.037,43.124,45.037,42.882,44.888,42.734z"/>'#13#10'</g>'#13#10'</svg>'#13#10
+      end    
+      item
+        Name = 'icons8-reset'
+        Svg = '<?xml version="1.0" encoding="iso-8859-1"?>'#13#10'<!-- Generator: Adobe Illustrator 24.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->'#13#10'<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"'#13#10#9' viewBox="0 0 48 48" style="enable-background:new 0 0 48 48;" xml:space="preserve">'#13#10'<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="9.8581" y1="9.8581" x2="38.1419" y2="38.1419">'#13#10#9'<stop  offset="0" style="stop-color:#05ACB3"/>'#13#10#9'<stop  offset="1" style="stop-color:#038387"/>'#13#10'</linearGradient>'#13#10'<path style="fill:url(#SVGID_1_);" d="M44,24c0,11.045-8.955,20-20,20S4,35.045,4,24S12.955,4,24,4S44,12.955,44,24z"/>'#13#10'<path style="opacity:0.05;" d="M33.015,15.079c-0.297-0.301-0.778-0.317-1.077-0.018l-2.795,2.795'#13#10#9'c-0.272,0.272-0.269,0.699-0.021,0.993c3.257,3.865,1.569,9.537-1.962,11.534c-1.291,0.73-5.064,0.858-7.126-0.57'#13#10#9'c-2.249-1.557-5.077-6.463-2.162-9.942l2.147,2.147C20.75,22.75,22,22.232,22,21.197V13c0-0.552-0.448-1-1-1h-8.468'#13#10#9'c-0.934,0-1.402,1.13-0.742,1.791l2.25,2.25c-4.183,4.705-4.045,12.078,0.374,16.735c4.55,4.794,12.973,5.637,17.651,1.435'#13#10#9'C37.02,29.76,39.608,21.751,33.015,15.079z"/>'#13#10'<path style="opacity:0.07;" d="M33.015,15.579c-0.289-0.308-0.778-0.317-1.077-0.018l-2.287,2.287'#13#10#9'c-0.277,0.277-0.273,0.711-0.022,1.01c3.109,3.7,1.964,9.273-1.846,11.674c-1.969,1.24-5.624,1.314-7.972-0.285'#13#10#9'c-3.181-2.162-4.879-7.369-1.941-10.876l2.037,2.037c0.587,0.587,1.592,0.171,1.592-0.659V13.5c0-0.552-0.448-1-1-1h-7.384'#13#10#9'c-0.781,0-1.172,0.944-0.62,1.496l2.044,2.044c-4.235,4.764-4.035,12.185,0.595,16.754c4.541,4.495,12.363,4.917,16.969,0.719'#13#10#9'C36.995,29.055,38.419,21.342,33.015,15.579z"/>'#13#10'<path style="fill:#FFFFFF;" d="M28.409,30.682c-2.634,1.771-6.184,1.771-8.817,0c-4.323-2.907-4.739-8.848-1.248-12.339'#13#10#9'l-2.828-2.828c-4.79,4.79-4.676,12.654,0.341,17.298c4.532,4.195,11.754,4.196,16.287,0.002c4.826-4.465,5.117-11.911,0.873-16.736'#13#10#9'c-0.279-0.317-0.778-0.317-1.077-0.018L30.16,17.84c-0.282,0.282-0.278,0.723-0.022,1.028'#13#10#9'C33.098,22.404,32.522,27.916,28.409,30.682z"/>'#13#10'<path style="fill:#FFFFFF;" d="M20,13h-6.3c-0.627,0-0.941,0.758-0.498,1.202l6.596,6.596C20.242,21.242,21,20.927,21,20.3V14'#13#10#9'C21,13.448,20.552,13,20,13z"/>'#13#10'</svg>'#13#10
       end>
-    Left = 933
-    Top = 145
+    Left = 968
+    Top = 320
   end
 end

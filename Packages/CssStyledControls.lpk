@@ -117,6 +117,10 @@
         <Filename Value="..\Source\CssMessageDialogs.pas"/>
         <UnitName Value="CssMessageDialogs"/>
       </Item>
+      <Item>
+        <Filename Value="..\Source\CssProgressBarControl.pas"/>
+        <UnitName Value="CssProgressBarControl"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

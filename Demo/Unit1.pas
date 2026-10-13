@@ -10,7 +10,7 @@ uses
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
   CssMenuControl, CssBitBtnControl, CssSvgImgList, CssSplitterControl,
   CssEditControl, CssComboControl, CssListboxControl, CssMemoControl,
-  CssVirtualTreeControl, CssMessageDialogs;
+  CssVirtualTreeControl, CssMessageDialogs, CssProgressBarControl;
 
 type
   PNodeData = ^TNodeData;
@@ -31,6 +31,8 @@ type
     CssButton3 : TCssButton;
     CssButton4 : TCssButton;
     CssButton5 : TCssButton;
+    CssButton6 : TCssButton;
+    CssButton7 : TCssButton;
     CssCheckBox1 : TCssCheckBox;
     CssCheckBox2 : TCssCheckBox;
     CssCheckBox3 : TCssCheckBox;
@@ -67,7 +69,13 @@ type
     CssPanel12 : TCssPanel;
     CssPanel13 : TCssPanel;
     CssPanel14 : TCssPanel;
+    CssPanel15 : TCssPanel;
+    CssPanel16 : TCssPanel;
+    CssPanel17 : TCssPanel;
+    CssPanel18 : TCssPanel;
+    CssPanel19 : TCssPanel;
     CssPanel2 : TCssPanel;
+    CssPanel20 : TCssPanel;
     CssPanel3 : TCssPanel;
     CssPanel4 : TCssPanel;
     CssPanel5 : TCssPanel;
@@ -76,6 +84,33 @@ type
     CssPanel8 : TCssPanel;
     CssPanel9 : TCssPanel;
     CssPopupMenu1 : TCssPopupMenu;
+    CssProgressBar1 : TCssProgressBar;
+    CssProgressBar10 : TCssProgressBar;
+    CssProgressBar11 : TCssProgressBar;
+    CssProgressBar12 : TCssProgressBar;
+    CssProgressBar13 : TCssProgressBar;
+    CssProgressBar14 : TCssProgressBar;
+    CssProgressBar15 : TCssProgressBar;
+    CssProgressBar16 : TCssProgressBar;
+    CssProgressBar17 : TCssProgressBar;
+    CssProgressBar18 : TCssProgressBar;
+    CssProgressBar19 : TCssProgressBar;
+    CssProgressBar2 : TCssProgressBar;
+    CssProgressBar20 : TCssProgressBar;
+    CssProgressBar21 : TCssProgressBar;
+    CssProgressBar22 : TCssProgressBar;
+    CssProgressBar23 : TCssProgressBar;
+    CssProgressBar24 : TCssProgressBar;
+    CssProgressBar25 : TCssProgressBar;
+    CssProgressBar26 : TCssProgressBar;
+    CssProgressBar27 : TCssProgressBar;
+    CssProgressBar3 : TCssProgressBar;
+    CssProgressBar4 : TCssProgressBar;
+    CssProgressBar5 : TCssProgressBar;
+    CssProgressBar6 : TCssProgressBar;
+    CssProgressBar7 : TCssProgressBar;
+    CssProgressBar8 : TCssProgressBar;
+    CssProgressBar9 : TCssProgressBar;
     CssProxy1 : TCssProxy;
     CssRadioButton1 : TCssRadioButton;
     CssRadioButton2 : TCssRadioButton;
@@ -97,6 +132,7 @@ type
     CssTabSheet2 : TCssTabSheet;
     CssTabSheet3 : TCssTabSheet;
     CssTabSheet4 : TCssTabSheet;
+    CssTabSheet5 : TCssTabSheet;
     LeftTree : TCssVirtualStringTree;
     MenuItem10 : TCssMenuItem;
     MenuItem11 : TCssMenuItem;
@@ -111,6 +147,8 @@ type
     MenuItem7 : TCssMenuItem;
     MenuItem8 : TCssMenuItem;
     procedure CssButton1Click(Sender : TObject);
+    procedure CssButton6Click(Sender : TObject);
+    procedure CssButton7Click(Sender : TObject);
     procedure CssCheckBox1Click(Sender : TObject);
     procedure CssLabel2LinkClick(Sender : TObject; const AHref, AText: String);
     procedure FormCreate(Sender : TObject);
@@ -374,6 +412,30 @@ begin
     // ------------------------------------------------------------------
     CssMessageDlgSetHtmlMode(False);
   end;
+end;
+
+procedure TForm1.CssButton6Click(Sender : TObject);
+var
+  Curr: Integer;
+begin
+  Curr := CssProgressBar19.Position;
+  if Curr < 100 then
+    inc(Curr, 10);
+  CssProgressBar19.Position := Curr;
+  CssProgressBar20.Position := Curr;
+  CssProgressBar21.Position := Curr;
+end;
+
+procedure TForm1.CssButton7Click(Sender : TObject);
+var
+  Curr: Integer;
+begin
+  Curr := CssProgressBar19.Position;
+  if Curr > 0 then
+    dec(Curr, 10);
+  CssProgressBar19.Position := Curr;
+  CssProgressBar20.Position := Curr;
+  CssProgressBar21.Position := Curr;
 end;
 
 procedure TForm1.CssLabel2LinkClick(Sender : TObject; const AHref,

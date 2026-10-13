@@ -64,10 +64,12 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - **Windows 11-style switches** — set `checkbox-style: toggle` / `radio-style: toggle` on a checkbox / radio button (or on a `toggle` class) to render them as pill switches with an animated thumb. A third synonym, `custom`, reuses the same toggle renderer but tunes the thumb inset independently through `toggle-thumb-inset`.
 - **SVG check / radio icons** — `TCssCheckBox`, `TCssRadioButton`, `TCssCheckGroup`, and `TCssRadioGroup` accept a `TCssSvgImgList` and draw per-state icons for every combination of checked / hovered / focused / disabled. When a dedicated disabled icon is not provided, the enabled artwork is desaturated and re-tinted to match the CSS `:disabled` text colour, exactly like `TCssBitBtn`.
 - **Tree icons from SVG** — `TCssVirtualStringTree` accepts a `TCssSvgImgList` and requests a per-cell icon through `OnGetImageIndex`, with DPI-aware sizing, per-theme variants, and automatic `currentColor` tinting.
+- [Progress Bars (TCssProgressBar)](#progress-bars-tcssprogressbar)
 - **Nested child styling** — composite controls (`TCssComboBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssListBox`, `TCssVirtualStringTree`, tabs) expose `*CssClass` / `*CssStyle` properties so you can style their internal children too.
 - **Focus-within** — a parent (`TCssPanel`, `TCssGroupBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssComboBox`, `TCssTabControl`, `TCssPageControl`) can highlight its border while a child has focus (`focus-within: true`).
 - **Standard LCL styling** — `TCssProxy` reads the active CSS variant and applies `background`, `color`, `font-*`, and `text-align` to plain LCL `TButton`, `TEdit`, `TLabel`, `TPanel`, and forms.
 - **Anti-aliased rendering** — rounded boxes, circles, triangles, check marks, and focus rings are drawn with sub-pixel coverage and cached bitmaps. SVG icons from `TCssSvgImgList` are rendered at up to 4× the requested size and box-filtered down with premultiplied alpha, so small icons keep clean diagonal edges.
+- **Animated progress bars** — `TCssProgressBar` supports horizontal and vertical orientation, a determinate mode with smooth (eased) transitions when `Position` changes, an indeterminate *pulse* mode (`pbMarquee`) whose amplitude tracks the current `Position`, three semantic states (normal / error / paused) selectable through CSS colors, and an optional percentage text that automatically switches its color depending on whether it currently sits over the fill or over the track.
 - **CSS-styled message dialogs** — the `CssMessageDialogs` unit replaces `ShowMessage`, `MessageDlg`, `MessageBox`, `InputBox`, `InputQuery`, and `PasswordBox` with dialogs built entirely from `TCssStyledControl` descendants, skinned by the same theme and honouring HTML text. Dialog messages may carry clickable `<a href="…">` links, handled through a global or per-dialog callback, and the icon shown next to the message can be taken from a shared `TCssSvgImgList` instead of the built-in shapes.
 - **No external dependencies** — pure LCL, works on Windows, Linux, and macOS.
 
@@ -152,7 +154,7 @@ Dialogs built by `TCssMessageDialogs` inherit the same `TCssStyleProvider` as th
 
 5. The component palette gets a new tab `CSSStyledControls`:
 
-   `TCssStyleProvider`, `TCssProxy`, `TCssButton`, `TCssBitBtn`, `TCssCheckBox`, `TCssCheckGroup`, `TCssComboBox`, `TCssEdit`, `TCssGroupBox`, `TCssLabel`, `TCssListBox`, `TCssMemo`, `TCssMainMenu`, `TCssPopupMenu`, `TCssPanel`, `TCssRadioButton`, `TCssRadioGroup`, `TCssScrollBar`, `TCssSplitter`, `TCssVirtualStringTree`, `TCssPageControl`, `TCssTabControl`, `TCssTabSheet`.
+   `TCssStyleProvider`, `TCssProxy`, `TCssButton`, `TCssBitBtn`, `TCssCheckBox`, `TCssCheckGroup`, `TCssComboBox`, `TCssEdit`, `TCssGroupBox`, `TCssLabel`, `TCssListBox`, `TCssMemo`, `TCssMainMenu`, `TCssPopupMenu`, `TCssPanel`, `TCssProgressBar`, `TCssRadioButton`, `TCssRadioGroup`, `TCssScrollBar`, `TCssSplitter`, `TCssVirtualStringTree`, `TCssPageControl`, `TCssTabControl`, `TCssTabSheet`.
 
    `TCssMenuItem` is not shown on the palette: it is created and edited only through the visual menu designer.
 
@@ -656,6 +658,7 @@ variants in one step, without a single line of code in the form.
 | `TCssLabel`               | Label with `FocusControl`, `ShowAccelChar`, `Transparent`.                   |
 | `TCssListBox`             | List box with multi-select, hover, per-item colors, custom scrollbar.        |
 | `TCssPanel`               | Container panel with `focus-within` support.                                 |
+| `TCssProgressBar`         | Progress bar with horizontal / vertical orientation, a determinate mode with eased position transitions, an indeterminate *pulse* mode, and three semantic states (normal / error / paused). |
 | `TCssGroupBox`            | Group box with caption on the border and `focus-within` support.             |
 | `TCssScrollBar`           | Custom scrollbar (can be drawn standalone or inside another control).        |
 | `TCssSplitter`            | Splitter with grip, live/ghost preview, and adjacent-control highlighting.   |
@@ -1367,6 +1370,117 @@ CssComboBox1.ScrollBarCssClass := 'combobox-scrollbar';
 | `item-height`               | Row height.                                        |
 
 Plus `ScrollBarCssClass` / `ScrollBarCssStyle` for the embedded scrollbar, and the Pascal properties `ScrollBarWidth`, `MouseWheelLines`, `AlwaysReserveScrollBar`.
+
+### TCssProgressBar
+
+`TCssProgressBar` is a CSS-styled replacement for `TProgressBar`. It supports
+both orientations, determinate and indeterminate modes, semantic states, and
+an optional percentage text — all skinned by the same theme as the rest of
+the library.
+
+#### CSS Properties
+
+| Property                 | Notes                                                                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `progress-color`         | Fill color of the bar in the normal state.                                                                                       |
+| `progress-error-color`   | Fill color when `State = pbsError`.                                                                                              |
+| `progress-paused-color`  | Fill color when `State = pbsPaused`.                                                                                             |
+| `progress-text-color`    | Color of the percentage text drawn over the fill. When omitted, the control auto-picks black or white based on the luminance of the fill, so the digits stay readable on both light and dark fills. |
+| `progress-radius`        | Corner radius of the fill. When omitted, the fill inherits the control's `border-radius` minus `border-width` minus `padding`, so it always tucks neatly inside the track. |
+
+Everything else — the track itself — is styled by the ordinary general
+properties (`background-color`, `border`, `border-radius`, `padding`,
+`font-*`, `color`).
+
+#### Pascal Properties
+
+| Property           | Type                        | Default        | Notes                                                                                                                            |
+| ------------------ | --------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `Min`              | `Integer`                   | `0`            | Lower bound of the range.                                                                                                        |
+| `Max`              | `Integer`                   | `100`          | Upper bound.                                                                                                                     |
+| `Position`         | `Integer`                   | `0`            | Current value, clamped to `[Min..Max]`. In `pbMarquee` mode this value is still the *target amplitude* of the pulse.             |
+| `Step`             | `Integer`                   | `10`           | Increment used by `StepIt`.                                                                                                      |
+| `Orientation`      | `TCssProgressBarOrientation`| `pbHorizontal` | `pbHorizontal` or `pbVertical`. In vertical mode the bar fills from the bottom up, and `ShowText` renders the percentage rotated 90° CCW. |
+| `State`            | `TCssProgressBarState`      | `pbsNormal`    | `pbsNormal`, `pbsError`, `pbsPaused`. Switches the fill color between the corresponding CSS properties.                          |
+| `Style`            | `TCssProgressBarStyle`      | `pbContinuous` | `pbContinuous` (determinate) or `pbMarquee` (indeterminate).                                                                     |
+| `ShowText`         | `Boolean`                   | `False`        | Draws the current percentage as text on top of the bar. The text is shown in **both** modes; in `pbMarquee` it displays the *target* `Position`, not the moving pulse. |
+| `Smooth`           | `Boolean`                   | `True`         | Animates `Position` changes over ~250 ms with an ease-out curve instead of jumping. Disable for instant updates.                 |
+| `MarqueeInterval`  | `Integer`                   | `30`           | Half-period of the pulse in milliseconds (min. `5`).                                                                             |
+| `DisplayFraction`  | `Double`                    | —              | Read-only. The fraction (0..1) that is currently drawn, including any in-flight animation.                                       |
+
+#### Methods
+
+| Method                     | Notes                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `StepIt`                   | Advances `Position` by `Step`.                                                                |
+| `StepBy(ADelta)`           | Advances `Position` by an arbitrary value.                                                    |
+
+#### Behavior
+
+- **Determinate mode (`pbContinuous`).** Assigning `Position` triggers a
+  smooth transition from the previous displayed value to the new one
+  (unless `Smooth = False`), so a `StepIt` loop reads as a continuously
+  moving bar rather than a series of jumps.
+- **Indeterminate mode (`pbMarquee`).** The fill is animated as a pulse:
+  it grows from zero up to the fraction given by `Position` and back.
+  This makes the bar a useful indicator for long-running operations where
+  the total is unknown but the current stage is meaningful — the amplitude
+  always reflects the caller's latest `Position`, while the motion itself
+  signals that the process is alive. Changing `Position` in this mode
+  smoothly retargets the amplitude rather than restarting the pulse.
+- **Text color.** When `ShowText` is enabled, the digits are drawn twice,
+  once in `color` clipped to the track region and once in
+  `progress-text-color` clipped to the fill region. That is why the same
+  text remains readable whether it sits over the pale track, over the
+  colored fill, or straddles the boundary. If `progress-text-color` is
+  not set, the control derives it from the fill luminance (black on light
+  fills, white on dark ones).
+- **Vertical orientation.** `pbVertical` fills from the bottom up. The
+  percentage text is rendered as a small rotated bitmap, so it works
+  identically on every widgetset — including GTK2, where `Font.Orientation`
+  is a no-op.
+- **Design-time.** Animations are intentionally disabled while
+  `csDesigning` is set, so dropping a `TCssProgressBar` on a form does not
+  cause a timer to fire inside the IDE.
+
+#### Example
+
+```css
+TCssProgressBar {
+  background-color: #F1F5F9;
+  color:            #1E293B;
+  border:           1px solid #E2E8F0;
+  border-radius:    8px;
+  padding:          2px;
+
+  progress-color:        #2563EB;
+  progress-text-color:   #FFFFFF;
+  progress-error-color:  #DC2626;
+  progress-paused-color: #F59E0B;
+}
+```
+
+```pascal
+// Determinate progress with smooth animation.
+CssProgressBar1.Min      := 0;
+CssProgressBar1.Max      := 200;
+CssProgressBar1.Position := 37;
+CssProgressBar1.ShowText := True;
+
+// Vertical, with the percentage rotated 90° CCW.
+CssProgressBar2.Orientation := pbVertical;
+CssProgressBar2.Position    := 60;
+CssProgressBar2.ShowText    := True;
+
+// Indeterminate: pulses from zero up to the current Position and back.
+CssProgressBar3.Style       := pbMarquee;
+CssProgressBar3.Position    := 75;
+CssProgressBar3.ShowText    := True;
+
+// Semantic states override the fill color.
+CssProgressBar4.State := pbsError;
+CssProgressBar4.State := pbsPaused;
+```
 
 ### TCssScrollBar
 
@@ -3038,6 +3152,15 @@ The `Columns` collection is edited through a dedicated **Columns Editor** dialog
 - Fields: `Text`, `Width`, `Header HAlign`, `Header VAlign`, `Cell HAlign`, `Cell VAlign`. Alignment fields include an `Inherit` option.
 - Every edit is applied live to the collection, so the tree updates immediately.
 - In the Object Inspector, the property shows as `(N columns)`.
+
+### On `TCssProgressBar`
+
+No dedicated property editor is required. The `Min`, `Max`, `Position`,
+`Orientation`, `State`, and `Style` properties are all editable in the
+Object Inspector, and the control repaints itself as they change. To
+preview the indeterminate *pulse* animation in the IDE, temporarily set
+`Smooth := True` and call `StepIt` from the form's `OnCreate` — the
+animation is intentionally suppressed in pure design mode.
 
 ---
 
