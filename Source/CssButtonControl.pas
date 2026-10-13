@@ -113,6 +113,8 @@ constructor TCssButton.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
+  ControlStyle := ControlStyle - [csClickEvents];
+
   Width := 75;
   Height := 25;
 
