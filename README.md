@@ -33,6 +33,7 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - [Menus (TCssMainMenu, TCssPopupMenu)](#menus-tcssmainmenu-tcsspopupmenu)
 - [Tabs (TCssTabControl, TCssPageControl)](#tabs-tcstabcontrol-tcspagecontrol)
 - [Tree Icons (TCssVirtualStringTree)](#tree-icons-tcssvirtualstringtree)
+- [Progress Bars (TCssProgressBar)](#progress-bars-tcssprogressbar)
 - [Themes (Light and Dark)](#themes-light-and-dark)
 - [HTML Formatting](#html-formatting)
 - [Link Handling](#link-handling)
@@ -64,7 +65,6 @@ The library brings a modern, web-like approach to desktop GUI development: inste
 - **Windows 11-style switches** — set `checkbox-style: toggle` / `radio-style: toggle` on a checkbox / radio button (or on a `toggle` class) to render them as pill switches with an animated thumb. A third synonym, `custom`, reuses the same toggle renderer but tunes the thumb inset independently through `toggle-thumb-inset`.
 - **SVG check / radio icons** — `TCssCheckBox`, `TCssRadioButton`, `TCssCheckGroup`, and `TCssRadioGroup` accept a `TCssSvgImgList` and draw per-state icons for every combination of checked / hovered / focused / disabled. When a dedicated disabled icon is not provided, the enabled artwork is desaturated and re-tinted to match the CSS `:disabled` text colour, exactly like `TCssBitBtn`.
 - **Tree icons from SVG** — `TCssVirtualStringTree` accepts a `TCssSvgImgList` and requests a per-cell icon through `OnGetImageIndex`, with DPI-aware sizing, per-theme variants, and automatic `currentColor` tinting.
-- [Progress Bars (TCssProgressBar)](#progress-bars-tcssprogressbar)
 - **Nested child styling** — composite controls (`TCssComboBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssListBox`, `TCssVirtualStringTree`, tabs) expose `*CssClass` / `*CssStyle` properties so you can style their internal children too.
 - **Focus-within** — a parent (`TCssPanel`, `TCssGroupBox`, `TCssCheckGroup`, `TCssRadioGroup`, `TCssComboBox`, `TCssTabControl`, `TCssPageControl`) can highlight its border while a child has focus (`focus-within: true`).
 - **Standard LCL styling** — `TCssProxy` reads the active CSS variant and applies `background`, `color`, `font-*`, and `text-align` to plain LCL `TButton`, `TEdit`, `TLabel`, `TPanel`, and forms.
