@@ -151,6 +151,12 @@ procedure DrawAARoundedRectOverlay(
   const ARadii: TCssCornerRadii;
   AColor: TColor);
 
+procedure DrawAARoundedBoxOutsideMask(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  const ARadii: TCssCornerRadii;
+  ABackgroundColor: TColor);
+
 // ----- Types for vector (SVG) rasterization --------------------------------
 type
   TAAFillRule   = (aafrNonZero, aafrEvenOdd);
@@ -1922,6 +1928,68 @@ begin
     end;
 
   AABlendCoverageToCanvas(ACanvas, ARect.Left, ARect.Top, W, H, Coverage, AColor);
+end;
+
+procedure DrawAARoundedBoxOutsideMask(
+  ACanvas: TCanvas;
+  const ARect: TRect;
+  const ARadii: TCssCornerRadii;
+  ABackgroundColor: TColor);
+var
+  W, H, X, Y: Integer;
+  Coverage: array of Byte;
+  HW, HH: Double;
+  RTL, RTR, RBR, RBL: Double;
+  CX, CY, Rr, QX, QY, SDF, OutCov: Double;
+begin
+  if ACanvas = nil then Exit;
+  if ABackgroundColor = clNone then Exit;
+  if ABackgroundColor = clDefault then ABackgroundColor := clBtnFace;
+
+  W := ARect.Right - ARect.Left;
+  H := ARect.Bottom - ARect.Top;
+  if (W <= 0) or (H <= 0) then Exit;
+
+  RTL := ARadii.TL;
+  RTR := ARadii.TR;
+  RBR := ARadii.BR;
+  RBL := ARadii.BL;
+
+  if (RTL <= 0) and (RTR <= 0) and (RBR <= 0) and (RBL <= 0) then Exit;
+
+  ClampCornerRadii(RTL, RTR, RBR, RBL, W, H);
+
+  HW := W / 2.0;
+  HH := H / 2.0;
+
+  SetLength(Coverage, W * H);
+
+  for Y := 0 to H - 1 do
+    for X := 0 to W - 1 do
+    begin
+      CX := X + 0.5 - HW;
+      CY := Y + 0.5 - HH;
+
+      if (CX >= 0) and (CY < 0) then Rr := RTR
+      else if (CX < 0) and (CY < 0) then Rr := RTL
+      else if (CX < 0) and (CY >= 0) then Rr := RBL
+      else Rr := RBR;
+
+      if Rr < 0 then Rr := 0;
+
+      QX := Abs(CX) - HW + Rr;
+      QY := Abs(CY) - HH + Rr;
+
+      SDF :=
+        Min(Max(QX, QY), 0.0) +
+        Sqrt(Sqr(Max(QX, 0.0)) + Sqr(Max(QY, 0.0))) - Rr;
+
+      OutCov := ClampD(0.5 + SDF, 0, 1);
+      Coverage[Y * W + X] := Round(OutCov * 255);
+    end;
+
+  AABlendCoverageToCanvas(
+    ACanvas, ARect.Left, ARect.Top, W, H, Coverage, ABackgroundColor);
 end;
 
 procedure InvalidateAACaches;

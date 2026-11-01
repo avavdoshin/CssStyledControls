@@ -398,6 +398,7 @@ TCssComboBox:disabled {
 .combobox-scrollbar,
 .listbox-scrollbar,
 .memo-scrollbar,
+.listview-scrollbar,
 .css-tree-scrollbar {
   background-color: #F8FAFC;
   scrolltrack-background: #F8FAFC;
@@ -411,6 +412,7 @@ TCssComboBox:disabled {
 .listbox-scrollbar:hover,
 .combobox-scrollbar:hover,
 .memo-scrollbar:hover,
+.listview-scrollbar:hover,
 .css-tree-scrollbar:hover {
   thumb-background: #94A3B8;
   arrow-color: #64748B;
@@ -419,6 +421,7 @@ TCssComboBox:disabled {
 .listbox-scrollbar:disabled,
 .combobox-scrollbar:disabled,
 .memo-scrollbar:disabled,
+.listview-scrollbar:disabled,
 .css-tree-scrollbar:disabled {
   thumb-background: #E2E8F0;
   arrow-color: #CBD5E1;
@@ -729,6 +732,61 @@ TCssVirtualStringTree:focus { border-color: #2563EB; }
 TCssVirtualStringTree:hover { border-color: #94A3B8; }
 
 .css-tree-edit {
+  background-color: #FFFFFF;
+  color: #1E293B;
+  border: 1px solid #2563EB;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+TCssListView {
+  background-color: #FFFFFF;
+  color: #1E293B;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 0px;
+  header-background: #F8FAFC;
+  header-color: #475569;
+  header-hover-background: #E2E8F0;
+  header-height: 28px;
+  header-padding: 8px;
+  sort-marker-color: #64748B;
+  item-background: #FFFFFF;
+  item-color: #1E293B;
+  item-hover-background: #EFF6FF;
+  item-hover-color: #1D4ED8;
+  item-selected-background: #2563EB;
+  item-selected-color: #FFFFFF;
+  selection-background: #2563EB;
+  selection-color: #FFFFFF;
+  hover-background: #EFF6FF;
+  grid-color: #E2E8F0;
+  line-color: #E2E8F0;
+  item-height: 24px;
+  item-padding: 4px;
+  scrollbar-size: 14px;
+  check-color: #FFFFFF;
+  placeholder-color: #94A3B8;
+  disabled-background: #F8FAFC;
+  disabled-color: #94A3B8;
+}
+TCssListView:hover { border-color: #94A3B8; }
+TCssListView:focus { border-color: #2563EB; }
+TCssListView:disabled {
+  background-color: #F8FAFC;
+  item-background: #F8FAFC;
+  item-color: #94A3B8;
+  item-selected-background: #CBD5E1;
+  item-selected-color: #64748B;
+  header-background: #F8FAFC;
+  header-color: #94A3B8;
+  line-color: #E2E8F0;
+  grid-color: #E2E8F0;
+  disabled-background: #F8FAFC;
+  disabled-color: #94A3B8;
+}
+
+.listview-edit {
   background-color: #FFFFFF;
   color: #1E293B;
   border: 1px solid #2563EB;
@@ -1136,6 +1194,7 @@ TCssComboBox:disabled {
 .combobox-scrollbar,
 .listbox-scrollbar,
 .memo-scrollbar,
+.listview-scrollbar,
 .css-tree-scrollbar {
   background-color: #0F172A;
   scrolltrack-background: #0F172A;
@@ -1149,6 +1208,7 @@ TCssComboBox:disabled {
 .listbox-scrollbar:hover,
 .combobox-scrollbar:hover,
 .memo-scrollbar:hover,
+.listview-scrollbar:hover,
 .css-tree-scrollbar:hover {
   thumb-background: #64748B;
   arrow-color: #94A3B8;
@@ -1157,6 +1217,7 @@ TCssComboBox:disabled {
 .listbox-scrollbar:disabled,
 .combobox-scrollbar:disabled,
 .memo-scrollbar:disabled,
+.listview-scrollbar:disabled,
 .css-tree-scrollbar:disabled {
   thumb-background: #334155;
   arrow-color: #475569;
@@ -1466,6 +1527,61 @@ TCssVirtualStringTree:focus { border-color: #60A5FA; }
 TCssVirtualStringTree:hover { border-color: #94A3B8; }
 
 .css-tree-edit {
+  background-color: #0F172A;
+  color: #E2E8F0;
+  border: 1px solid #60A5FA;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+TCssListView {
+  background-color: #1E293B;
+  color: #E2E8F0;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0px;
+  header-background: #0F172A;
+  header-color: #94A3B8;
+  header-hover-background: #334155;
+  header-height: 28px;
+  header-padding: 8px;
+  sort-marker-color: #CBD5E1;
+  item-background: #1E293B;
+  item-color: #E2E8F0;
+  item-hover-background: #334155;
+  item-hover-color: #93C5FD;
+  item-selected-background: #3B82F6;
+  item-selected-color: #FFFFFF;
+  selection-background: #3B82F6;
+  selection-color: #FFFFFF;
+  hover-background: #334155;
+  grid-color: #334155;
+  line-color: #334155;
+  item-height: 24px;
+  item-padding: 4px;
+  scrollbar-size: 14px;
+  check-color: #FFFFFF;
+  placeholder-color: #94A3B8;
+  disabled-background: #0F172A;
+  disabled-color: #64748B;
+}
+TCssListView:hover { border-color: #94A3B8; }
+TCssListView:focus { border-color: #60A5FA; }
+TCssListView:disabled {
+  background-color: #0F172A;
+  item-background: #0F172A;
+  item-color: #64748B;
+  item-selected-background: #334155;
+  item-selected-color: #94A3B8;
+  header-background: #0F172A;
+  header-color: #64748B;
+  line-color: #334155;
+  grid-color: #334155;
+  disabled-background: #0F172A;
+  disabled-color: #64748B;
+}
+
+.listview-edit {
   background-color: #0F172A;
   color: #E2E8F0;
   border: 1px solid #60A5FA;

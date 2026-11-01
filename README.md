@@ -278,7 +278,7 @@ populating the tree, `CssCheckBox1Click` for the theme toggle,
 `CssLabel2LinkClick` and `OnLinkClick` for the link demo, and the
 tree's own editing and drag-and-drop events.
 
-The form is organised as a `TCssPageControl` with four tabs, plus a
+The form is organised as a `TCssPageControl` with six tabs, plus a
 bottom status panel and a top menu bar. All dialogs shown during the
 demo are produced by the `TCssMessageDialogs` unit, so they are styled
 by the same `TCssStyleProvider` that skins the main form — there is no
@@ -531,6 +531,76 @@ the switch.
   notes, icon indexes, and sizes. One node (*Pears*) is disabled to
   demonstrate the muted palette for `:disabled` rows.
 
+### Page 5 — Bars
+
+- **Horizontal determinate** panel — six `TCssProgressBar`s at
+  10%…60%, covering the three semantic states (`pbsNormal`, `pbsPaused`,
+  `pbsError`) in both their enabled and disabled palettes. Their `Hint`
+  names the state, so hovering is enough to identify each bar.
+
+- **Horizontal marquee** panel — the same six state/disabled
+  combinations with `Style = pbMarquee`, showing the animated
+  indeterminate pulse whose amplitude follows `Position`.
+
+- **Vertical marquee** panel — six vertical bars
+  (`Orientation = pbVertical`) with the same state coverage.
+
+- **Interactive** panel — a smooth determinate bar, a marquee bar and
+  a bar with smooth transitions turned off, driven by the *Increase* /
+  *Decrease* buttons (`CssButton6` / `CssButton7`). The buttons clamp
+  the position between 0 and 100 and update all three bars at once, so
+  the difference between eased and immediate updates is visible.
+
+- **Vertical determinate** panel — vertical bars at 10%, 50% and 100%,
+  plus a 100% marquee bar and the paused/error variants at full
+  position.
+
+### Page 6 — ListView
+
+- `CssListView1` demonstrates the **report view**
+  (`ViewStyle = lvsReport`) with fourteen items and five columns:
+  *Name* (300 px), *Kind* (110 px, centred), *Note* (360 px),
+  *Size* (90 px, right-aligned) and *Modified* (220 px). It enables
+  `Checkboxes`, `GridLines`, `HotTrack`, `RowSelect`, `MultiSelect`,
+  `HideSelection = False` and `AutoSort = True`. Every row carries an
+  SVG icon from `CssSvgImgList1` through `Item.ImageIndex`; the icons
+  are rasterised at 16×16 (`SmallImages`, `SmallImageWidth/Height`).
+
+- **Sorting** — clicking the *Kind* header toggles ascending /
+  descending order and paints the `sort-marker-color` arrow in the
+  header. No Pascal sorting code is involved; `AutoSort` uses the
+  control's built-in comparison.
+
+- **Inline editing** — double-clicking a row starts the editor on
+  column 0 (*Name*). The editor is styled by `.listview-edit`; pressing
+  Enter commits the text and `OnEdited` (`CssListView1Edited`) copies
+  the new caption to the matching item in the other three views, which
+  hold independent item objects.
+
+- **Keyboard navigation** — Up/Down move the selection between rows,
+  while Left/Right move the focused cell between columns without
+  changing the selected row. `ShowItemFocusRect = True` draws the dotted
+  focus rectangle around the current cell, and clicking a cell also
+  updates the focused column.
+
+- **Other view styles** — three read-only `TCssListView`s on the lower
+  half of the page use the same data:
+  - `CssListView2` — `lvsList` with a single 160 px column;
+  - `CssListView3` — `lvsSmallIcon` with 16×16 artwork;
+  - `CssListView4` — `lvsIcon` with 40×40 artwork
+    (`LargeImages`, `LargeImageWidth/Height`).
+
+  Keyboard navigation in these views follows the visible layout: Up/Down
+  move inside the current visual column and Left/Right move to the same
+  row of the adjacent column, falling back to that column's last item
+  when the row does not exist.
+
+- The embedded scrollbars use `.listview-scrollbar`, and the inline
+  editor uses `.listview-edit`. Both the embedded demo stylesheet and
+  `Themes/ModernTheme.css` define the light and dark variants of
+  `TCssListView`, so switching the theme restyles the header, rows,
+  selection, grid lines, check marks and scrollbars without any code.
+
 ### Status bar and menu
 
 - A `TCssCheckBox` styled as a Windows 11 switch (`.toggle` class) that
@@ -668,6 +738,7 @@ variants in one step, without a single line of code in the form.
 | `TCssMemo`                | Multi-line editor with word-wrap, scrollbars, selection, clipboard, colored caret and placeholder. |
 | `TCssLabel`               | Label with `FocusControl`, `ShowAccelChar`, `Transparent`.                   |
 | `TCssListBox`             | List box with multi-select, hover, per-item colors, custom scrollbar.        |
+| `TCssListView`            | List view with report / list / small icon / icon styles, columns, sub-items, checkboxes, SVG images, sorting, inline editing, multi-select, and custom scrollbars. |
 | `TCssPanel`               | Container panel with `focus-within` support.                                 |
 | `TCssProgressBar`         | Progress bar with horizontal / vertical orientation, a determinate mode with eased position transitions, an indeterminate *pulse* mode, and three semantic states (normal / error / paused). |
 | `TCssGroupBox`            | Group box with caption on the border and `focus-within` support.             |
@@ -1381,6 +1452,91 @@ CssComboBox1.ScrollBarCssClass := 'combobox-scrollbar';
 | `item-height`               | Row height.                                        |
 
 Plus `ScrollBarCssClass` / `ScrollBarCssStyle` for the embedded scrollbar, and the Pascal properties `ScrollBarWidth`, `MouseWheelLines`, `AlwaysReserveScrollBar`.
+
+### TCssListView
+
+`TCssListView` is a CSS-styled replacement for `TListView`. It supports the
+same four view styles and the usual item / column model.
+
+```pascal
+var
+  Item: TCssListItem;
+begin
+  CssListView1.ViewStyle := lvsReport;
+  CssListView1.Columns.AddItem('Name', 200);
+  CssListView1.Columns.AddItem('Size', 90).Alignment := taRightJustify;
+  CssListView1.Columns.AddItem('Modified', 140);
+
+  CssListView1.Items.BeginUpdate;
+  try
+    Item := CssListView1.Items.AddItem('Report.pdf');
+    Item.SubItems.Add('1.2 MB');
+    Item.SubItems.Add('2026-10-29');
+    Item.ImageIndex := 0;
+    Item.Checked := True;
+  finally
+    CssListView1.Items.EndUpdate;
+  end;
+end;
+```
+
+Key properties:
+
+| Property | Notes |
+| -------- | ----- |
+| `ViewStyle` | `lvsReport` (default), `lvsList`, `lvsSmallIcon`, `lvsIcon`. |
+| `Columns` | Collection of `TCssListColumn` (`Caption`, `Width`, `MinWidth`, `Alignment`, `Visible`, `AutoSize`, `ImageIndex`). Column 0 shows `Item.Caption`, column *n* shows `Item.SubItems[n - 1]`. |
+| `Items` | Collection of `TCssListItem` (`Caption`, `SubItems`, `ImageIndex`, `StateIndex`, `OverlayIndex`, `Checked`, `Indent`, `Data`, `Selected`). |
+| `MultiSelect`, `RowSelect` | Selection behaviour. Ctrl and Shift are honoured, `SelectAll` / `ClearSelection` are available in code. |
+| `Checkboxes` | Draws a checkbox in column 0 (or before the icon in icon views). |
+| `ShowColumnHeaders`, `GridLines`, `HotTrack`, `HideSelection` | Report / interaction options. |
+| `ReadOnly` | When `False`, `F2` or a double click opens the inline editor. Set `ReadOnly := True` to disable editing. |
+| `SmallImages`, `LargeImages`, `StateImages` | `TCssSvgImgList` instances. Small images are used in report / list / small-icon modes, large images in icon mode. |
+| `SortType`, `SortColumn`, `SortDirection`, `AutoSort` | Built-in sorting. `AutoSort` sorts when a column header is clicked. `AlphaSort` and `CustomSort` are also available. |
+| `ItemIndex`, `FocusedColumn`, `SelCount`, `Selected`, `TopItem`, `VisibleRowCount` | Runtime selection and scrolling information. In report mode `FocusedColumn` is the cell that receives the keyboard focus. |
+
+Keyboard navigation is spatial and matches the visible item layout:
+
+- **Up/Down** move within the current visual column of items.
+- **Left/Right** move to the same row in the adjacent visual column. If that
+  row does not exist there, the last item of the target column is selected.
+- In `lvsReport`, **Left/Right** move the focused header column instead;
+  set `ShowItemFocusRect := True` to draw the focus rectangle around the
+  current cell.
+
+Events: `OnSelectItem`, `OnItemChecked`, `OnItemActivate`, `OnColumnClick`,
+`OnCompare`, `OnInsert`, `OnDeletion`, `OnEditing`, `OnEdited`, `OnDrawItem`,
+and `OnChange`.
+
+#### CSS Properties
+
+| Property | Notes |
+| -------- | ----- |
+| `header-background` | Column header background. |
+| `header-color` | Column header text color. |
+| `header-hover-background` | Header background under the mouse when `HotTrack` is enabled. |
+| `header-height` | Header height in pixels. |
+| `header-padding` | Horizontal header text padding. |
+| `sort-marker-color` | Color of the sort arrow. |
+| `item-background` | Default row / item background. |
+| `item-color` | Default item text color. |
+| `item-hover-background`, `item-hover-color` | Hover colors. |
+| `item-selected-background`, `item-selected-color` | Selected item colors. |
+| `selection-background`, `selection-color` | Fallback selection colors when the item-specific values are not set. |
+| `hover-background` | Fallback hover background. |
+| `grid-color`, `line-color` | Grid and separator colors. |
+| `item-height`, `row-height` | Row height. |
+| `item-padding`, `column-padding` | Horizontal padding inside cells. |
+| `scrollbar-size` | Thickness of the embedded scrollbars. |
+| `check-color` | Check mark color. |
+| `placeholder`, `placeholder-color` | Text shown when the list is empty. |
+| `disabled-background`, `disabled-color` | Colors used when `Enabled = False`. |
+
+The embedded scrollbars use `ScrollBarCssClass` (default
+`listview-scrollbar`), the inline editor uses `EditCssClass` (default
+`listview-edit`), and the checkboxes use `CheckBoxCssClass` (default
+`listview-checkbox checkbox`). `ScrollBarCssStyle`, `CheckBoxCssStyle`, and
+`CheckBoxInlineCss` can be used for per-instance overrides.
 
 ### TCssProgressBar
 

@@ -106,6 +106,19 @@
         <PackageName Value="LCL"/>
       </Item>
     </RequiredPackages>
+    <Units>
+      <Unit>
+        <Filename Value="CssStyledControlsDemo.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="Unit1.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit>
+    </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>

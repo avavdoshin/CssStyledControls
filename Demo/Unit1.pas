@@ -9,8 +9,9 @@ uses
   CssPanelControl, CssCheckboxControl, CssRadioControl, CssProxyControl,
   CssLabelControl, CssTabbedControl, CssButtonControl, CssGroupControl,
   CssMenuControl, CssBitBtnControl, CssSvgImgList, CssSplitterControl,
-  CssEditControl, CssComboControl, CssListboxControl, CssMemoControl,
-  CssVirtualTreeControl, CssMessageDialogs, CssProgressBarControl;
+  CssEditControl, CssComboControl, CssListboxControl, CssListViewControl,
+  CssMemoControl, CssVirtualTreeControl, CssMessageDialogs,
+  CssProgressBarControl;
 
 type
   PNodeData = ^TNodeData;
@@ -60,6 +61,10 @@ type
     CssListBox1 : TCssListBox;
     CssListBox2 : TCssListBox;
     CssListBox3 : TCssListBox;
+    CssListView1 : TCssListView;
+    CssListView2 : TCssListView;
+    CssListView3 : TCssListView;
+    CssListView4 : TCssListView;
     CssMainMenu1 : TCssMainMenu;
     CssMemo1 : TCssMemo;
     CssPageControl1 : TCssPageControl;
@@ -76,6 +81,11 @@ type
     CssPanel19 : TCssPanel;
     CssPanel2 : TCssPanel;
     CssPanel20 : TCssPanel;
+    CssPanel21 : TCssPanel;
+    CssPanel22 : TCssPanel;
+    CssPanel23 : TCssPanel;
+    CssPanel24 : TCssPanel;
+    CssPanel25 : TCssPanel;
     CssPanel3 : TCssPanel;
     CssPanel4 : TCssPanel;
     CssPanel5 : TCssPanel;
@@ -133,6 +143,7 @@ type
     CssTabSheet3 : TCssTabSheet;
     CssTabSheet4 : TCssTabSheet;
     CssTabSheet5 : TCssTabSheet;
+    CssTabSheet6 : TCssTabSheet;
     LeftTree : TCssVirtualStringTree;
     MenuItem10 : TCssMenuItem;
     MenuItem11 : TCssMenuItem;
@@ -150,6 +161,8 @@ type
     procedure CssButton6Click(Sender : TObject);
     procedure CssButton7Click(Sender : TObject);
     procedure CssCheckBox1Click(Sender : TObject);
+    procedure CssListView1Edited(Sender : TObject; Item : TCssListItem;
+      const NewText : string);
     procedure CssLabel2LinkClick(Sender : TObject; const AHref, AText: String);
     procedure FormCreate(Sender : TObject);
     procedure FormKeyDown(Sender : TObject; var Key : Word; Shift : TShiftState
@@ -187,6 +200,7 @@ type
       SrcNode: TCssVirtualNode;
       TargetTree: TCssVirtualStringTree;
       TargetParent: TCssVirtualNode): TCssVirtualNode;
+    procedure PopulateListViewDemo;
   public
     procedure OnLinkClick(Sender : TObject; const AHref, AText: String);
   end;
@@ -475,6 +489,145 @@ begin
   AddTextNode(LeftTree, Root, 'Currants',    'black', SVG_NEWS, 6);
 
   LeftTree.FullExpand;
+
+  PopulateListViewDemo;
+end;
+
+procedure TForm1.PopulateListViewDemo;
+const
+  SVG_OK      = 0;  // icons8-ok
+  SVG_NEWS    = 1;  // icons8-news
+  SVG_EDIT    = 2;  // icons8-edit
+  SVG_DONE    = 3;  // icons8-done
+  SVG_REFRESH = 4;  // icons8-refresh
+  SVG_SHARE   = 5;  // icons8-share
+
+var
+  Col: TCssListColumn;
+
+  procedure AddReportItem(const AName, AKind, ANote, ASize,
+    AModified: string; AImage: Integer; AChecked: Boolean);
+  var
+    It: TCssListItem;
+  begin
+    It := CssListView1.Items.AddItem(AName);
+    It.SubItems.Add(AKind);
+    It.SubItems.Add(ANote);
+    It.SubItems.Add(ASize);
+    It.SubItems.Add(AModified);
+    It.ImageIndex := AImage;
+    It.Checked := AChecked;
+  end;
+
+  procedure CopyNames(ATarget: TCssListView);
+  var
+    J: Integer;
+    Src, Dst: TCssListItem;
+  begin
+    ATarget.BeginUpdate;
+    try
+      for J := 0 to CssListView1.ItemCount - 1 do
+      begin
+        Src := CssListView1.Items[J];
+        Dst := ATarget.Items.AddItem(Src.Caption);
+        Dst.ImageIndex := Src.ImageIndex;
+      end;
+    finally
+      ATarget.EndUpdate;
+    end;
+  end;
+
+begin
+  // ------------------------------------------------------------------
+  // Report view: columns, SVG cell icons, checkboxes, grid lines,
+  // hot tracking, multi-selection, sorting and inline editing.
+  // ------------------------------------------------------------------
+  CssListView1.Columns.Clear;
+  CssListView1.Columns.AddItem('Name', 300);
+  Col := CssListView1.Columns.AddItem('Kind', 110);
+  Col.Alignment := taCenter;
+  CssListView1.Columns.AddItem('Note', 360);
+  Col := CssListView1.Columns.AddItem('Size', 90);
+  Col.Alignment := taRightJustify;
+  CssListView1.Columns.AddItem('Modified', 220);
+
+  CssListView1.BeginUpdate;
+  try
+    AddReportItem('Projects', 'Folder', 'Contains 12 items', '',
+      '2026-10-31 09:12', SVG_NEWS, False);
+    AddReportItem('Report.pdf', 'Document', 'Quarterly report', '1.2 MB',
+      '2026-10-30 18:45', SVG_OK, True);
+    AddReportItem('Presentation.pptx', 'Presentation', 'Product overview',
+      '4.8 MB', '2026-10-29 14:20', SVG_SHARE, False);
+    AddReportItem('Budget.xlsx', 'Spreadsheet', '2027 planning', '860 KB',
+      '2026-10-28 11:05', SVG_DONE, True);
+    AddReportItem('Notes.txt', 'Text', 'Meeting notes', '12 KB',
+      '2026-10-27 09:30', SVG_EDIT, False);
+    AddReportItem('Photo.png', 'Image', 'Screenshot', '2.4 MB',
+      '2026-10-26 16:10', SVG_NEWS, False);
+    AddReportItem('Music.mp3', 'Audio', 'Demo track', '7.1 MB',
+      '2026-10-25 20:00', SVG_SHARE, False);
+    AddReportItem('Archive.zip', 'Archive', 'Source backup', '18 MB',
+      '2026-10-24 08:15', SVG_REFRESH, False);
+    AddReportItem('README.md', 'Markdown', 'Project readme', '6 KB',
+      '2026-10-23 12:40', SVG_EDIT, False);
+    AddReportItem('Setup.exe', 'Installer', 'Demo installer', '32 MB',
+      '2026-10-22 17:55', SVG_OK, False);
+    AddReportItem('Logo.svg', 'Vector', 'Application logo', '24 KB',
+      '2026-10-21 10:25', SVG_EDIT, False);
+    AddReportItem('Video.mp4', 'Video', 'Feature tour', '120 MB',
+      '2026-10-20 19:35', SVG_SHARE, False);
+    AddReportItem('Data.csv', 'Data', 'Exported records', '3.3 MB',
+      '2026-10-19 13:00', SVG_DONE, False);
+    AddReportItem('Backup.bak', 'Backup', 'Weekly snapshot', '45 MB',
+      '2026-10-18 06:45', SVG_REFRESH, False);
+  finally
+    CssListView1.EndUpdate;
+  end;
+
+  CssListView1.ItemIndex := 1;
+
+  // ------------------------------------------------------------------
+  // List view: one column controls the item width; names and icons are
+  // copied from the report above.
+  // ------------------------------------------------------------------
+  CssListView2.Columns.Clear;
+  CssListView2.Columns.AddItem('', 160);
+  CopyNames(CssListView2);
+  CssListView2.ItemIndex := 0;
+
+  // ------------------------------------------------------------------
+  // Small icon view: a grid of 16x16 icons with captions.
+  // ------------------------------------------------------------------
+  CssListView3.Columns.Clear;
+  CssListView3.Columns.AddItem('', 170);
+  CopyNames(CssListView3);
+  CssListView3.ItemIndex := 2;
+
+  // ------------------------------------------------------------------
+  // Icon view: the same items rendered with 40x40 artwork.
+  // ------------------------------------------------------------------
+  CssListView4.Columns.Clear;
+  CssListView4.Columns.AddItem('', 120);
+  CopyNames(CssListView4);
+  CssListView4.ItemIndex := 4;
+end;
+
+procedure TForm1.CssListView1Edited(Sender : TObject; Item : TCssListItem;
+  const NewText : string);
+var
+  I: Integer;
+begin
+  // The report list, the list view, the small icon view and the icon
+  // view hold independent items, so keep their captions in sync while
+  // the demo is running.
+  I := Item.Index;
+  if (I >= 0) and (I < CssListView2.ItemCount) then
+    CssListView2.Items[I].Caption := NewText;
+  if (I >= 0) and (I < CssListView3.ItemCount) then
+    CssListView3.Items[I].Caption := NewText;
+  if (I >= 0) and (I < CssListView4.ItemCount) then
+    CssListView4.Items[I].Caption := NewText;
 end;
 
 procedure TForm1.FormKeyDown(Sender : TObject; var Key : Word;

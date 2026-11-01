@@ -10,7 +10,7 @@ interface
 uses
   CssStyledControlsReg, CssButtonControl, CssCheckboxControl, CssComboControl, 
   CssEditControl, CssGroupControl, CssLabelControl, CssListboxControl, 
-  CssMemoControl, CssMenuControl, CssPanelControl, CssRadioControl, 
+  CssListViewControl, CssMemoControl, CssMenuControl, CssPanelControl, CssRadioControl, 
   CssScrollControl, CssSplitterControl, CssTabbedControl, 
   CssVirtualTreeControl, CssUtils, CssGroupCaptionControl, CssStyledControl, 
   CssProxyControl, CssFormDarkTitle, CssBitBtnControl, CssAntiAlias, 

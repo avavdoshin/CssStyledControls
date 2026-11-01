@@ -50,6 +50,10 @@
         <UnitName Value="CssListboxControl"/>
       </Item>
       <Item>
+        <Filename Value="..\Source\CssListViewControl.pas"/>
+        <UnitName Value="CssListViewControl"/>
+      </Item>
+      <Item>
         <Filename Value="..\Source\CssMemoControl.pas"/>
         <UnitName Value="CssMemoControl"/>
       </Item>

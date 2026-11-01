@@ -472,6 +472,7 @@ type
     function PlainTextToHtml(const AText: string): string;
 
     procedure DrawStyledBackground(ACanvas: TCanvas; const ARect: TRect);
+    procedure DrawBackgroundOnly(ACanvas: TCanvas; const ARect: TRect);
     procedure DrawStyledTextToCanvas(ACanvas: TCanvas; const ARect: TRect; const AText: string);
     procedure DrawCaptionToCanvas(ACanvas: TCanvas; const ARect: TRect; const AText: string);
 
@@ -5974,6 +5975,67 @@ begin
         InflateRect(DrawR, -(FBorderWidth div 2), -(FBorderWidth div 2));
 
       ACanvas.Rectangle(DrawR.Left, DrawR.Top, DrawR.Right, DrawR.Bottom);
+    end;
+  end;
+end;
+
+procedure TCssStyledControl.DrawBackgroundOnly(
+  ACanvas: TCanvas; const ARect: TRect);
+var
+  BG: TColor;
+  Radii: TCssCornerRadii;
+  Params: TCssRoundedBoxParams;
+  NeedAA: Boolean;
+begin
+  if (ARect.Right <= ARect.Left) or (ARect.Bottom <= ARect.Top) then
+    Exit;
+
+  if FHasBackground then
+    BG := FBackground
+  else
+    BG := Color;
+
+  if BG = clDefault then
+    BG := clBtnFace;
+
+  Radii := GetCssBorderRadii;
+
+  NeedAA :=
+    (Radii.TL > 0) or (Radii.TR > 0) or (Radii.BR > 0) or (Radii.BL > 0) or
+    FBoxShadow.Used or
+    (FBackgroundGradient.Kind <> cgkNone);
+
+  if NeedAA then
+  begin
+    Params.Radii := Radii;
+    Params.FillColor := BG;
+    Params.BorderColor := clNone;
+    Params.BorderWidth := 0;
+    Params.BorderStyle := cbsNone;
+    Params.Shadow := FBoxShadow;
+    Params.Gradient := FBackgroundGradient;
+    Params.HasGradient := FBackgroundGradient.Kind <> cgkNone;
+    Params.CornerBackColor[0] :=
+      GetBackgroundBeneathAtClientPoint(Point(ARect.Left, ARect.Top));
+    Params.CornerBackColor[1] :=
+      GetBackgroundBeneathAtClientPoint(Point(ARect.Right - 1, ARect.Top));
+    Params.CornerBackColor[2] :=
+      GetBackgroundBeneathAtClientPoint(Point(ARect.Right - 1, ARect.Bottom - 1));
+    Params.CornerBackColor[3] :=
+      GetBackgroundBeneathAtClientPoint(Point(ARect.Left, ARect.Bottom - 1));
+
+    CssAntiAlias.DrawAARoundedBox(ACanvas, ARect, Params);
+  end
+  else
+  begin
+    if BG = clNone then
+      BG := GetParentBackgroundColor;
+
+    if BG <> clNone then
+    begin
+      ACanvas.Brush.Style := bsSolid;
+      ACanvas.Brush.Color := BG;
+      ACanvas.FillRect(ARect);
     end;
   end;
 end;
