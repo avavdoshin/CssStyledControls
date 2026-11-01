@@ -542,32 +542,34 @@ begin
   // Report view: columns, SVG cell icons, checkboxes, grid lines,
   // hot tracking, multi-selection, sorting and inline editing.
   // ------------------------------------------------------------------
+  CssListView1.ShowItemFocusRect := True;
   CssListView1.Columns.Clear;
-  CssListView1.Columns.AddItem('Name', 300);
-  Col := CssListView1.Columns.AddItem('Kind', 110);
+  CssListView1.Columns.AddItem('<b>Name</b>', 300);
+  Col := CssListView1.Columns.AddItem('<i>Kind</i>', 110);
   Col.Alignment := taCenter;
-  CssListView1.Columns.AddItem('Note', 360);
-  Col := CssListView1.Columns.AddItem('Size', 90);
+  CssListView1.Columns.AddItem('<u>Note</u>', 360);
+  Col := CssListView1.Columns.AddItem('<b>Size</b>', 90);
   Col.Alignment := taRightJustify;
-  CssListView1.Columns.AddItem('Modified', 220);
+  CssListView1.Columns.AddItem('<i>Modified</i>', 220);
 
   CssListView1.BeginUpdate;
   try
     AddReportItem('Projects', 'Folder', 'Contains 12 items', '',
       '2026-10-31 09:12', SVG_NEWS, False);
-    AddReportItem('Report.pdf', 'Document', 'Quarterly report', '1.2 MB',
+    AddReportItem('Report.pdf', 'Document', '<b>Quarterly</b> report', '1.2 MB',
       '2026-10-30 18:45', SVG_OK, True);
-    AddReportItem('Presentation.pptx', 'Presentation', 'Product overview',
+    AddReportItem('Presentation.pptx', 'Presentation', '<i>Product</i> overview',
       '4.8 MB', '2026-10-29 14:20', SVG_SHARE, False);
-    AddReportItem('Budget.xlsx', 'Spreadsheet', '2027 planning', '860 KB',
+    AddReportItem('Budget.xlsx', 'Spreadsheet',
+      '<span style="color:#2563EB"><b>2027</b></span> planning', '860 KB',
       '2026-10-28 11:05', SVG_DONE, True);
     AddReportItem('Notes.txt', 'Text', 'Meeting notes', '12 KB',
       '2026-10-27 09:30', SVG_EDIT, False);
     AddReportItem('Photo.png', 'Image', 'Screenshot', '2.4 MB',
       '2026-10-26 16:10', SVG_NEWS, False);
-    AddReportItem('Music.mp3', 'Audio', 'Demo track', '7.1 MB',
+    AddReportItem('Music.mp3', 'Audio', '<b>Demo track</b>', '7.1 MB',
       '2026-10-25 20:00', SVG_SHARE, False);
-    AddReportItem('Archive.zip', 'Archive', 'Source backup', '18 MB',
+    AddReportItem('Archive.zip', 'Archive', '<i>Source backup</i>', '18 MB',
       '2026-10-24 08:15', SVG_REFRESH, False);
     AddReportItem('README.md', 'Markdown', 'Project readme', '6 KB',
       '2026-10-23 12:40', SVG_EDIT, False);

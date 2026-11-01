@@ -709,6 +709,16 @@ implementation
 uses
   CssUtils, CssAntiAlias;
 
+function ListAlignmentToCss(AAlign: TAlignment): TCssTextAlign;
+begin
+  case AAlign of
+    taCenter: Result := ctaCenter;
+    taRightJustify: Result := ctaRight;
+  else
+    Result := ctaLeft;
+  end;
+end;
+
 function CompareListItems(Item1, Item2: TCollectionItem;
   Context: Pointer): Integer;
 begin
@@ -4113,8 +4123,14 @@ procedure TCssListView.DrawHeaderText(const ARect: TRect;
 var
   TS: TTextStyle;
 begin
-  ApplyTextStyle(TS, AAlign);
-  Canvas.TextRect(ARect, ARect.Left, ARect.Top, AText, TS);
+  if HtmlMode then
+    DrawHtmlTextWithAlign(Canvas, ARect, AText,
+      ListAlignmentToCss(AAlign), cvaMiddle, Canvas.Font.Color)
+  else
+  begin
+    ApplyTextStyle(TS, AAlign);
+    Canvas.TextRect(ARect, ARect.Left, ARect.Top, AText, TS);
+  end;
 end;
 
 procedure TCssListView.DrawSortArrow(const ARect: TRect;
@@ -4940,8 +4956,14 @@ begin
   else
     Canvas.Font.Color := GetItemTextColor;
 
-  ApplyTextStyle(TS, CellAlign);
-  Canvas.TextRect(R, R.Left, R.Top, S, TS);
+  if HtmlMode then
+    DrawHtmlTextWithAlign(Canvas, R, S,
+      ListAlignmentToCss(CellAlign), cvaMiddle, Canvas.Font.Color)
+  else
+  begin
+    ApplyTextStyle(TS, CellAlign);
+    Canvas.TextRect(R, R.Left, R.Top, S, TS);
+  end;
 end;
 
 // --- Checkbox helpers ---
@@ -5192,6 +5214,9 @@ begin
     Result := AItem.Caption
   else
     Result := AItem.GetSubItemText(AColumn - 1);
+
+  if HtmlMode then
+    Result := HtmlToPlainText(Result);
 end;
 
 function TCssListView.CompareItems(AItem1, AItem2: TCssListItem): Integer;
@@ -5725,7 +5750,12 @@ begin
   UpdateCanvasFont;
 
   P := GetEffectiveItemPadding;
-  MaxW := Canvas.TextWidth(FColumns[AIndex].Caption) + 2 * P + ScalePx(12);
+  S := FColumns[AIndex].Caption;
+
+  if HtmlMode then
+    S := HtmlToPlainText(S);
+
+  MaxW := Canvas.TextWidth(S) + 2 * P + ScalePx(12);
 
   if (FSortType <> lstNone) and (FSortColumn = AIndex) then
     Inc(MaxW, ScalePx(16));

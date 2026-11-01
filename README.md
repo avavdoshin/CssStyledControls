@@ -594,6 +594,11 @@ the switch.
   focus rectangle around the current cell, and clicking a cell also
   updates the focused column.
 
+- **HTML text** — `CssListView1.HtmlMode = True`, so the column headers
+  and the *Note* cells render HTML: bold, italic, underline, and inline
+  colors are visible in the report list. Sorting and `AutoSizeColumn`
+  use the plain text without the tags.
+
 - **Other view styles** — three read-only `TCssListView`s on the lower
   half of the page use the same data:
   - `CssListView2` — `lvsList` with a single 160 px column;
@@ -1502,6 +1507,7 @@ Key properties:
 | `Checkboxes` | Draws a checkbox in column 0 (or before the icon in icon views). |
 | `ShowColumnHeaders`, `GridLines`, `HotTrack`, `HideSelection` | Report / interaction options. |
 | `ReadOnly` | When `False`, `F2` or a double click opens the inline editor. Set `ReadOnly := True` to disable editing. |
+| `HtmlMode` | Renders item captions, subitems, and column headers as HTML (`<b>`, `<i>`, `<u>`, colors, spans). Sorting, incremental search, and `AutoSizeColumn` use the plain text with tags stripped. |
 | `SmallImages`, `LargeImages`, `StateImages` | `TCssSvgImgList` instances. Small images are used in report / list / small-icon modes, large images in icon mode. |
 | `SortType`, `SortColumn`, `SortDirection`, `AutoSort` | Built-in sorting. `AutoSort` sorts when a column header is clicked. `AlphaSort` and `CustomSort` are also available. |
 | `ItemIndex`, `FocusedColumn`, `SelCount`, `Selected`, `TopItem`, `VisibleRowCount` | Runtime selection and scrolling information. In report mode `FocusedColumn` is the cell that receives the keyboard focus. |
