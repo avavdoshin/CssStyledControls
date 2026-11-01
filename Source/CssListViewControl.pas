@@ -494,7 +494,7 @@ type
       ASelected, AHovered: Boolean);
     procedure DrawPlaceholder(const ARect: TRect);
     procedure DrawRubberBand;
-    procedure DrawFocusMark(const ARect: TRect);
+    procedure DrawFocusMark(const ARect: TRect; ASelectedCell: Boolean);
     procedure DrawColumnGrid;
     procedure ApplyTextStyle(var AStyle: TTextStyle; AAlign: TAlignment;
       AVertical: Boolean = True);
@@ -4309,9 +4309,11 @@ begin
   Canvas.TextRect(ARect, ARect.Left, ARect.Top, S, TS);
 end;
 
-procedure TCssListView.DrawFocusMark(const ARect: TRect);
+procedure TCssListView.DrawFocusMark(const ARect: TRect;
+  ASelectedCell: Boolean);
 var
   R: TRect;
+  MarkColor: TColor;
 begin
   R := ARect;
   Inc(R.Left, 1);
@@ -4322,11 +4324,21 @@ begin
   if (R.Right <= R.Left) or (R.Bottom <= R.Top) then
     Exit;
 
+  if ASelectedCell then
+  begin
+    MarkColor := GetItemSelectedTextColor;
+
+    if (MarkColor = clNone) or (MarkColor = clDefault) then
+      MarkColor := clWhite;
+  end
+  else
+    MarkColor := GetItemTextColor;
+
   Canvas.Brush.Style := bsClear;
   Canvas.Pen.Style := psDot;
   Canvas.Pen.Mode := pmCopy;
   Canvas.Pen.Width := 1;
-  Canvas.Pen.Color := GetItemTextColor;
+  Canvas.Pen.Color := MarkColor;
 
   Canvas.Rectangle(R.Left, R.Top, R.Right, R.Bottom);
 
@@ -4419,7 +4431,9 @@ begin
     else
       CellR := RowR;
 
-    DrawFocusMark(CellR);
+    DrawFocusMark(CellR,
+      IsSel and (FRowSelect or (FColumns.Count = 0) or
+      (GetEffectiveFocusedColumn = 0)));
   end;
 end;
 
@@ -4455,7 +4469,7 @@ begin
     DrawItemCell(AIndex, 0, R, IsSel, IsHov);
 
   if FShowItemFocusRect and Focused and (FFocusedItem = Item) and ShowFocusRect then
-    DrawFocusMark(R);
+    DrawFocusMark(R, IsSel);
 end;
 
 procedure TCssListView.DrawSmallIconRow(AIndex: Integer);
@@ -4490,7 +4504,7 @@ begin
     DrawItemCell(AIndex, 0, R, IsSel, IsHov);
 
   if FShowItemFocusRect and Focused and (FFocusedItem = Item) and ShowFocusRect then
-    DrawFocusMark(R);
+    DrawFocusMark(R, IsSel);
 end;
 
 procedure TCssListView.DrawIconRow(AIndex: Integer);
@@ -4532,7 +4546,7 @@ begin
   if not DefaultDraw then
   begin
     if Focused and (FFocusedItem = Item) and ShowFocusRect then
-      DrawFocusMark(R);
+      DrawFocusMark(R, IsSel);
     Exit;
   end;
 
@@ -4634,7 +4648,7 @@ begin
   Canvas.TextRect(TextR, TextR.Left, TextR.Top, Item.Caption, TS);
 
   if FShowItemFocusRect and Focused and (FFocusedItem = Item) and ShowFocusRect then
-    DrawFocusMark(R);
+    DrawFocusMark(R, IsSel);
 end;
 
 procedure TCssListView.DrawItemCell(AIndex, AColumn: Integer;

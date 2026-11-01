@@ -139,6 +139,17 @@ visible side by side.
 | :---: | :---: |
 | ![Progress bar — light](Screenshots/Bars_light.png) | ![Progress bar — dark](Screenshots/Bars_dark.png) |
 
+### ListView
+
+Report view with columns, SVG icons, checkboxes, sorting and inline
+editing, plus list, small-icon and icon views. The report view shows the
+focus rectangle around the current cell (`ShowItemFocusRect`), and the
+lower views use spatial arrow-key navigation between their visual columns.
+
+| Light | Dark |
+| :---: | :---: |
+| ![ListView — light](Screenshots/ListView_light.png) | ![ListView — dark](Screenshots/ListView_dark.png) |
+
 ---
 
 ## Installation
